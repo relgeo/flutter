@@ -8,6 +8,8 @@ Status posisi repo saat ini:
 2. parity dijaga bertahap melalui audit dan shared reference fixtures
 3. README ini tidak mengklaim parity final absolut untuk seluruh surface
 4. surface Flutter saat ini terutama mengikuti domain technical drawing sebagai baseline parity, bukan mendefinisikan seluruh identitas RelGeo
+5. repository ini adalah workbench non-publishable; versi aplikasi Flutter tidak sama dengan versi DSL
+6. active/runtime/invalid shared-fixture dan semantic projection sudah diverifikasi secara lokal; active, runtime-diagnostic, dan candidate boolean/intersection juga lulus pada operasi, scene projection, dan SVG semantic projection ter-normalisasi tanpa parent workspace, sedangkan candidate belum active, cakupan SVG penuh, dan CI masih terbuka
 
 ---
 
@@ -26,6 +28,7 @@ Status posisi repo saat ini:
    * **Dual Panel Split**: Left editor utilizing the advanced `re_editor` editor for RelGeo YAML DSL code, alongside dynamic diagnostics & values tables.
    * **Interactive Viewport**: Right panel utilizing `InteractiveViewer` with smooth zooming, panning, reset, and fit gesture controls over a custom engineering grid.
    * **Real-time Parametric Sliders**: Modifying dynamic parameters recalculates the entire topological graph on-the-fly and refreshes the canvas instantly in real-time.
+   * **Workbench-only controls**: sheet/view selection, role filters, visual profiles, persisted preferences, object inspection, and runtime diagnostics.
    * **Vector SVG Exporter**: Compiles active layers into beautiful vector XML outputs exported directly to the local folder at `exports/bracket_parametric.svg`.
 
 ---
@@ -72,6 +75,34 @@ Execute the active Flutter test suite:
 ```bash
 flutter test
 ```
+
+Untuk menjalankan gate yang men-stage fixture canonical workspace, gunakan dari root
+`relgeo/workspace`:
+
+```bash
+pnpm run flutter:conformance
+```
+
+Gate workspace lokal terakhir lulus pada Flutter `3.41.9` / Dart `3.11.5`, termasuk 119 test.
+Checkout Flutter terisolasi juga lulus analyzer non-fatal dan `flutter test` dengan 99 test; 7 test shared-fixture dilewati secara eksplisit karena fixture canonical berada di root workspace.
+Analyzer sengaja memakai baseline non-fatal untuk lint/info legacy; seluruh temuannya
+tetap dicetak. CI memiliki job terpisah dan belum menggantikan verifikasi lokal ini.
+
+Test yang membaca canonical fixture workspace dapat diarahkan secara portable
+ke directory fixture yang memiliki subdirectory `reference/`:
+
+```bash
+RELGEO_FIXTURE_ROOT=../fixtures flutter test test/reference_fixtures_test.dart
+```
+
+Integration gate boleh menunjuk `RELGEO_FIXTURE_ROOT` ke staging directory
+sementara. Repository Flutter tidak menyimpan absolute path operator dan tidak
+mem-publish canonical fixture sebagai package Dart.
+
+Compatibility line aktif adalah `RelGeo DSL 0.5`; `version: 1.0.0+1` pada
+`pubspec.yaml` adalah application version Flutter. Status evidence dan gap
+lintas consumer dicatat di workspace pada
+`docs/plans/06-flutter-alignment.md`.
 
 Untuk status parity terbaru, lihat audit aktif di:
 

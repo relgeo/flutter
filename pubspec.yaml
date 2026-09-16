@@ -1,5 +1,7 @@
 name: relgeo_flutter
-description: "A new Flutter project."
+description: "RelGeo DSL v0.5 Flutter workbench and renderer."
+# RelGeo DSL compatibility line: 0.5. This is an application workbench, not
+# a pub.dev package; the application version below is intentionally separate.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

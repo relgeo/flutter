@@ -7,7 +7,8 @@
 import 'dart:math' as math;
 import '../geometry/types.dart';
 
-const double _kTolerance = 1e-4; // Toleransi floating point untuk perbandingan geometri
+const double _kTolerance =
+    1e-4; // Toleransi floating point untuk perbandingan geometri
 
 /// Memproses seluruh blok `constraints` dan mengembalikan daftar pelanggaran.
 List<ConstraintViolation> processConstraints(
@@ -16,7 +17,8 @@ List<ConstraintViolation> processConstraints(
 ) {
   final violations = <ConstraintViolation>[];
 
-  for (final raw in rawConstraints) {
+  for (var index = 0; index < rawConstraints.length; index++) {
+    final raw = rawConstraints[index];
     if (raw is! Map) continue;
 
     for (final entry in raw.entries) {
@@ -26,7 +28,7 @@ List<ConstraintViolation> processConstraints(
       try {
         switch (type) {
           case 'align':
-            final v = _processAlign(spec, objects);
+            final v = _processAlign(spec, objects, path: 'constraints[$index]');
             if (v != null) violations.add(v);
 
           case 'equal':
@@ -51,13 +53,15 @@ List<ConstraintViolation> processConstraints(
         }
       } catch (e) {
         // Constraint evaluation error — catat sebagai violation
-        violations.add(ConstraintViolation(
-          type: type,
-          message: 'Constraint evaluation error: $e',
-          deviation: double.infinity,
-          path: 'constraints.$type',
-          involvedObjects: [],
-        ));
+        violations.add(
+          ConstraintViolation(
+            type: type,
+            message: 'Constraint evaluation error: $e',
+            deviation: double.infinity,
+            path: 'constraints.$type',
+            involvedObjects: [],
+          ),
+        );
       }
     }
   }
@@ -68,7 +72,11 @@ List<ConstraintViolation> processConstraints(
 // ─────────────────────────────────────────────────────────────────────────────
 // align: memvalidasi bahwa dua anchor/edge memiliki koordinat yang sama
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processAlign(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processAlign(
+  dynamic spec,
+  Map<String, ResolvedObject> objects, {
+  required String path,
+}) {
   if (spec is! Map) return null;
 
   final targetSpec = spec['target'];
@@ -82,18 +90,41 @@ ConstraintViolation? _processAlign(dynamic spec, Map<String, ResolvedObject> obj
 
   if (targetPt == null || withPt == null) return null;
 
+  final dx = (targetPt.x - withPt.x).abs();
+  final dy = (targetPt.y - withPt.y).abs();
+
+  // The default point alignment contract follows the TypeScript resolver:
+  // compare Euclidean distance and expose an indexed constraint path.
+  if (axis == 'both') {
+    final deviation = math.sqrt(dx * dx + dy * dy);
+    if (deviation <= 1e-3) return null;
+
+    return ConstraintViolation(
+      type: 'align',
+      message:
+          'Points are not aligned. Distance: ${deviation.toStringAsFixed(4)}',
+      deviation: deviation,
+      path: path,
+      involvedObjects: const [],
+      visualHelper: (
+        x1: targetPt.x,
+        y1: targetPt.y,
+        x2: withPt.x,
+        y2: withPt.y,
+      ),
+    );
+  }
+
   double deviation = 0.0;
   String message = '';
 
-  if (axis == 'x' || axis == 'both') {
-    final dx = (targetPt.x - withPt.x).abs();
+  if (axis == 'x') {
     if (dx > _kTolerance) {
       deviation = math.max(deviation, dx);
       message += 'X misalignment: ${dx.toStringAsFixed(3)}. ';
     }
   }
-  if (axis == 'y' || axis == 'both') {
-    final dy = (targetPt.y - withPt.y).abs();
+  if (axis == 'y') {
     if (dy > _kTolerance) {
       deviation = math.max(deviation, dy);
       message += 'Y misalignment: ${dy.toStringAsFixed(3)}. ';
@@ -106,7 +137,7 @@ ConstraintViolation? _processAlign(dynamic spec, Map<String, ResolvedObject> obj
     type: 'align',
     message: message.trim(),
     deviation: deviation,
-    path: 'constraints.align',
+    path: path,
     involvedObjects: _extractObjectIds([targetSpec, withSpec]),
     visualHelper: targetPt != null && withPt != null
         ? (x1: targetPt.x, y1: targetPt.y, x2: withPt.x, y2: withPt.y)
@@ -117,7 +148,10 @@ ConstraintViolation? _processAlign(dynamic spec, Map<String, ResolvedObject> obj
 // ─────────────────────────────────────────────────────────────────────────────
 // equal: memvalidasi kesamaan nilai antara dua ekspresi geometri
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processEqual(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processEqual(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is! List || spec.length < 2) return null;
 
   final val1 = _resolveScalar(spec[0], objects);
@@ -130,7 +164,8 @@ ConstraintViolation? _processEqual(dynamic spec, Map<String, ResolvedObject> obj
 
   return ConstraintViolation(
     type: 'equal',
-    message: 'Values not equal: $val1 ≠ $val2 (deviation: ${deviation.toStringAsFixed(3)})',
+    message:
+        'Values not equal: $val1 ≠ $val2 (deviation: ${deviation.toStringAsFixed(3)})',
     deviation: deviation,
     path: 'constraints.equal',
     involvedObjects: _extractObjectIds(spec),
@@ -140,7 +175,10 @@ ConstraintViolation? _processEqual(dynamic spec, Map<String, ResolvedObject> obj
 // ─────────────────────────────────────────────────────────────────────────────
 // parallel: memvalidasi bahwa dua garis sejajar
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processParallel(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processParallel(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is! List || spec.length < 2) return null;
 
   final dir1 = _getLineDirection(spec[0].toString(), objects);
@@ -169,7 +207,10 @@ ConstraintViolation? _processParallel(dynamic spec, Map<String, ResolvedObject> 
 // ─────────────────────────────────────────────────────────────────────────────
 // perpendicular: memvalidasi bahwa dua garis tegak lurus (dot product ≈ 0)
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processPerpendicular(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processPerpendicular(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is! List || spec.length < 2) return null;
 
   final dir1 = _getLineDirection(spec[0].toString(), objects);
@@ -188,7 +229,8 @@ ConstraintViolation? _processPerpendicular(dynamic spec, Map<String, ResolvedObj
 
   return ConstraintViolation(
     type: 'perpendicular',
-    message: 'Lines not perpendicular: deviation from 90° = ${angleTo90.toStringAsFixed(2)}°',
+    message:
+        'Lines not perpendicular: deviation from 90° = ${angleTo90.toStringAsFixed(2)}°',
     deviation: angleTo90,
     path: 'constraints.perpendicular',
     involvedObjects: spec.map((e) => e.toString()).toList(),
@@ -198,7 +240,10 @@ ConstraintViolation? _processPerpendicular(dynamic spec, Map<String, ResolvedObj
 // ─────────────────────────────────────────────────────────────────────────────
 // tangent: memvalidasi bahwa garis bersinggungan dengan circle
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processTangent(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processTangent(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is! List || spec.length < 2) return null;
 
   final lineId = spec[0].toString();
@@ -227,7 +272,8 @@ ConstraintViolation? _processTangent(dynamic spec, Map<String, ResolvedObject> o
 
   return ConstraintViolation(
     type: 'tangent',
-    message: 'Not tangent: distance to center = ${distToCenter.toStringAsFixed(3)}, radius = ${circleObj.radius.toStringAsFixed(3)}, deviation = ${deviation.toStringAsFixed(3)}',
+    message:
+        'Not tangent: distance to center = ${distToCenter.toStringAsFixed(3)}, radius = ${circleObj.radius.toStringAsFixed(3)}, deviation = ${deviation.toStringAsFixed(3)}',
     deviation: deviation,
     path: 'constraints.tangent',
     involvedObjects: [lineId, circleId],
@@ -243,7 +289,10 @@ ConstraintViolation? _processTangent(dynamic spec, Map<String, ResolvedObject> o
 // ─────────────────────────────────────────────────────────────────────────────
 // coincident: memvalidasi bahwa dua titik sama posisinya
 // ─────────────────────────────────────────────────────────────────────────────
-ConstraintViolation? _processCoincident(dynamic spec, Map<String, ResolvedObject> objects) {
+ConstraintViolation? _processCoincident(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is! List || spec.length < 2) return null;
 
   final pt1 = _resolveAnchorPoint(spec[0], objects);
@@ -258,7 +307,8 @@ ConstraintViolation? _processCoincident(dynamic spec, Map<String, ResolvedObject
 
   return ConstraintViolation(
     type: 'coincident',
-    message: 'Points not coincident: distance = ${deviation.toStringAsFixed(3)}',
+    message:
+        'Points not coincident: distance = ${deviation.toStringAsFixed(3)}',
     deviation: deviation,
     path: 'constraints.coincident',
     involvedObjects: _extractObjectIds(spec),
@@ -272,7 +322,10 @@ ConstraintViolation? _processCoincident(dynamic spec, Map<String, ResolvedObject
 
 /// Menyelesaikan anchor spec menjadi Point2D.
 /// Spec bisa berupa String (object ID) atau Map (object.anchor).
-Point2D? _resolveAnchorPoint(dynamic spec, Map<String, ResolvedObject> objects) {
+Point2D? _resolveAnchorPoint(
+  dynamic spec,
+  Map<String, ResolvedObject> objects,
+) {
   if (spec is String) {
     // Langsung referensi object atau anchor (format: 'objectId.anchor')
     final parts = spec.split('.');
@@ -309,10 +362,14 @@ Point2D? _getCenterPoint(ResolvedObject obj) {
   return switch (obj) {
     ResolvedPoint(:final x, :final y) => (x: x, y: y),
     ResolvedCircle(:final cx, :final cy) => (x: cx, y: cy),
-    ResolvedRect(:final x, :final y, :final width, :final height) =>
-        (x: x + width / 2, y: y + height / 2),
-    ResolvedLine(:final x1, :final y1, :final x2, :final y2) =>
-        (x: (x1 + x2) / 2, y: (y1 + y2) / 2),
+    ResolvedRect(:final x, :final y, :final width, :final height) => (
+      x: x + width / 2,
+      y: y + height / 2,
+    ),
+    ResolvedLine(:final x1, :final y1, :final x2, :final y2) => (
+      x: (x1 + x2) / 2,
+      y: (y1 + y2) / 2,
+    ),
     _ => null,
   };
 }
@@ -324,7 +381,8 @@ Point2D? _getAnchorPoint(ResolvedObject obj, String anchor) {
 
   // Anchor standar berdasarkan tipe
   return switch (obj) {
-    ResolvedRect(:final x, :final y, :final width, :final height) => switch (anchor) {
+    ResolvedRect(:final x, :final y, :final width, :final height) =>
+      switch (anchor) {
         'center' => (x: x + width / 2, y: y + height / 2),
         'topLeft' => (x: x, y: y),
         'topRight' => (x: x + width, y: y),
@@ -334,14 +392,20 @@ Point2D? _getAnchorPoint(ResolvedObject obj, String anchor) {
         'bottomCenter' => (x: x + width / 2, y: y + height),
         'centerLeft' => (x: x, y: y + height / 2),
         'centerRight' => (x: x + width, y: y + height / 2),
-        'left' || 'right' || 'top' || 'bottom' || 'centerX' || 'centerY' => _getCenterPoint(obj),
+        'left' ||
+        'right' ||
+        'top' ||
+        'bottom' ||
+        'centerX' ||
+        'centerY' => _getCenterPoint(obj),
         _ => null,
       },
     ResolvedCircle(:final cx, :final cy) => switch (anchor) {
-        'center' => (x: cx, y: cy),
-        _ => null,
-      },
-    ResolvedLine(:final x1, :final y1, :final x2, :final y2) => switch (anchor) {
+      'center' => (x: cx, y: cy),
+      _ => null,
+    },
+    ResolvedLine(:final x1, :final y1, :final x2, :final y2) =>
+      switch (anchor) {
         'start' => (x: x1, y: y1),
         'end' => (x: x2, y: y2),
         'center' => (x: (x1 + x2) / 2, y: (y1 + y2) / 2),
@@ -381,7 +445,10 @@ double? _resolveScalar(dynamic spec, Map<String, ResolvedObject> objects) {
 }
 
 /// Mendapatkan unit direction vector dari sebuah garis.
-({double x, double y})? _getLineDirection(String id, Map<String, ResolvedObject> objects) {
+({double x, double y})? _getLineDirection(
+  String id,
+  Map<String, ResolvedObject> objects,
+) {
   final obj = objects[id];
   if (obj is! ResolvedLine) return null;
 

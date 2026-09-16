@@ -1,7 +1,7 @@
 /// Pustaka tipe data dan struktur geometri dasar RelGeo.
 ///
 /// Berkas ini memetakan seluruh representasi objek yang diselesaikan (Resolved Objects)
-/// dari spesifikasi v0.4 TypeScript ke sistem tipe Dart asli yang kuat (typed).
+/// dari baseline TypeScript RelGeo ke sistem tipe Dart asli yang kuat (typed).
 
 typedef Point2D = ({double x, double y});
 
@@ -34,7 +34,8 @@ class Meta {
   final String role;
   final String? layer;
   final String? dash;
-  // Manufacturing metadata (v0.4 §16)
+  // Manufacturing metadata from the historical v0.4 contract, retained for
+  // compatibility while the active contract line is v0.5.
   final String? material;
   final String? thickness;
   final String? process;

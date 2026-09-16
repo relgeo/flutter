@@ -6,6 +6,8 @@ import 'package:relgeo_flutter/src/ui/editor_panel.dart';
 import 'package:relgeo_flutter/src/ui/inspector_panel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/shared_fixture.dart';
+
 const _sheetDsl = '''scene:
   unit: mm
   padding: 20
@@ -57,6 +59,8 @@ sheets:
 ''';
 
 void main() {
+  final sharedFixturesAvailable = hasSharedFixtures();
+
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
@@ -78,6 +82,97 @@ void main() {
     expect(find.text('INSPECTOR'), findsOneWidget);
   });
 
+  testWidgets(
+    'active v0.5 fixture flows through workbench surfaces',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        RelGeoCADApp(
+          initialDsl: loadSharedFixtureText('10-v05-relational-baseline.yaml'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('COMPILED OK'), findsOneWidget);
+      expect(find.text('MODEL PREVIEW'), findsOneWidget);
+      expect(find.byKey(const Key('scene-canvas')), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('export-svg-button')),
+          matching: find.text('SVG MODEL'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('ERRORS'));
+      await tester.pumpAndSettle();
+      expect(find.text('COMPILATION SUCCESSFUL'), findsOneWidget);
+    },
+    skip: !sharedFixturesAvailable,
+  );
+
+  testWidgets(
+    'runtime diagnostic remains visible in the workbench inspector',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        RelGeoCADApp(
+          initialDsl: loadSharedFixtureText(
+            '14-v05-runtime-align-violation.yaml',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('COMPILED OK'), findsOneWidget);
+      expect(find.byKey(const Key('scene-canvas')), findsOneWidget);
+
+      await tester.tap(find.text('ERRORS'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Points are not aligned. Distance: 14.1421'),
+        findsOneWidget,
+      );
+    },
+    skip: !sharedFixturesAvailable,
+  );
+
+  testWidgets(
+    'invalid edits keep the last valid preview while showing diagnostics',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        RelGeoCADApp(
+          initialDsl: loadSharedFixtureText('10-v05-relational-baseline.yaml'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('scene-canvas')), findsOneWidget);
+      final controller = _editorPanel(tester).controller;
+      controller.text =
+          'version: 0.5\nobjects:\n  broken:\n    type: definitely-not-a-relgeo-object';
+      controller.notifyListeners();
+      tester.binding.scheduleFrame();
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('ERROR'), findsAtLeastNWidgets(1));
+      expect(find.byKey(const Key('scene-canvas')), findsOneWidget);
+
+      await tester.tap(find.text('ERRORS'));
+      await tester.pumpAndSettle();
+      expect(find.text('COMPILER / TOPOLOGY ERROR'), findsOneWidget);
+    },
+    skip: !sharedFixturesAvailable,
+  );
+
   testWidgets('workbench can switch active sheet from sheet selector', (
     WidgetTester tester,
   ) async {
@@ -92,7 +187,10 @@ void main() {
     expect(find.byKey(const Key('preview-surface-badge')), findsOneWidget);
     expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
     expect(find.byKey(const Key('physical-target-badge')), findsOneWidget);
-    expect(find.byKey(const Key('physical-view-summary-badge')), findsOneWidget);
+    expect(
+      find.byKey(const Key('physical-view-summary-badge')),
+      findsOneWidget,
+    );
     expect(
       find.text('TARGET: A4 · 297.0 × 210.0 MM · LANDSCAPE'),
       findsOneWidget,
@@ -122,35 +220,41 @@ void main() {
     expect(find.textContaining('420.0, 297.0'), findsOneWidget);
   });
 
-  testWidgets('workbench can switch back to model preview from surface selector', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1920, 1080);
-    tester.view.devicePixelRatio = 1.0;
+  testWidgets(
+    'workbench can switch back to model preview from surface selector',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
+      await tester.pumpAndSettle();
 
-    expect(_scenePainter(tester).sheetId, 'sheet_a4');
-    expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
+      expect(_scenePainter(tester).sheetId, 'sheet_a4');
+      expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('sheet-selector')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('sheet-option-model-preview')).last);
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('sheet-selector')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('sheet-option-model-preview')).last,
+      );
+      await tester.pumpAndSettle();
 
-    expect(_scenePainter(tester).sheetId, isNull);
-    expect(find.text('MODEL PREVIEW'), findsOneWidget);
-    expect(find.byKey(const Key('physical-target-badge')), findsNothing);
-    expect(find.byKey(const Key('physical-view-summary-badge')), findsNothing);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('export-svg-button')),
-        matching: find.text('SVG MODEL'),
-      ),
-      findsOneWidget,
-    );
-  });
+      expect(_scenePainter(tester).sheetId, isNull);
+      expect(find.text('MODEL PREVIEW'), findsOneWidget);
+      expect(find.byKey(const Key('physical-target-badge')), findsNothing);
+      expect(
+        find.byKey(const Key('physical-view-summary-badge')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('export-svg-button')),
+          matching: find.text('SVG MODEL'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('role filter updates hidden roles used by canvas painter', (
     WidgetTester tester,

@@ -515,13 +515,16 @@ class _InspectorPanelState extends State<InspectorPanel>
                     size: 14,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    v.message,
-                    style: const TextStyle(
-                      fontFamily: 'Courier',
-                      fontSize: 11,
-                      color: _accentColor,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      v.message,
+                      softWrap: true,
+                      style: const TextStyle(
+                        fontFamily: 'Courier',
+                        fontSize: 11,
+                        color: _accentColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -1088,7 +1091,9 @@ class _InspectorPanelState extends State<InspectorPanel>
                       children: [
                         Text(
                           'ERRORS',
-                          style: TextStyle(color: hasError ? _errorColor : null),
+                          style: TextStyle(
+                            color: hasError ? _errorColor : null,
+                          ),
                         ),
                         if (hasError) ...[
                           const SizedBox(width: 4),

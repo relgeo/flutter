@@ -1,20 +1,23 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
-import 'package:yaml/yaml.dart';
 
-Map<dynamic, dynamic> _loadFixture(String name) {
-  final file = File('../fixtures/reference/$name');
-  return loadYaml(file.readAsStringSync()) as Map<dynamic, dynamic>;
-}
+import 'support/shared_fixture.dart';
 
 void main() {
+  if (!hasSharedFixtures()) {
+    test(
+      'shared reference fixtures require workspace fixture staging',
+      () {},
+      skip: 'Set RELGEO_FIXTURE_ROOT to run canonical workspace fixtures.',
+    );
+    return;
+  }
+
   test(
     'resolves text-anchor multiline fixture from shared reference folder',
     () {
       final scene = resolveGeometry(
-        _loadFixture('01-text-anchor-multiline.yaml'),
+        loadSharedFixture('01-text-anchor-multiline.yaml'),
       );
 
       final title = scene.objects['title'] as ResolvedText;
@@ -36,7 +39,7 @@ void main() {
     'renders mixed presentational sheet fixture from shared reference folder',
     () {
       final scene = resolveGeometry(
-        _loadFixture('02-mixed-presentational-sheet.yaml'),
+        loadSharedFixture('02-mixed-presentational-sheet.yaml'),
       );
       final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
@@ -55,7 +58,7 @@ void main() {
   );
 
   test('renders sheet title block fixture from shared reference folder', () {
-    final scene = resolveGeometry(_loadFixture('03-sheet-title-block.yaml'));
+    final scene = resolveGeometry(loadSharedFixture('03-sheet-title-block.yaml'));
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     expect(svg.contains('SHEET: Assembly Sheet'), isTrue);
@@ -70,7 +73,7 @@ void main() {
     'renders grouped sheet rooting fixture from shared reference folder',
     () {
       final scene = resolveGeometry(
-        _loadFixture('04-grouped-sheet-rooting.yaml'),
+        loadSharedFixture('04-grouped-sheet-rooting.yaml'),
       );
       final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
@@ -83,7 +86,7 @@ void main() {
   );
 
   test('renders clone sheet target fixture from shared reference folder', () {
-    final scene = resolveGeometry(_loadFixture('05-clone-sheet-target.yaml'));
+    final scene = resolveGeometry(loadSharedFixture('05-clone-sheet-target.yaml'));
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     final rectMatch = RegExp(
@@ -98,7 +101,7 @@ void main() {
     'renders nested structural sheet fixture from shared reference folder',
     () {
       final scene = resolveGeometry(
-        _loadFixture('06-nested-structural-sheet.yaml'),
+        loadSharedFixture('06-nested-structural-sheet.yaml'),
       );
       final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
@@ -122,7 +125,7 @@ void main() {
     'renders component sheet meta override fixture from shared reference folder',
     () {
       final scene = resolveGeometry(
-        _loadFixture('07-component-sheet-meta-override.yaml'),
+        loadSharedFixture('07-component-sheet-meta-override.yaml'),
       );
       final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
@@ -137,7 +140,7 @@ void main() {
   );
 
   test('renders sheet xml escaping fixture from shared reference folder', () {
-    final scene = resolveGeometry(_loadFixture('08-sheet-xml-escaping.yaml'));
+    final scene = resolveGeometry(loadSharedFixture('08-sheet-xml-escaping.yaml'));
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     expect(svg.contains('A&amp;B &lt;main&gt;'), isTrue);
@@ -148,7 +151,7 @@ void main() {
   });
 
   test('renders multi-sheet title block fixture from shared reference folder', () {
-    final scene = resolveGeometry(_loadFixture('09-multi-sheet-title-block.yaml'));
+    final scene = resolveGeometry(loadSharedFixture('09-multi-sheet-title-block.yaml'));
     final sheetA = SvgExporter.generateSVG(scene, sheetId: 'sheetA');
     final sheetB = SvgExporter.generateSVG(scene, sheetId: 'sheetB');
 

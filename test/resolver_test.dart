@@ -1,7 +1,7 @@
-import 'dart:io';
-import 'package:yaml/yaml.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
+
+import 'support/shared_fixture.dart';
 
 class _CustomTextMetricsProvider extends TextMetricsProvider {
   @override
@@ -13,16 +13,12 @@ class _CustomTextMetricsProvider extends TextMetricsProvider {
     String? fontStyle,
     required double lineHeight,
   }) {
-    return TextMetrics(
-      width: 100.0,
-      height: 40.0,
-    );
+    return TextMetrics(width: 100.0, height: 40.0);
   }
 }
 
 Map<dynamic, dynamic> _loadFixture(String name) {
-  final file = File('../fixtures/reference/$name');
-  return loadYaml(file.readAsStringSync()) as Map<dynamic, dynamic>;
+  return loadSharedFixture(name);
 }
 
 void main() {
@@ -69,7 +65,7 @@ void main() {
       expect(circle.radius, equals(25.0));
     });
 
-    test('Text fallback metrics use v0.4 baseline defaults', () {
+    test('Legacy v0.4 text fallback metrics retain baseline defaults', () {
       final doc = {
         'version': 0.4,
         'objects': {
@@ -145,31 +141,31 @@ void main() {
       expect(metrics.height, equals(20.0));
     });
 
-    test('Text resolver accepts string fontSize and lineHeight like TypeScript', () {
-      final doc = {
-        'version': 0.5,
-        'objects': {
-          'label': {
-            'type': 'text',
-            'at': [100.0, 40.0],
-            'anchor': 'center',
-            'content': 'AB\nLONGER',
-            'meta': {
-              'fontSize': '14px',
-              'lineHeight': '1.5',
+    test(
+      'Text resolver accepts string fontSize and lineHeight like TypeScript',
+      () {
+        final doc = {
+          'version': 0.5,
+          'objects': {
+            'label': {
+              'type': 'text',
+              'at': [100.0, 40.0],
+              'anchor': 'center',
+              'content': 'AB\nLONGER',
+              'meta': {'fontSize': '14px', 'lineHeight': '1.5'},
             },
           },
-        },
-      };
+        };
 
-      final scene = resolveGeometry(doc);
-      final label = scene.objects['label'] as ResolvedText;
+        final scene = resolveGeometry(doc);
+        final label = scene.objects['label'] as ResolvedText;
 
-      expect(label.width, closeTo(50.4, 1e-9));
-      expect(label.height, closeTo(42.0, 1e-9));
-      expect(label.x, closeTo(74.8, 1e-9));
-      expect(label.y, closeTo(19.0, 1e-9));
-    });
+        expect(label.width, closeTo(50.4, 1e-9));
+        expect(label.height, closeTo(42.0, 1e-9));
+        expect(label.x, closeTo(74.8, 1e-9));
+        expect(label.y, closeTo(19.0, 1e-9));
+      },
+    );
 
     test('Text resolver honors injected textMetrics provider for layout', () {
       final doc = {
@@ -203,14 +199,8 @@ void main() {
           'version': 0.5,
           'scene': {'unit': 'mm'},
           'constants': {
-            'commonBracket': {
-              'width': 120,
-              'thickness': 6,
-            },
-            'standardBoltM6': {
-              'diameter': 6,
-              'clearance': 0.5,
-            },
+            'commonBracket': {'width': 120, 'thickness': 6},
+            'standardBoltM6': {'diameter': 6, 'clearance': 0.5},
           },
           'components': {
             'holeMark': {
@@ -226,9 +216,7 @@ void main() {
                   'to': ['width + diameter + clearance', 0],
                 },
               },
-              'exports': {
-                'end': 'guide.end',
-              },
+              'exports': {'end': 'guide.end'},
             },
           },
           'objects': {
@@ -264,10 +252,7 @@ void main() {
             },
           },
           'metaPresets': {
-            'guideLine': {
-              'stroke': '#999999',
-              'strokeWidth': 1,
-            },
+            'guideLine': {'stroke': '#999999', 'strokeWidth': 1},
           },
           'objects': {
             'centerLine': {
@@ -295,46 +280,49 @@ void main() {
       },
     );
 
-    test('meta.inherit resolves through metaPresets before local overrides', () {
-      final doc = {
-        'version': 0.5,
-        'scene': {'unit': 'mm'},
-        'metaPresets': {
-          'finalStroke': {
-            'role': 'final',
-            'stroke': '#111827',
-            'strokeWidth': 1,
-          },
-          'inspectionMark': {
-            'inherit': 'finalStroke',
-            'dash': '4 2',
-            'opacity': 0.7,
-          },
-        },
-        'objects': {
-          'mark': {
-            'type': 'line',
-            'from': [0, 0],
-            'to': [10, 0],
-            'meta': {
-              'inherit': 'inspectionMark',
-              'intent': 'inspection-mark',
-              'strokeWidth': 2,
+    test(
+      'meta.inherit resolves through metaPresets before local overrides',
+      () {
+        final doc = {
+          'version': 0.5,
+          'scene': {'unit': 'mm'},
+          'metaPresets': {
+            'finalStroke': {
+              'role': 'final',
+              'stroke': '#111827',
+              'strokeWidth': 1,
+            },
+            'inspectionMark': {
+              'inherit': 'finalStroke',
+              'dash': '4 2',
+              'opacity': 0.7,
             },
           },
-        },
-      };
+          'objects': {
+            'mark': {
+              'type': 'line',
+              'from': [0, 0],
+              'to': [10, 0],
+              'meta': {
+                'inherit': 'inspectionMark',
+                'intent': 'inspection-mark',
+                'strokeWidth': 2,
+              },
+            },
+          },
+        };
 
-      final scene = resolveGeometry(doc);
-      final mark = scene.objects['mark'] as ResolvedLine;
+        final scene = resolveGeometry(doc);
+        final mark = scene.objects['mark'] as ResolvedLine;
 
-      expect(mark.meta.role, equals('final'));
-      expect(mark.meta.stroke, equals('#111827'));
-      expect(mark.meta.dash, equals('4 2'));
-      expect(mark.meta.opacity, equals(0.7));
-      expect(mark.meta.strokeWidth, equals(2.0));
-      expect(mark.meta.extra['intent'], equals('inspection-mark'));
-    });
+        expect(mark.meta.role, equals('final'));
+        expect(mark.meta.stroke, equals('#111827'));
+        expect(mark.meta.dash, equals('4 2'));
+        expect(mark.meta.opacity, equals(0.7));
+        expect(mark.meta.strokeWidth, equals(2.0));
+        expect(mark.meta.extra['intent'], equals('inspection-mark'));
+      },
+    );
 
     test(
       'style alias still resolves through styles map for backward compatibility',
@@ -342,10 +330,7 @@ void main() {
         final doc = {
           'version': 0.5,
           'styles': {
-            'guideLine': {
-              'stroke': '#999999',
-              'strokeWidth': 1,
-            },
+            'guideLine': {'stroke': '#999999', 'strokeWidth': 1},
           },
           'objects': {
             'centerLine': {
@@ -369,23 +354,15 @@ void main() {
       final doc = {
         'version': 0.5,
         'constants': {
-          'a': {
-            'inherit': 'b',
-            'stroke': '#111111',
-          },
-          'b': {
-            'inherit': 'a',
-            'stroke': '#222222',
-          },
+          'a': {'inherit': 'b', 'stroke': '#111111'},
+          'b': {'inherit': 'a', 'stroke': '#222222'},
         },
         'objects': {
           'centerLine': {
             'type': 'line',
             'from': [0, 0],
             'to': [10, 0],
-            'meta': {
-              'inherit': 'a',
-            },
+            'meta': {'inherit': 'a'},
           },
         },
       };
@@ -393,9 +370,7 @@ void main() {
       expect(
         () => resolveGeometry(doc),
         throwsA(
-          predicate(
-            (error) => error.toString().contains('CIRCULAR_INHERIT'),
-          ),
+          predicate((error) => error.toString().contains('CIRCULAR_INHERIT')),
         ),
       );
     });
@@ -560,10 +535,7 @@ void main() {
               'count': 3,
               'spacing': 'uniform-length',
             },
-            'item': {
-              'type': 'point',
-              'at': 'item.point',
-            },
+            'item': {'type': 'point', 'at': 'item.point'},
           },
         },
       };
@@ -585,91 +557,84 @@ void main() {
       expect(p2.y, closeTo(0.0, 0.001));
     });
 
-    test(
-      'repeat.along fixed-distance derives count from usable length',
-      () {
-        final doc = {
-          'version': 0.5,
-          'scene': {'unit': 'px'},
-          'objects': {
-            'guide': {
-              'type': 'line',
-              'from': [0, 0],
-              'to': [100, 0],
+    test('repeat.along fixed-distance derives count from usable length', () {
+      final doc = {
+        'version': 0.5,
+        'scene': {'unit': 'px'},
+        'objects': {
+          'guide': {
+            'type': 'line',
+            'from': [0, 0],
+            'to': [100, 0],
+          },
+          'pegs': {
+            'type': 'repeat',
+            'along': {
+              'target': 'guide',
+              'spacing': 'fixed-distance',
+              'distance': 30,
             },
-            'pegs': {
-              'type': 'repeat',
-              'along': {
-                'target': 'guide',
-                'spacing': 'fixed-distance',
-                'distance': 30,
-              },
-              'item': {
-                'type': 'point',
-                'at': ['item.distance', 'item.t * 100'],
-              },
+            'item': {
+              'type': 'point',
+              'at': ['item.distance', 'item.t * 100'],
             },
           },
-        };
+        },
+      };
 
-        final scene = resolveGeometry(doc);
-        final pegs = scene.objects['pegs'] as ResolvedCollection;
+      final scene = resolveGeometry(doc);
+      final pegs = scene.objects['pegs'] as ResolvedCollection;
 
-        expect(pegs.children, hasLength(4));
+      expect(pegs.children, hasLength(4));
 
-        final p0 = scene.objects['pegs[0]'] as ResolvedPoint;
-        final p1 = scene.objects['pegs[1]'] as ResolvedPoint;
-        final p2 = scene.objects['pegs[2]'] as ResolvedPoint;
-        final p3 = scene.objects['pegs[3]'] as ResolvedPoint;
+      final p0 = scene.objects['pegs[0]'] as ResolvedPoint;
+      final p1 = scene.objects['pegs[1]'] as ResolvedPoint;
+      final p2 = scene.objects['pegs[2]'] as ResolvedPoint;
+      final p3 = scene.objects['pegs[3]'] as ResolvedPoint;
 
-        expect(p0.x, closeTo(0.0, 0.001));
-        expect(p1.x, closeTo(30.0, 0.001));
-        expect(p2.x, closeTo(60.0, 0.001));
-        expect(p3.x, closeTo(90.0, 0.001));
-        expect(p3.y, closeTo(90.0, 0.001));
-      },
-    );
+      expect(p0.x, closeTo(0.0, 0.001));
+      expect(p1.x, closeTo(30.0, 0.001));
+      expect(p2.x, closeTo(60.0, 0.001));
+      expect(p3.x, closeTo(90.0, 0.001));
+      expect(p3.y, closeTo(90.0, 0.001));
+    });
 
-    test(
-      'repeat.along fixed-distance rejects explicit count in v0.5',
-      () {
-        final doc = {
-          'version': 0.5,
-          'scene': {'unit': 'px'},
-          'objects': {
-            'guide': {
-              'type': 'line',
-              'from': [0, 0],
-              'to': [100, 0],
+    test('repeat.along fixed-distance rejects explicit count in v0.5', () {
+      final doc = {
+        'version': 0.5,
+        'scene': {'unit': 'px'},
+        'objects': {
+          'guide': {
+            'type': 'line',
+            'from': [0, 0],
+            'to': [100, 0],
+          },
+          'badRepeat': {
+            'type': 'repeat',
+            'along': {
+              'target': 'guide',
+              'spacing': 'fixed-distance',
+              'distance': 20,
+              'count': 5,
             },
-            'badRepeat': {
-              'type': 'repeat',
-              'along': {
-                'target': 'guide',
-                'spacing': 'fixed-distance',
-                'distance': 20,
-                'count': 5,
-              },
-              'item': {
-                'type': 'point',
-                'at': [0, 0],
-              },
+            'item': {
+              'type': 'point',
+              'at': [0, 0],
             },
           },
-        };
+        },
+      };
 
-        expect(
-          () => resolveGeometry(doc),
-          throwsA(
-            predicate(
-              (error) => error.toString().contains(
-                'INVALID_REPEAT_ALONG_SPACING',
-              ),
-            ),
+      expect(
+        () => resolveGeometry(doc),
+        throwsA(
+          predicate(
+            (error) =>
+                error.toString().contains('INVALID_REPEAT_ALONG_SPACING'),
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test(
       'repeat.along with on.frame item.frame resolves oriented child transforms',
@@ -693,9 +658,7 @@ void main() {
               'item': {
                 'type': 'rect',
                 'size': [10, 4],
-                'on': {
-                  'frame': 'item.frame',
-                },
+                'on': {'frame': 'item.frame'},
               },
             },
           },
@@ -752,6 +715,9 @@ void main() {
         expect(scene.objects.containsKey('note'), isTrue);
         expect(scene.objects.containsKey('dim'), isTrue);
       },
+      skip: !hasSharedFixtures()
+          ? 'Set RELGEO_FIXTURE_ROOT to run canonical workspace fixtures.'
+          : null,
     );
 
     test('boolean scene resolves expected result objects', () {

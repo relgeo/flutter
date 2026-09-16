@@ -5,13 +5,16 @@ import '../geometry/types.dart';
 const double mmToPx = 96.0 / 25.4;
 const double cmToPx = 96.0 / 2.54;
 const double mToPx = (96.0 / 2.54) * 100.0;
+const double inToPx = 96.0;
 const double degToRad = 3.141592653589793 / 180.0;
 
 double convertToPx(dynamic value) {
   if (value is num) return value.toDouble();
 
   final strVal = value.toString().trim();
-  final match = RegExp(r'^([\d.-]+)(px|mm|cm|m|%|deg|rad)$').firstMatch(strVal);
+  final match = RegExp(
+    r'^([+-]?[\d.-]+)(px|mm|cm|m|in|ip|%|deg|rad)$',
+  ).firstMatch(strVal);
   if (match == null) {
     final double? parsed = double.tryParse(strVal);
     if (parsed == null) {
@@ -34,6 +37,9 @@ double convertToPx(dynamic value) {
       return numVal * cmToPx;
     case 'm':
       return numVal * mToPx;
+    case 'in':
+    case 'ip':
+      return numVal * inToPx;
     case 'deg':
       return numVal * degToRad;
     case 'rad':
@@ -52,8 +58,9 @@ double convertFromPx(double px, LengthUnit targetUnit) {
       return px / cmToPx;
     case LengthUnit.m:
       return px / mToPx;
+    case LengthUnit.ip:
+      return px / inToPx;
     case LengthUnit.px:
-    default:
       return px;
   }
 }
@@ -74,26 +81,19 @@ dynamic normalizeUnit(dynamic value, [LengthUnit targetUnit = LengthUnit.px]) {
 
   final strVal = value.toString().trim();
 
-  if (strVal.endsWith('%')) {
-    return convertToPx(strVal);
-  }
-
-  final targetUnitStr = targetUnit.name;
-  if (strVal.endsWith(targetUnitStr)) {
-    final valStr = strVal.substring(0, strVal.length - targetUnitStr.length).trim();
-    final parsed = double.tryParse(valStr);
-    if (parsed != null) {
-      return parsed;
-    }
-  }
-
-  final hasUnit = RegExp(r'[a-z%]+$').hasMatch(strVal);
-  if (!hasUnit) {
+  final unitMatch = RegExp(
+    r'^([+-]?[\d.-]+)(px|mm|cm|m|in|ip|%|deg|rad)$',
+  ).firstMatch(strVal);
+  if (unitMatch == null) {
     final parsed = double.tryParse(strVal);
-    if (parsed == null) {
-      throw Exception('INVALID_UNIT_VALUE: $strVal');
-    }
-    return parsed;
+    return parsed ?? value;
+  }
+
+  final numericPart = unitMatch.group(1)!;
+  final unit = unitMatch.group(2)!;
+  final targetUnitStr = targetUnit == LengthUnit.ip ? 'in' : targetUnit.name;
+  if (unit == targetUnitStr || (targetUnit == LengthUnit.ip && unit == 'ip')) {
+    return double.parse(numericPart);
   }
 
   final pxValue = convertToPx(strVal);
