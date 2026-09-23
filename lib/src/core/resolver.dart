@@ -696,10 +696,7 @@ dynamic getRawAnchorValue(
         return math.max(0.0, a);
       }
 
-    case ResolvedBoolean(:final points, :final segments, :final holes):
-      final polyPoints = segments.isNotEmpty
-          ? pointsFromSegments(segments)
-          : points;
+    case ResolvedBoolean():
       final bbox = geom.calculateBoundingBox({obj.id: obj});
       if (anchor == 'left' || anchor == 'x') return bbox.x;
       if (anchor == 'right') return bbox.x + bbox.width;
@@ -1442,10 +1439,7 @@ Map<String, dynamic> _resolveStructuredSource(
       seen: seen,
       sources: sources,
     );
-    return {
-      ...inherited,
-      ...localEntries,
-    };
+    return {...inherited, ...localEntries};
   } finally {
     seen.remove(ref);
   }
@@ -1483,8 +1477,12 @@ Map<dynamic, dynamic> applyObjectStylePreset(
   ResolveContext ctx,
 ) {
   final metadataSources = <Map<dynamic, dynamic>?>[
-    ctx.doc['metaPresets'] is Map ? Map<dynamic, dynamic>.from(ctx.doc['metaPresets'] as Map) : null,
-    ctx.doc['styles'] is Map ? Map<dynamic, dynamic>.from(ctx.doc['styles'] as Map) : null,
+    ctx.doc['metaPresets'] is Map
+        ? Map<dynamic, dynamic>.from(ctx.doc['metaPresets'] as Map)
+        : null,
+    ctx.doc['styles'] is Map
+        ? Map<dynamic, dynamic>.from(ctx.doc['styles'] as Map)
+        : null,
     ctx.scalars,
   ];
 

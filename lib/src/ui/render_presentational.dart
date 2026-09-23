@@ -278,8 +278,6 @@ class RenderPresentational {
     const angleRad = math.pi / 4;
     final ux = math.cos(angleRad);
     final uy = math.sin(angleRad);
-    final vx = -uy;
-    final vy = ux;
 
     final point = (x: center.x + radius * ux, y: center.y + radius * uy);
     final farPoint = (x: center.x - radius * ux, y: center.y - radius * uy);

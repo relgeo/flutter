@@ -349,7 +349,6 @@ List<Point2D> sampleSegmentLikePoints(
       :final cy,
       :final radius,
       :final sweep,
-      :final largeArc,
     ):
       final startAngle = math.atan2(y1 - cy, x1 - cx);
       double endAngle = math.atan2(y2 - cy, x2 - cx);

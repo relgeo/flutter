@@ -325,7 +325,6 @@ class SvgExporter {
         } else {
           return;
         }
-        if (cx == null || cy == null || radius == null) return;
         final layout = RenderPresentational.radialDimensionLayout(
           center: (x: cx, y: cy),
           radius: radius,
@@ -558,9 +557,7 @@ class SvgExporter {
           } else {
             final d =
                 'M ${x - size} $y L ${x + size} $y M $x ${y - size} L $x ${y + size}';
-            out.writeln(
-              '  <path ${attrs(obj, meta)} d="$d" ${style(meta)} />',
-            );
+            out.writeln('  <path ${attrs(obj, meta)} d="$d" ${style(meta)} />');
           }
         case ResolvedText(:final x, :final y, :final content):
           _writeText(
@@ -1022,13 +1019,6 @@ class SvgExporter {
             first = false;
           }
           pd.write('C $cp1x $cp1y $cp2x $cp2y $x2 $y2 ');
-        default:
-          final pts = sampleSegmentLikePoints(seg);
-          for (int j = 0; j < pts.length; j++) {
-            pd.write(j == 0 && first ? 'M ' : 'L ');
-            pd.write('${pts[j].x} ${pts[j].y} ');
-            first = false;
-          }
       }
     }
     if (closed) pd.write('Z');

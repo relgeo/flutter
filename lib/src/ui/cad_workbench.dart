@@ -60,10 +60,9 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   WorkbenchVisualProfile get _workbenchProfile =>
       WorkbenchVisualProfile.byId(widget.workbenchProfileId);
 
-  ResolvedSheet? get _activeSheet =>
-      _scene != null && _selectedSheetId != null
-          ? _scene!.sheets[_selectedSheetId!]
-          : null;
+  ResolvedSheet? get _activeSheet => _scene != null && _selectedSheetId != null
+      ? _scene!.sheets[_selectedSheetId!]
+      : null;
 
   String _formatLength(double value) => value.toStringAsFixed(1);
 
@@ -76,7 +75,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   String get _activeSheetSizeLabel {
     final sheet = _activeSheet;
     if (sheet == null) return '';
-    return (sheet.meta?.extra?['sheetSize'] ??
+    return (sheet.meta?.extra['sheetSize'] ??
             (sheet.size is String ? sheet.size : 'Custom'))
         .toString();
   }
@@ -574,25 +573,21 @@ objects:
     setState(() => _zoomLevel = _viewportController.value.getMaxScaleOnAxis());
   }
 
-  String get _activeSurfaceLabel =>
-      _selectedSheetId != null
-          ? 'Sheet/View: ${_selectedSheetId!}'
-          : 'Model Preview';
+  String get _activeSurfaceLabel => _selectedSheetId != null
+      ? 'Sheet/View: ${_selectedSheetId!}'
+      : 'Model Preview';
 
-  String get _activePreviewRouteLabel =>
-      _selectedSheetId != null
-          ? 'Sheet/view physical preview route'
-          : 'Scene model preview route';
+  String get _activePreviewRouteLabel => _selectedSheetId != null
+      ? 'Sheet/view physical preview route'
+      : 'Scene model preview route';
 
-  String get _exportDialogTitle =>
-      _selectedSheetId != null
-          ? 'Simpan SVG Sheet/View'
-          : 'Simpan SVG Model Preview';
+  String get _exportDialogTitle => _selectedSheetId != null
+      ? 'Simpan SVG Sheet/View'
+      : 'Simpan SVG Model Preview';
 
-  String get _exportFileName =>
-      _selectedSheetId != null
-          ? 'relgeo-sheet-${_selectedSheetId!}.svg'
-          : 'relgeo-model-preview.svg';
+  String get _exportFileName => _selectedSheetId != null
+      ? 'relgeo-sheet-${_selectedSheetId!}.svg'
+      : 'relgeo-model-preview.svg';
 
   String get _exportButtonLabel =>
       _selectedSheetId != null ? 'SVG SHEET' : 'SVG MODEL';
@@ -1017,9 +1012,7 @@ objects:
                             color: _workbenchProfile.toolbarBackgroundColor
                                 .withOpacity(0.88),
                             borderRadius: BorderRadius.circular(5),
-                            border: Border.all(
-                              color: const Color(0x5510B981),
-                            ),
+                            border: Border.all(color: const Color(0x5510B981)),
                           ),
                           child: Text(
                             _activeSheetPhysicalTargetLabel,

@@ -111,11 +111,6 @@ class CanvasPainter extends CustomPainter {
       ..color = const Color(0xFF333333)
       ..strokeWidth = 0.8 / zoomScale
       ..style = PaintingStyle.stroke;
-    final framePaint = Paint()
-      ..color = const Color(0xFF666666)
-      ..strokeWidth = 0.5 / zoomScale
-      ..style = PaintingStyle.stroke;
-
     double p = 10;
     switch (scene.unit) {
       case LengthUnit.cm:
@@ -871,33 +866,38 @@ class CanvasPainter extends CustomPainter {
   void drawPoint(Canvas canvas, ResolvedPoint pt, Paint paint) {
     final x = pt.x;
     final y = pt.y;
-    final pointScale = sheetId != null ? _effectivePresentationalZoom() : zoomScale;
+    final pointScale = sheetId != null
+        ? _effectivePresentationalZoom()
+        : zoomScale;
     final explicitSize = pt.meta.extra.containsKey('pointSize')
         ? RenderTypography.parseScalar(pt.meta.extra['pointSize'], 0)
         : null;
     final defaultSize = math.max(
-      math.sqrt(scene.bbox.width * scene.bbox.width + scene.bbox.height * scene.bbox.height) * 0.01,
+      math.sqrt(
+            scene.bbox.width * scene.bbox.width +
+                scene.bbox.height * scene.bbox.height,
+          ) *
+          0.01,
       0.5,
     );
     final markerSize = (explicitSize ?? defaultSize) / pointScale;
     final pointShape = pt.meta.extra['pointShape']?.toString().trim() ?? 'plus';
 
     if (pointShape == 'circle') {
-      final fillPaint =
-          pt.meta.fill != null
+      final fillPaint = pt.meta.fill != null
           ? getPaintForMeta(pt.meta, isFill: true)
           : (paint.color.alpha > 0
-                ? (Paint()
-                  ..color = paint.color
-                  ..style = PaintingStyle.fill)
-                : Paint()..color = Colors.transparent);
-      final strokePaint =
-          pt.meta.stroke != null
+                  ? (Paint()
+                      ..color = paint.color
+                      ..style = PaintingStyle.fill)
+                  : Paint()
+              ..color = Colors.transparent);
+      final strokePaint = pt.meta.stroke != null
           ? getPaintForMeta(pt.meta, isFill: false)
           : (Paint()
-            ..color = Colors.transparent
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0);
+              ..color = Colors.transparent
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 0);
       canvas.drawCircle(Offset(x, y), markerSize, fillPaint);
       if (strokePaint.color.alpha > 0 && strokePaint.strokeWidth > 0) {
         canvas.drawCircle(Offset(x, y), markerSize, strokePaint);
@@ -1186,8 +1186,7 @@ class CanvasPainter extends CustomPainter {
   }
 
   void drawText(Canvas canvas, ResolvedText textObj, Color textColor) {
-    final textScale =
-        sheetId != null ? _effectivePresentationalZoom() : 1.0;
+    final textScale = sheetId != null ? _effectivePresentationalZoom() : 1.0;
     final fontSize = RenderTypography.textFontSize(textObj.meta) / textScale;
     final fontFamily = RenderTypography.fontFamily(textObj.meta);
     final lineHeight = RenderTypography.parseScalar(
@@ -1323,23 +1322,20 @@ class CanvasPainter extends CustomPainter {
       case 'radius':
       case 'diameter':
         final target = dim.target != null ? scene.objects[dim.target] : null;
-        double? cx;
-        double? cy;
-        double? radius;
+        late final double centerX;
+        late final double centerY;
+        late final double circleRadius;
         if (target is ResolvedCircle) {
-          cx = target.cx;
-          cy = target.cy;
-          radius = target.radius;
+          centerX = target.cx;
+          centerY = target.cy;
+          circleRadius = target.radius;
         } else if (target is ResolvedArc) {
-          cx = target.cx;
-          cy = target.cy;
-          radius = target.radius;
+          centerX = target.cx;
+          centerY = target.cy;
+          circleRadius = target.radius;
         } else {
           return;
         }
-        final centerX = cx!;
-        final centerY = cy!;
-        final circleRadius = radius!;
         final arrowWidth = arrowLength / 3;
         final layout = RenderPresentational.radialDimensionLayout(
           center: (x: centerX, y: centerY),

@@ -139,9 +139,7 @@ ConstraintViolation? _processAlign(
     deviation: deviation,
     path: path,
     involvedObjects: _extractObjectIds([targetSpec, withSpec]),
-    visualHelper: targetPt != null && withPt != null
-        ? (x1: targetPt.x, y1: targetPt.y, x2: withPt.x, y2: withPt.y)
-        : null,
+    visualHelper: (x1: targetPt.x, y1: targetPt.y, x2: withPt.x, y2: withPt.y),
   );
 }
 

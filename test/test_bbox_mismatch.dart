@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
-import 'package:relgeo_flutter/src/geometry/utils.dart';
 import 'package:yaml/yaml.dart';
 
 void main() {

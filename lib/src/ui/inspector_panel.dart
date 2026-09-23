@@ -949,7 +949,6 @@ class _InspectorPanelState extends State<InspectorPanel>
       ResolvedClone() => 'CLONE',
       ResolvedCollection() => 'COLLECTION',
       ResolvedGroup() => 'GROUP',
-      _ => 'OBJECT',
     };
   }
 
