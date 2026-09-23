@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
-import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
 
 void main() {
   testWidgets('sheet preview matches baseline golden', (

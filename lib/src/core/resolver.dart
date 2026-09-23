@@ -215,8 +215,9 @@ class ResolverEvalContext implements EvalContext {
   @override
   TypedValue? callFunction(String name, List<TypedValue> args) {
     if (name == 'count') {
-      if (args.isEmpty)
+      if (args.isEmpty) {
         throw Exception('count() requires exactly one argument');
+      }
       final arg = args[0];
       if (arg.type == 'array' && arg.value is List) {
         return wrap((arg.value as List).length);
@@ -232,8 +233,9 @@ class ResolverEvalContext implements EvalContext {
     }
 
     if (name == 'first') {
-      if (args.isEmpty)
+      if (args.isEmpty) {
         throw Exception('first() requires exactly one argument');
+      }
       final arg = args[0];
       if (arg.type == 'array' && arg.value is List) {
         final list = arg.value as List;
@@ -242,8 +244,9 @@ class ResolverEvalContext implements EvalContext {
       }
       final val = arg.value;
       if (val is ResolvedCollection) {
-        if (val.children.isEmpty)
+        if (val.children.isEmpty) {
           throw Exception('first() called on empty collection');
+        }
         final childObj = objects[val.children.first];
         if (childObj != null) return wrap(childObj);
       }
@@ -264,8 +267,9 @@ class ResolverEvalContext implements EvalContext {
       }
       final val = arg.value;
       if (val is ResolvedCollection) {
-        if (val.children.isEmpty)
+        if (val.children.isEmpty) {
           throw Exception('last() called on empty collection');
+        }
         final childObj = objects[val.children.last];
         if (childObj != null) return wrap(childObj);
       }
@@ -558,11 +562,13 @@ dynamic getRawAnchorValue(
       if (anchor == 'topRight') return (x: cx + halfWidth, y: cy - halfHeight);
       if (anchor == 'centerLeft') return (x: cx - halfWidth, y: cy);
       if (anchor == 'centerRight') return (x: cx + halfWidth, y: cy);
-      if (anchor == 'bottomLeft')
+      if (anchor == 'bottomLeft') {
         return (x: cx - halfWidth, y: cy + halfHeight);
+      }
       if (anchor == 'bottomCenter') return (x: cx, y: cy + halfHeight);
-      if (anchor == 'bottomRight')
+      if (anchor == 'bottomRight') {
         return (x: cx + halfWidth, y: cy + halfHeight);
+      }
       if (anchor == 'area') {
         double a = math.pi * rx * ry;
         for (final h in holes) {
@@ -607,14 +613,16 @@ dynamic getRawAnchorValue(
       if (anchor == 'start') return (x: x1, y: y1);
       if (anchor == 'cp') return (x: cpx, y: cpy);
       if (anchor == 'end') return (x: x2, y: y2);
-      if (anchor == 'center')
+      if (anchor == 'center') {
         return (x: (x1 + cpx + x2) / 3, y: (y1 + cpy + y2) / 3);
-      if (anchor == 'length')
+      }
+      if (anchor == 'length') {
         return geom.approximateQuadraticLength(
           (x: x1, y: y1),
           (x: cpx, y: cpy),
           (x: x2, y: y2),
         );
+      }
 
     case ResolvedCubic(
       :final x1,
@@ -630,15 +638,17 @@ dynamic getRawAnchorValue(
       if (anchor == 'cp1') return (x: cp1x, y: cp1y);
       if (anchor == 'cp2') return (x: cp2x, y: cp2y);
       if (anchor == 'end') return (x: x2, y: y2);
-      if (anchor == 'center')
+      if (anchor == 'center') {
         return (x: (x1 + cp1x + cp2x + x2) / 4, y: (y1 + cp1y + cp2y + y2) / 4);
-      if (anchor == 'length')
+      }
+      if (anchor == 'length') {
         return geom.approximateCubicLength(
           (x: x1, y: y1),
           (x: cp1x, y: cp1y),
           (x: cp2x, y: cp2y),
           (x: x2, y: y2),
         );
+      }
 
     case ResolvedPath(
       :final points,
@@ -659,8 +669,9 @@ dynamic getRawAnchorValue(
         if (anchor == 'height') return bbox.height;
         if (anchor == 'centerX') return bbox.x + bbox.width / 2;
         if (anchor == 'centerY') return bbox.y + bbox.height / 2;
-        if (anchor == 'center')
+        if (anchor == 'center') {
           return (x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2);
+        }
         if (anchor == 'start') return pathPoints.first;
         if (anchor == 'end') return pathPoints.last;
         if (anchor == 'length') return geom.polylineLength(pathPoints, closed);
@@ -686,8 +697,9 @@ dynamic getRawAnchorValue(
       if (anchor == 'height') return bbox.height;
       if (anchor == 'centerX') return bbox.x + bbox.width / 2;
       if (anchor == 'centerY') return bbox.y + bbox.height / 2;
-      if (anchor == 'center')
+      if (anchor == 'center') {
         return (x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2);
+      }
       if (anchor == 'area') {
         double a = geom.polygonArea(polyPoints);
         for (final h in holes) {
@@ -706,8 +718,9 @@ dynamic getRawAnchorValue(
       if (anchor == 'height') return bbox.height;
       if (anchor == 'centerX') return bbox.x + bbox.width / 2;
       if (anchor == 'centerY') return bbox.y + bbox.height / 2;
-      if (anchor == 'center')
+      if (anchor == 'center') {
         return (x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2);
+      }
 
     case ResolvedText(:final x, :final y, :final width, :final height):
       if (anchor == 'x' || anchor == 'left') return x;
@@ -739,20 +752,25 @@ dynamic getRawAnchorValue(
       if (anchor == 'height') return bbox.height;
       if (anchor == 'centerX') return bbox.x + bbox.width / 2;
       if (anchor == 'centerY') return bbox.y + bbox.height / 2;
-      if (anchor == 'center')
+      if (anchor == 'center') {
         return (x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2);
+      }
       if (anchor == 'topLeft') return (x: bbox.x, y: bbox.y);
       if (anchor == 'topCenter') return (x: bbox.x + bbox.width / 2, y: bbox.y);
       if (anchor == 'topRight') return (x: bbox.x + bbox.width, y: bbox.y);
-      if (anchor == 'centerLeft')
+      if (anchor == 'centerLeft') {
         return (x: bbox.x, y: bbox.y + bbox.height / 2);
-      if (anchor == 'centerRight')
+      }
+      if (anchor == 'centerRight') {
         return (x: bbox.x + bbox.width, y: bbox.y + bbox.height / 2);
+      }
       if (anchor == 'bottomLeft') return (x: bbox.x, y: bbox.y + bbox.height);
-      if (anchor == 'bottomCenter')
+      if (anchor == 'bottomCenter') {
         return (x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height);
-      if (anchor == 'bottomRight')
+      }
+      if (anchor == 'bottomRight') {
         return (x: bbox.x + bbox.width, y: bbox.y + bbox.height);
+      }
 
     default:
       return null;
@@ -1662,18 +1680,24 @@ ResolvedPoint resolvePoint(
         x = baseX + dist * math.cos(rad);
         y = baseY + dist * math.sin(rad);
       } else {
-        if (move.containsKey('right'))
+        if (move.containsKey('right')) {
           x = baseX + normalizeUnit(ev.evaluate(move['right']), ctx.targetUnit);
-        if (move.containsKey('left'))
+        }
+        if (move.containsKey('left')) {
           x = baseX - normalizeUnit(ev.evaluate(move['left']), ctx.targetUnit);
-        if (move.containsKey('up'))
+        }
+        if (move.containsKey('up')) {
           y = baseY - normalizeUnit(ev.evaluate(move['up']), ctx.targetUnit);
-        if (move.containsKey('down'))
+        }
+        if (move.containsKey('down')) {
           y = baseY + normalizeUnit(ev.evaluate(move['down']), ctx.targetUnit);
-        if (move.containsKey('x'))
+        }
+        if (move.containsKey('x')) {
           x = baseX + normalizeUnit(ev.evaluate(move['x']), ctx.targetUnit);
-        if (move.containsKey('y'))
+        }
+        if (move.containsKey('y')) {
           y = baseY + normalizeUnit(ev.evaluate(move['y']), ctx.targetUnit);
+        }
       }
     }
   }
@@ -2166,7 +2190,7 @@ ResolvedText resolveText(
   return resolved;
 }
 
-/// Mem-parsing raw segments YAML menjadi List<PathResolvedSegment>.
+/// Mem-parsing raw segments YAML menjadi `List&lt;PathResolvedSegment&gt;`.
 /// Menangani semua tipe: line, arc (3-point), quadratic, cubic.
 List<PathResolvedSegment> parsePathSegments(
   List<dynamic> rawSegs,

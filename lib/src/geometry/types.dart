@@ -2,6 +2,7 @@
 ///
 /// Berkas ini memetakan seluruh representasi objek yang diselesaikan (Resolved Objects)
 /// dari baseline TypeScript RelGeo ke sistem tipe Dart asli yang kuat (typed).
+library;
 
 typedef Point2D = ({double x, double y});
 

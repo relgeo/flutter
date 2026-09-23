@@ -112,7 +112,7 @@ class WorkbenchVisualProfile {
       showAnchors: false,
       showLabels: true,
       showBoundingBoxes: true,
-      hiddenRoles: const {},
+      hiddenRoles: {},
       baseGridWorldStep: 10.0,
     ),
   );

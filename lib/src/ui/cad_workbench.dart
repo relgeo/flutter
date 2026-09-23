@@ -5,10 +5,8 @@ import 'package:re_editor/re_editor.dart';
 import 'package:yaml/yaml.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 import 'inspector_panel.dart';
-import 'canvas_painter.dart';
 import 'grid_painter.dart';
 import 'editor_panel.dart';
-import 'svg_exporter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'workbench_preferences.dart';
 import 'workbench_visual_profile.dart';
@@ -83,7 +81,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   String get _activeSheetPhysicalTargetLabel {
     final sheet = _activeSheet;
     if (sheet == null) return '';
-    return 'TARGET: ${_activeSheetSizeLabel} · '
+    return 'TARGET: $_activeSheetSizeLabel · '
         '${_formatLength(sheet.width)} × ${_formatLength(sheet.height)} '
         '${_targetUnit.name.toUpperCase()} · $_activeSheetOrientation';
   }
@@ -625,7 +623,7 @@ objects:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'SVG ${_activeSurfaceLabel} berhasil disimpan ke: $outputFile',
+              'SVG $_activeSurfaceLabel berhasil disimpan ke: $outputFile',
             ),
             action: SnackBarAction(
               label: 'LIHAT',

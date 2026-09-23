@@ -4,7 +4,7 @@
 /// penanganan unit ukuran, parser ekspresi matematika, topological graph solver,
 /// serta engine perpotongan geometri terpadu.
 
-library relgeo_flutter;
+library;
 
 export 'src/geometry/types.dart';
 export 'src/geometry/transforms.dart';

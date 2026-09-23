@@ -2,6 +2,7 @@
 ///
 /// Sesuai spec RelGeo v0.3 §11 (Fillet & Chamfer) dan §12 (Path Offset).
 /// Digunakan oleh resolver saat memproses field `corners`, `corner.all`, dan `offset` pada `path`/`polygon`.
+library;
 
 import 'dart:math' as math;
 import 'types.dart';

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:vector_math/vector_math_64.dart' show Matrix4;
 import '../geometry/types.dart';
 import '../geometry/utils.dart' as geom;
 import 'render_hierarchy.dart';

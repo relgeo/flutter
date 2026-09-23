@@ -1,4 +1,5 @@
 /// Implementasi sistem transformasi 2D untuk RelGeo (Translate, Rotate, Scale, Mirror).
+library;
 
 import 'dart:math' as math;
 import 'types.dart';

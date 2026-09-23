@@ -49,7 +49,9 @@ class RenderHierarchy {
               ? mergeCloneDescendantMeta(obj.meta, metaOverride)
               : mergeInheritedMeta(metaOverride, obj.meta));
 
-      if (!effectiveMeta.visible || !shouldRenderRole(effectiveMeta.role)) return;
+      if (!effectiveMeta.visible || !shouldRenderRole(effectiveMeta.role)) {
+        return;
+      }
 
       switch (obj) {
         case ResolvedClone():

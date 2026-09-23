@@ -3,6 +3,7 @@
 /// Berkas ini mengimplementasikan parser rekursif (recursive descent parser) murni
 /// yang mendukung aritmatika, boolean, ternary, pemanggilan fungsi standard math,
 /// dan seluruh fungsi geometri bawaan RelGeo (seperti distance, pointAt, intersection, dll.).
+library;
 
 import 'dart:math' as math;
 import '../geometry/types.dart';
@@ -445,7 +446,7 @@ class Evaluator {
         if (lookAheadPos + 1 < _tokens.length) {
           final nextId = _tokens[lookAheadPos + 1];
           if (RegExp(r'^[a-zA-Z_]').hasMatch(nextId)) {
-            path += "." + nextId;
+            path += ".$nextId";
             lookAheadPos += 2;
             final resolved = context.resolveIdentifier(path);
             if (resolved != null) {
@@ -862,8 +863,9 @@ class Evaluator {
             final targetLen = (subEval.evaluate(args[1]) as num).toDouble();
             computedVal = getTAtLengthFromObject(obj, targetLen, args[0]);
           } else if (token == "intersection") {
-            if (args.length < 2)
+            if (args.length < 2) {
               throw Exception("intersection() requires at least 2 arguments");
+            }
             final obj1 = lookupObj(args[0], "intersection");
             final obj2 = lookupObj(args[1], "intersection");
             final label = "intersection(${args[0]}, ${args[1]})";
@@ -881,14 +883,16 @@ class Evaluator {
               } else if (raw.startsWith('nearest(') && raw.endsWith(')')) {
                 final refId = raw.substring(8, raw.length - 1);
                 final refObj = context.objects?[refId];
-                if (refObj == null)
+                if (refObj == null) {
                   throw Exception('Unknown reference in nearest(): $refId');
+                }
                 selector = NearestSelector(getPointFromObject(refObj));
               } else if (raw.startsWith('farthest(') && raw.endsWith(')')) {
                 final refId = raw.substring(9, raw.length - 1);
                 final refObj = context.objects?[refId];
-                if (refObj == null)
+                if (refObj == null) {
                   throw Exception('Unknown reference in farthest(): $refId');
+                }
                 selector = FarthestSelector(getPointFromObject(refObj));
               } else {
                 throw Exception('Unsupported intersection selector: $raw');
@@ -1116,13 +1120,15 @@ class Evaluator {
   }
 
   Point2D resolvePointLikeArg(String arg) {
-    final resolved = this.context.resolveIdentifier(arg);
+    final resolved = context.resolveIdentifier(arg);
     if (resolved is ({double x, double y})) return resolved;
     if (context.objects == null) {
       throw Exception('Cannot resolve point-like argument: $arg');
     }
     final obj = context.objects![arg];
-    if (obj == null) throw Exception('Unknown object in point-like argument: $arg');
+    if (obj == null) {
+      throw Exception('Unknown object in point-like argument: $arg');
+    }
     return getPointFromObject(obj);
   }
 
@@ -1270,8 +1276,9 @@ class Evaluator {
       case ResolvedPolygon(:final points):
         return geom.polygonArea(points);
       case ResolvedPath(:final points, :final closed):
-        if (!closed)
+        if (!closed) {
           throw Exception('Path "$label" must be closed to expose area');
+        }
         return geom.polygonArea(points);
       default:
         throw Exception('Unknown or invalid object in area: $label');
@@ -1330,8 +1337,9 @@ class Evaluator {
         final p = clamped * (2 * (width + height));
         if (p <= width) return (x: x + p, y: y);
         if (p <= width + height) return (x: x + width, y: y + (p - width));
-        if (p <= 2 * width + height)
+        if (p <= 2 * width + height) {
           return (x: x + width - (p - (width + height)), y: y + height);
+        }
         return (x: x, y: y + height - (p - (2 * width + height)));
       case ResolvedArc(
         :final cx,
@@ -1636,18 +1644,21 @@ class Evaluator {
     }
   }
 
-  Point2D reflectPointAgainstTarget(Point2D point, ResolvedObject obj, String label) {
+  Point2D reflectPointAgainstTarget(
+    Point2D point,
+    ResolvedObject obj,
+    String label,
+  ) {
     switch (obj) {
       case ResolvedPoint(:final x, :final y):
         return (x: x * 2 - point.x, y: y * 2 - point.y);
       case ResolvedLine():
         final projected = projectPointToLine(point, obj, label);
-        return (
-          x: projected.x * 2 - point.x,
-          y: projected.y * 2 - point.y,
-        );
+        return (x: projected.x * 2 - point.x, y: projected.y * 2 - point.y);
       default:
-        throw Exception('reflect() requires a point or line target, got $label');
+        throw Exception(
+          'reflect() requires a point or line target, got $label',
+        );
     }
   }
 
@@ -1657,8 +1668,9 @@ class Evaluator {
     String label,
   ) {
     final totalLen = getLengthFromObject(obj, label);
-    if (totalLen == 0.0)
+    if (totalLen == 0.0) {
       throw Exception('Path length is zero or unavailable for object "$label"');
+    }
     if (targetLen < 0.0 || targetLen > totalLen) {
       throw Exception(
         'INVALID_T_AT_LENGTH: targetLength must be between 0 and total length ($totalLen), got $targetLen',
@@ -1751,11 +1763,17 @@ class Evaluator {
       case ResolvedPath(:final points):
         return points.isNotEmpty
             ? points
-            : List.generate(steps + 1, (i) => getPointAtObject(obj, i / steps, label));
+            : List.generate(
+                steps + 1,
+                (i) => getPointAtObject(obj, i / steps, label),
+              );
       case ResolvedPolygon(:final points):
         return points.isNotEmpty
             ? points
-            : List.generate(steps + 1, (i) => getPointAtObject(obj, i / steps, label));
+            : List.generate(
+                steps + 1,
+                (i) => getPointAtObject(obj, i / steps, label),
+              );
       default:
         return List.generate(
           steps + 1,

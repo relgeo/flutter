@@ -1,5 +1,6 @@
 /// Utilitas matematika analitis, sampling kurva Bezier, kalkulasi jarak,
 /// pencarian titik terdekat (closestPoint), luas, dan panjang geometri RelGeo.
+library;
 
 import 'dart:math' as math;
 import 'types.dart';

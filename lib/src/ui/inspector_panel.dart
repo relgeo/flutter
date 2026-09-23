@@ -198,7 +198,7 @@ class _InspectorPanelState extends State<InspectorPanel>
   Widget _buildObjectDetails(ResolvedObject obj) {
     final rows = <_DetailRow>[];
     final unit = widget.targetUnit;
-    final fmt = (double? v) => v != null ? v.toStringAsFixed(2) : '?';
+    String fmt(double? v) => v != null ? v.toStringAsFixed(2) : '?';
 
     switch (obj) {
       case ResolvedPoint(:final x, :final y):
@@ -215,7 +215,7 @@ class _InspectorPanelState extends State<InspectorPanel>
       case ResolvedRect(:final x, :final y, :final width, :final height):
         rows.addAll([
           _DetailRow('Size', '${fmt(width)} × ${fmt(height)} $unit'),
-          _DetailRow('Area', '${(width * height).toStringAsFixed(1)} ${unit}²'),
+          _DetailRow('Area', '${(width * height).toStringAsFixed(1)} $unit²'),
           _DetailRow(
             'Center',
             '(${(x + width / 2).toStringAsFixed(1)}, ${(y + height / 2).toStringAsFixed(1)})',
@@ -229,7 +229,7 @@ class _InspectorPanelState extends State<InspectorPanel>
           _DetailRow('Diameter', '${(radius * 2).toStringAsFixed(2)} $unit'),
           _DetailRow(
             'Area',
-            '${(math.pi * radius * radius).toStringAsFixed(1)} ${unit}²',
+            '${(math.pi * radius * radius).toStringAsFixed(1)} $unit²',
           ),
         ]);
       case ResolvedEllipse(
@@ -251,7 +251,7 @@ class _InspectorPanelState extends State<InspectorPanel>
           ),
           _DetailRow(
             'Area',
-            '${(math.pi * rx * ry).toStringAsFixed(1)} ${unit}²',
+            '${(math.pi * rx * ry).toStringAsFixed(1)} $unit²',
           ),
           _DetailRow('Perimeter', '${perimeter.toStringAsFixed(1)} $unit'),
         ]);
@@ -661,14 +661,14 @@ class _InspectorPanelState extends State<InspectorPanel>
           key =
               'Rect (${width.toStringAsFixed(0)}×${height.toStringAsFixed(0)})';
           details =
-              'Perimeter: ${(2 * (width + height)).toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} ${unit}²';
+              'Perimeter: ${(2 * (width + height)).toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} $unit²';
           type = 'Plate';
         case ResolvedCircle(:final radius):
           final area = math.pi * radius * radius;
           totalArea += area;
           key = 'Circle (r=${radius.toStringAsFixed(1)})';
           details =
-              'Ø ${(radius * 2).toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} ${unit}²';
+              'Ø ${(radius * 2).toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} $unit²';
           type = 'Hole';
         case ResolvedEllipse(:final rx, :final ry):
           final area = math.pi * rx * ry;
@@ -678,7 +678,7 @@ class _InspectorPanelState extends State<InspectorPanel>
           totalArea += area;
           key = 'Ellipse (${rx.toStringAsFixed(0)}×${ry.toStringAsFixed(0)})';
           details =
-              'Perimeter: ${perimeter.toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} ${unit}²';
+              'Perimeter: ${perimeter.toStringAsFixed(1)} $unit, Area: ${area.toStringAsFixed(1)} $unit²';
           type = 'Profile';
         case ResolvedPath(:final segments):
           double len = 0;
@@ -779,7 +779,7 @@ class _InspectorPanelState extends State<InspectorPanel>
                       ),
                     ),
                     Text(
-                      '${totalArea.toStringAsFixed(1)} ${unit}²',
+                      '${totalArea.toStringAsFixed(1)} $unit²',
                       style: const TextStyle(
                         color: Colors.white,
                         fontFamily: 'Courier',

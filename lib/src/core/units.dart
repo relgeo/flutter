@@ -1,4 +1,5 @@
 /// Pustaka konversi unit ukuran (px, mm, cm, m, deg, rad, %) di RelGeo.
+library;
 
 import '../geometry/types.dart';
 

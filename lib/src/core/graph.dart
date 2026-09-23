@@ -2,14 +2,46 @@
 ///
 /// Modul ini menganalisis hubungan relasional antara variabel (derived) dan
 /// objek geometri, lalu menyusun urutan evaluasi deterministik yang aman dari loop.
-
+library;
 
 const Set<String> knownFunctions = {
-  "min", "max", "abs", "clamp", "sin", "cos", "tan", "sqrt", "pow", "round", "floor", "ceil",
-  "distance", "length", "perimeter", "area", "bbox", "midpoint", "polar", "angleBetween",
-  "width", "height", "minX", "maxX", "minY", "maxY", "pointAt", "closestPoint", "project",
-  "reflect", "toWorld", "toLocal", "intersection", "tangentAt", "normalAt", "frameAt",
-  "tAtLength"
+  "min",
+  "max",
+  "abs",
+  "clamp",
+  "sin",
+  "cos",
+  "tan",
+  "sqrt",
+  "pow",
+  "round",
+  "floor",
+  "ceil",
+  "distance",
+  "length",
+  "perimeter",
+  "area",
+  "bbox",
+  "midpoint",
+  "polar",
+  "angleBetween",
+  "width",
+  "height",
+  "minX",
+  "maxX",
+  "minY",
+  "maxY",
+  "pointAt",
+  "closestPoint",
+  "project",
+  "reflect",
+  "toWorld",
+  "toLocal",
+  "intersection",
+  "tangentAt",
+  "normalAt",
+  "frameAt",
+  "tAtLength",
 };
 
 class CircularDependencyException implements Exception {
@@ -67,7 +99,11 @@ List<String> extractObjectRefs(dynamic value, Set<String> objectIds) {
   return refs;
 }
 
-bool isDescendant(String childId, String potentialParentId, Map<String, String> parentMap) {
+bool isDescendant(
+  String childId,
+  String potentialParentId,
+  Map<String, String> parentMap,
+) {
   String? p = parentMap[childId];
   while (p != null) {
     if (p == potentialParentId) return true;
@@ -76,7 +112,10 @@ bool isDescendant(String childId, String potentialParentId, Map<String, String> 
   return false;
 }
 
-void collectFromPlace(Map<dynamic, dynamic>? place, void Function(dynamic) addRef) {
+void collectFromPlace(
+  Map<dynamic, dynamic>? place,
+  void Function(dynamic) addRef,
+) {
   if (place == null) return;
   for (final val in place.values) {
     addRef(val);
@@ -85,7 +124,7 @@ void collectFromPlace(Map<dynamic, dynamic>? place, void Function(dynamic) addRe
 
 void collectFromOn(Map<dynamic, dynamic>? on, void Function(dynamic) addRef) {
   if (on == null) return;
-  
+
   if (on.containsKey('point')) {
     final pt = on['point'];
     if (pt is Map) {
@@ -111,7 +150,10 @@ void collectFromOn(Map<dynamic, dynamic>? on, void Function(dynamic) addRef) {
   }
 }
 
-void addTransformDependencies(dynamic transform, void Function(dynamic) addRef) {
+void addTransformDependencies(
+  dynamic transform,
+  void Function(dynamic) addRef,
+) {
   if (transform == null) return;
 
   void addOpDeps(dynamic op) {
@@ -279,7 +321,9 @@ List<String> getObjectDependencies(
           if (seg is Map) {
             if (seg.containsKey('line')) addDeepDeps(seg['line'], addRef);
             if (seg.containsKey('arc')) addDeepDeps(seg['arc'], addRef);
-            if (seg.containsKey('quadratic')) addDeepDeps(seg['quadratic'], addRef);
+            if (seg.containsKey('quadratic')) {
+              addDeepDeps(seg['quadratic'], addRef);
+            }
             if (seg.containsKey('cubic')) addDeepDeps(seg['cubic'], addRef);
           }
         }
@@ -301,7 +345,7 @@ List<String> getObjectDependencies(
         if (compDef is Map) {
           final compChildren = compDef['children'];
           if (compChildren is Map) {
-            // Kita tidak perlu menambahkan children definition sebagai graph dependency 
+            // Kita tidak perlu menambahkan children definition sebagai graph dependency
             // karena mereka di-resolve secara terpisah di ResolveContext komponen.
             // Namun, jika ada dependencies ke object global dari dalam komponen,
             // kita harus extract semuanya. (Ini adalah simple scan)
@@ -377,7 +421,9 @@ List<String> getObjectDependencies(
     addRef(obj['target']);
     final between = obj['between'];
     if (between is List) {
-      for (final b in between) addRef(b);
+      for (final b in between) {
+        addRef(b);
+      }
     }
     final text = obj['text'];
     if (text is String) {
@@ -421,7 +467,10 @@ List<String> getObjectDependencies(
   return deps.toList();
 }
 
-List<String> sortNodes(List<String> nodeIds, List<String> Function(String id) getDeps) {
+List<String> sortNodes(
+  List<String> nodeIds,
+  List<String> Function(String id) getDeps,
+) {
   final List<String> sorted = [];
   final Set<String> visited = {};
   final Set<String> visiting = {};
@@ -484,14 +533,11 @@ List<String> sortObjects(
     }
   }
 
-  return sortNodes(
-    objectIds.toList(),
-    (id) {
-      final obj = objects[id];
-      if (obj is! Map) return [];
-      return getObjectDependencies(id, obj, objectIds, parentMap, doc);
-    },
-  );
+  return sortNodes(objectIds.toList(), (id) {
+    final obj = objects[id];
+    if (obj is! Map) return [];
+    return getObjectDependencies(id, obj, objectIds, parentMap, doc);
+  });
 }
 
 List<String> extractObjectRefsFromAny(
@@ -563,10 +609,7 @@ List<UnifiedNode> sortUnified(
     }
   }
 
-  final allNodes = [
-    ...objects.keys.map(objKey),
-    ...derived.keys.map(drvKey),
-  ];
+  final allNodes = [...objects.keys.map(objKey), ...derived.keys.map(drvKey)];
 
   List<String> getDeps(String prefixedId) {
     if (prefixedId.startsWith('obj:')) {
@@ -574,20 +617,37 @@ List<UnifiedNode> sortUnified(
       final obj = objects[id];
       if (obj is! Map) return [];
 
-      final objDeps = getObjectDependencies(id, obj, objectIds, parentMap, doc).map(objKey).toList();
+      final objDeps = getObjectDependencies(
+        id,
+        obj,
+        objectIds,
+        parentMap,
+        doc,
+      ).map(objKey).toList();
       final allRefs = extractObjectRefsFromAny(obj, objectIds, derivedIds);
-      final drvDeps = allRefs.where((ref) => derivedIds.contains(ref)).map(drvKey).toList();
+      final drvDeps = allRefs
+          .where((ref) => derivedIds.contains(ref))
+          .map(drvKey)
+          .toList();
       return [...objDeps, ...drvDeps];
     } else {
       // drv:X
       final id = prefixedId.substring(4);
       final def = derived[id];
-      final expr = (def is Map && def.containsKey('value')) ? def['value'] : def;
+      final expr = (def is Map && def.containsKey('value'))
+          ? def['value']
+          : def;
       if (expr is! String) return [];
 
       final idents = getExpressionIdentifiers(expr);
-      final drvDeps = idents.where((ref) => derivedIds.contains(ref) && ref != id).map(drvKey).toList();
-      final objDeps = idents.where((ref) => objectIds.contains(ref)).map(objKey).toList();
+      final drvDeps = idents
+          .where((ref) => derivedIds.contains(ref) && ref != id)
+          .map(drvKey)
+          .toList();
+      final objDeps = idents
+          .where((ref) => objectIds.contains(ref))
+          .map(objKey)
+          .toList();
       return [...drvDeps, ...objDeps];
     }
   }

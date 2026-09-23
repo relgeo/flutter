@@ -3,6 +3,7 @@
 /// Sesuai spec v0.1 §7 (`align`) dan v0.2 §5 (`equal`, `parallel`, `perpendicular`, `tangent`).
 /// Constraints bersifat non-modifying: tidak mengubah geometri, hanya menghasilkan
 /// daftar [ConstraintViolation] yang dapat ditampilkan di UI dan digunakan untuk validasi.
+library;
 
 import 'dart:math' as math;
 import '../geometry/types.dart';

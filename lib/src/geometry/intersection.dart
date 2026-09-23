@@ -4,6 +4,7 @@
 /// numerik antara berbagai jenis objek geometri secara deterministik.
 /// Hasil diurutkan berdasarkan koordinat X menaik (atau Y sebagai tiebreaker)
 /// untuk menjaga stabilitas seleksi indeks koleksi.
+library;
 
 import 'dart:math' as math;
 import 'types.dart';
