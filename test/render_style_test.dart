@@ -30,7 +30,7 @@ void main() {
       fallbackRoleColor: const Color(0xFF123456),
     );
 
-    expect(paint.color.value, const Color(0xFF123456).value);
+    expect(paint.color.toARGB32(), const Color(0xFF123456).toARGB32());
   });
 
   test(

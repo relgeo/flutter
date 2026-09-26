@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
-import 'workbench_visual_profile.dart';
+import '../../ui/workbench_visual_profile.dart';
 
 class EditorPanel extends StatelessWidget {
   final CodeLineEditingController controller;
@@ -533,7 +533,9 @@ class RelGeoAutocompleteView extends StatelessWidget
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? visualProfile.accentSoftColor
-                                : visualProfile.borderColor.withOpacity(0.2),
+                                : visualProfile.borderColor.withValues(
+                                    alpha: 0.2,
+                                  ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

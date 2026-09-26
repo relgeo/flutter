@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/main.dart';
 import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
-import 'package:relgeo_flutter/src/ui/editor_panel.dart';
-import 'package:relgeo_flutter/src/ui/inspector_panel.dart';
+import 'package:relgeo_flutter/src/features/editor/editor_panel.dart';
+import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/shared_fixture.dart';
@@ -80,6 +81,156 @@ void main() {
     expect(find.text('DSL EDITOR'), findsOneWidget);
     expect(find.text('VIEWPORT'), findsOneWidget);
     expect(find.text('INSPECTOR'), findsOneWidget);
+  });
+
+  testWidgets('theme mode defaults to system and can switch explicitly', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    tester.binding.platformDispatcher.platformBrightnessTestValue =
+        Brightness.dark;
+
+    await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.system,
+    );
+    expect(
+      Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
+      Brightness.dark,
+    );
+
+    await tester.tap(find.byKey(const Key('theme-mode-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('theme-mode-option-dark')).last);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
+    );
+
+    await tester.tap(find.byKey(const Key('theme-mode-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('theme-mode-option-light')).last);
+    await tester.pumpAndSettle();
+    expect(
+      Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
+      Brightness.light,
+    );
+  });
+
+  testWidgets('theme selector exposes semantic state', (
+    WidgetTester tester,
+  ) async {
+    final semanticsHandle = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const RelGeoCADApp());
+    await tester.pumpAndSettle();
+
+    final node = tester.getSemantics(
+      find.byKey(const Key('theme-mode-semantics')),
+    );
+    expect(node.label, contains('Theme mode'));
+    expect(node.value, contains('System'));
+    expect(node.hint, contains('Choose System, Light, or Dark'));
+    semanticsHandle.dispose();
+  });
+
+  testWidgets('workbench controls expose semantic state', (
+    WidgetTester tester,
+  ) async {
+    final semanticsHandle = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+
+    await tester.pumpWidget(const RelGeoCADApp());
+    await tester.pumpAndSettle();
+
+    final profileNode = tester.getSemantics(
+      find.byKey(const Key('workbench-profile-semantics')),
+    );
+    expect(profileNode.label, contains('Canvas appearance'));
+    expect(profileNode.value, contains('CAD Dark'));
+    expect(profileNode.hint, contains('Choose a canvas appearance preset'));
+    semanticsHandle.dispose();
+    tester.view.reset();
+  });
+
+  testWidgets('custom controls expose keyboard activation bindings', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const RelGeoCADApp());
+    await tester.pumpAndSettle();
+
+    final detectors = tester
+        .widgetList<FocusableActionDetector>(
+          find.byType(FocusableActionDetector),
+        )
+        .toList();
+    final keyboardDetectors = detectors
+        .where(
+          (detector) => detector.actions?.containsKey(ActivateIntent) ?? false,
+        )
+        .toList();
+
+    expect(keyboardDetectors.length, greaterThanOrEqualTo(3));
+    for (final detector in keyboardDetectors) {
+      expect(
+        detector.shortcuts?.values.any((intent) => intent is ActivateIntent),
+        isTrue,
+      );
+      expect(
+        detector.actions,
+        containsPair(ActivateIntent, isA<Action<Intent>>()),
+      );
+    }
+  });
+
+  testWidgets('custom controls participate in keyboard focus traversal', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const RelGeoCADApp());
+    await tester.pumpAndSettle();
+
+    final customControlCount = find
+        .byType(FocusableActionDetector)
+        .evaluate()
+        .length;
+    expect(customControlCount, greaterThanOrEqualTo(3));
+
+    var reachedCustomControl = false;
+    for (var attempt = 0; attempt < 32 && !reachedCustomControl; attempt++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+
+      final focusContext = FocusManager.instance.primaryFocus?.context;
+      if (focusContext == null) continue;
+
+      focusContext.visitAncestorElements((element) {
+        if (element.widget is FocusableActionDetector) {
+          reachedCustomControl = true;
+          return false;
+        }
+        return true;
+      });
+    }
+
+    expect(reachedCustomControl, isTrue);
   });
 
   testWidgets(
@@ -614,6 +765,32 @@ void main() {
         isTrue,
       );
       expect(_scenePainter(tester).hiddenRoles.contains('guide'), isFalse);
+    },
+  );
+
+  testWidgets(
+    'full workbench renders cleanly in light and dark system themes',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        tester.binding.platformDispatcher.platformBrightnessTestValue =
+            brightness;
+
+        await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('DSL EDITOR'), findsOneWidget);
+        expect(find.text('VIEWPORT'), findsOneWidget);
+        expect(find.text('INSPECTOR'), findsOneWidget);
+        expect(
+          Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
+          brightness,
+        );
+      }
     },
   );
 }

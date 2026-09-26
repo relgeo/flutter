@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../geometry/types.dart';
-import '../geometry/utils.dart' as geom;
-import 'workbench_visual_profile.dart';
+import '../../geometry/types.dart';
+import '../../geometry/utils.dart' as geom;
+import '../../ui/relgeo_theme_extension.dart';
+import '../../ui/workbench_visual_profile.dart';
+import '../../ui/workbench_motion.dart';
 
 // ─────────────────────────────────────────────
 // Inspector Panel — Tab Objects / Values / Errors / BOM
@@ -15,6 +17,7 @@ class InspectorPanel extends StatefulWidget {
   final String? compilerError;
   final String targetUnit;
   final WorkbenchVisualProfile visualProfile;
+  final RelGeoThemeExtension? themeTokens;
 
   const InspectorPanel({
     super.key,
@@ -23,6 +26,7 @@ class InspectorPanel extends StatefulWidget {
     required this.compilerError,
     required this.targetUnit,
     this.visualProfile = WorkbenchVisualProfile.cadDark,
+    this.themeTokens,
   });
 
   @override
@@ -34,16 +38,17 @@ class _InspectorPanelState extends State<InspectorPanel>
   late TabController _tabController;
   final Map<String, bool> _expandedObjects = {};
 
-  static const _errorColor = Color(0xFFEF4444);
-  static const _errorSoftColor = Color(0x1AEF4444);
-  static const _readyColor = Color(0xFF10B981);
-  static const _accentColor = Color(0xFFF59E0B);
-
   WorkbenchVisualProfile get _visualProfile => widget.visualProfile;
+  RelGeoThemeExtension get _themeTokens =>
+      widget.themeTokens ?? RelGeoThemeExtension.fromProfile(_visualProfile);
+  Color get _errorColor => _themeTokens.errorColor;
+  Color get _errorSoftColor => _themeTokens.errorSoftColor;
+  Color get _readyColor => _themeTokens.successColor;
+  Color get _accentColor => _themeTokens.warningColor;
   Color get _bgColor => _visualProfile.overlayBackgroundColor;
   Color get _surfaceColor => _visualProfile.toolbarBackgroundColor;
   Color get _surfaceStrongColor =>
-      _visualProfile.toolbarBackgroundColor.withOpacity(0.9);
+      _visualProfile.toolbarBackgroundColor.withValues(alpha: 0.9);
   Color get _borderColor => _visualProfile.borderColor;
   Color get _mutedColor => _visualProfile.mutedColor;
   Color get _brandColor => _visualProfile.accentColor;
@@ -80,13 +85,18 @@ class _InspectorPanelState extends State<InspectorPanel>
         final isExpanded = _expandedObjects[id] ?? false;
 
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: workbenchMotionDuration(
+            context,
+            const Duration(milliseconds: 150),
+          ),
           margin: const EdgeInsets.only(bottom: 4),
           decoration: BoxDecoration(
             color: isExpanded ? _surfaceStrongColor : _surfaceColor,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isExpanded ? _brandColor.withOpacity(0.4) : _borderColor,
+              color: isExpanded
+                  ? _brandColor.withValues(alpha: 0.4)
+                  : _borderColor,
             ),
           ),
           child: Column(
@@ -159,12 +169,12 @@ class _InspectorPanelState extends State<InspectorPanel>
                           decoration: BoxDecoration(
                             color: _roleBadgeColor(
                               obj.meta.role,
-                            ).withOpacity(0.15),
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(3),
                             border: Border.all(
                               color: _roleBadgeColor(
                                 obj.meta.role,
-                              ).withOpacity(0.5),
+                              ).withValues(alpha: 0.5),
                             ),
                           ),
                           child: Text(
@@ -455,18 +465,18 @@ class _InspectorPanelState extends State<InspectorPanel>
       decoration: BoxDecoration(
         color: _errorSoftColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _errorColor.withOpacity(0.4)),
+        border: Border.all(color: _errorColor.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline, color: _errorColor, size: 14),
+              Icon(Icons.error_outline, color: _errorColor, size: 14),
               const SizedBox(width: 6),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                   color: _errorColor,
@@ -500,16 +510,16 @@ class _InspectorPanelState extends State<InspectorPanel>
           margin: const EdgeInsets.only(bottom: 6),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: _accentColor.withOpacity(0.07),
+            color: _accentColor.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: _accentColor.withOpacity(0.3)),
+            border: Border.all(color: _accentColor.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.warning_amber_outlined,
                     color: _accentColor,
                     size: 14,
@@ -519,7 +529,7 @@ class _InspectorPanelState extends State<InspectorPanel>
                     child: Text(
                       v.message,
                       softWrap: true,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Courier',
                         fontSize: 11,
                         color: _accentColor,
@@ -570,14 +580,14 @@ class _InspectorPanelState extends State<InspectorPanel>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _readyColor.withOpacity(0.08),
+            color: _readyColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _readyColor.withOpacity(0.3)),
+            border: Border.all(color: _readyColor.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.check_circle_outline,
@@ -736,7 +746,7 @@ class _InspectorPanelState extends State<InspectorPanel>
           decoration: BoxDecoration(
             color: _brandSoftColor,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _brandColor.withOpacity(0.2)),
+            border: Border.all(color: _brandColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -1037,9 +1047,11 @@ class _InspectorPanelState extends State<InspectorPanel>
                     decoration: BoxDecoration(
                       color: _errorSoftColor,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: _errorColor.withOpacity(0.5)),
+                      border: Border.all(
+                        color: _errorColor.withValues(alpha: 0.5),
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'ERROR',
                       style: TextStyle(
                         fontFamily: 'Courier',
@@ -1056,11 +1068,13 @@ class _InspectorPanelState extends State<InspectorPanel>
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: _readyColor.withOpacity(0.12),
+                      color: _readyColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: _readyColor.withOpacity(0.4)),
+                      border: Border.all(
+                        color: _readyColor.withValues(alpha: 0.4),
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'OK',
                       style: TextStyle(
                         fontFamily: 'Courier',
@@ -1099,7 +1113,7 @@ class _InspectorPanelState extends State<InspectorPanel>
                           Container(
                             width: 5,
                             height: 5,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: _errorColor,
                               shape: BoxShape.circle,
                             ),

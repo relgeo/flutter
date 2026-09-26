@@ -66,6 +66,16 @@ relgeo_flutter/
 
 ## 🛠️ Getting Started & Verification
 
+### Rencana Pengembangan
+
+Rencana modularisasi workbench dan dukungan theme `System / Light / Dark` tersedia di:
+
+- [Modular Workbench dan Theme System](docs/plans/01-theme-and-modular-workbench.md)
+
+Rencana tersebut adalah dokumen milik repository Flutter dan menjadi acuan untuk
+pemisahan app theme, canvas appearance, behavior preset, feature boundary, dan
+window/platform boundary.
+
 ### Prerequisites
 * Flutter macOS SDK installed.
 * Standard Flutter CLI configuration.

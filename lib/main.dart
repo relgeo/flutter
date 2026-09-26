@@ -1,54 +1,80 @@
 import 'package:flutter/material.dart';
 import 'src/ui/cad_workbench.dart';
+import 'src/ui/app_theme.dart';
 import 'src/ui/workbench_preferences.dart';
+import 'src/ui/workbench_preferences_controller.dart';
 import 'src/ui/workbench_visual_profile.dart';
+import 'src/ui/workbench_window_host.dart';
+import 'src/ui/workbench_window_policy.dart';
 
 void main() {
   runApp(const RelGeoCADApp());
 }
 
 class RelGeoCADApp extends StatefulWidget {
-  const RelGeoCADApp({super.key, this.initialDsl});
+  const RelGeoCADApp({super.key, this.initialDsl, this.windowHost});
 
   final String? initialDsl;
+  final WorkbenchWindowHost? windowHost;
 
   @override
   State<RelGeoCADApp> createState() => _RelGeoCADAppState();
 }
 
 class _RelGeoCADAppState extends State<RelGeoCADApp> {
+  final WorkbenchPreferencesController _preferencesController =
+      WorkbenchPreferencesController();
+  RelGeoThemePreference _themePreference =
+      WorkbenchPreferencesData.defaults.themePreference;
   String _workbenchProfileId = WorkbenchVisualProfile.cadDark.id;
 
   @override
   void initState() {
     super.initState();
     _loadWorkbenchPreferences();
+    _configureWindowHost();
   }
 
-  WorkbenchVisualProfile get _workbenchProfile =>
-      WorkbenchVisualProfile.byId(_workbenchProfileId);
+  Future<void> _configureWindowHost() async {
+    await widget.windowHost?.configure(
+      WorkbenchWindowPolicy.defaultConfiguration,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant RelGeoCADApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.windowHost != widget.windowHost) {
+      _configureWindowHost();
+    }
+  }
 
   Future<void> _loadWorkbenchPreferences() async {
-    final data = await WorkbenchPreferencesStore.load();
+    final data = await _preferencesController.load();
     if (!mounted || data == null) return;
     setState(() {
+      _themePreference = data.themePreference;
       _workbenchProfileId = data.workbenchProfileId;
     });
   }
 
   Future<void> _persistProfilePreference(String value) async {
-    final current =
-        await WorkbenchPreferencesStore.load() ??
-        WorkbenchPreferencesData.defaults;
-    await WorkbenchPreferencesStore.save(
-      current.copyWith(workbenchProfileId: value),
+    await _preferencesController.update(
+      (current) => current.copyWith(workbenchProfileId: value),
+    );
+  }
+
+  Future<void> _persistThemePreference(RelGeoThemePreference value) async {
+    await _preferencesController.update(
+      (current) => current.copyWith(themePreference: value),
     );
   }
 
   Future<void> _resetWorkbenchPreferences() async {
-    await WorkbenchPreferencesStore.clear();
+    await _preferencesController.clear();
     if (!mounted) return;
     setState(() {
+      _themePreference = WorkbenchPreferencesData.defaults.themePreference;
       _workbenchProfileId =
           WorkbenchPreferencesData.defaults.workbenchProfileId;
     });
@@ -59,9 +85,18 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
     return MaterialApp(
       title: 'RelGeo CAD Workbench',
       debugShowCheckedModeBanner: false,
-      theme: _workbenchProfile.materialTheme(),
+      theme: buildRelGeoLightTheme(),
+      darkTheme: buildRelGeoDarkTheme(),
+      themeMode: _themePreference.themeMode,
       home: CADWorkbenchPage(
         initialDsl: widget.initialDsl,
+        themePreference: _themePreference,
+        onThemePreferenceChanged: (value) {
+          setState(() {
+            _themePreference = value;
+          });
+          _persistThemePreference(value);
+        },
         workbenchProfileId: _workbenchProfileId,
         onWorkbenchProfileChanged: (value) {
           setState(() {

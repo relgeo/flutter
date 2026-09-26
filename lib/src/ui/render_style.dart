@@ -174,7 +174,7 @@ class RenderStyle {
     }
 
     if (meta.opacity != null) {
-      color = color.withOpacity(meta.opacity!);
+      color = color.withValues(alpha: meta.opacity!);
     }
 
     paint.color = color;
@@ -239,7 +239,7 @@ class RenderStyle {
   }
 
   static String colorToHex(Color color) {
-    final rgb = color.value.toRadixString(16).padLeft(8, '0').substring(2);
+    final rgb = color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2);
     return '#$rgb';
   }
 }

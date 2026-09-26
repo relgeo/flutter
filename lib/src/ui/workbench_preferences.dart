@@ -1,6 +1,37 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum RelGeoThemePreference {
+  system('system', 'System'),
+  light('light', 'Light'),
+  dark('dark', 'Dark');
+
+  const RelGeoThemePreference(this.storageValue, this.label);
+
+  final String storageValue;
+  final String label;
+
+  ThemeMode get themeMode {
+    switch (this) {
+      case RelGeoThemePreference.system:
+        return ThemeMode.system;
+      case RelGeoThemePreference.light:
+        return ThemeMode.light;
+      case RelGeoThemePreference.dark:
+        return ThemeMode.dark;
+    }
+  }
+
+  static RelGeoThemePreference fromStorage(String? value) {
+    for (final preference in values) {
+      if (preference.storageValue == value) return preference;
+    }
+    return system;
+  }
+}
+
 class WorkbenchPreferencesData {
+  final RelGeoThemePreference themePreference;
   final String workbenchProfileId;
   final bool followProfileOverlay;
   final bool followProfileRoleFilter;
@@ -10,6 +41,7 @@ class WorkbenchPreferencesData {
   final Set<String> hiddenRoles;
 
   const WorkbenchPreferencesData({
+    required this.themePreference,
     required this.workbenchProfileId,
     required this.followProfileOverlay,
     required this.followProfileRoleFilter,
@@ -20,6 +52,7 @@ class WorkbenchPreferencesData {
   });
 
   WorkbenchPreferencesData copyWith({
+    RelGeoThemePreference? themePreference,
     String? workbenchProfileId,
     bool? followProfileOverlay,
     bool? followProfileRoleFilter,
@@ -29,6 +62,7 @@ class WorkbenchPreferencesData {
     Set<String>? hiddenRoles,
   }) {
     return WorkbenchPreferencesData(
+      themePreference: themePreference ?? this.themePreference,
       workbenchProfileId: workbenchProfileId ?? this.workbenchProfileId,
       followProfileOverlay: followProfileOverlay ?? this.followProfileOverlay,
       followProfileRoleFilter:
@@ -41,6 +75,7 @@ class WorkbenchPreferencesData {
   }
 
   static const defaults = WorkbenchPreferencesData(
+    themePreference: RelGeoThemePreference.system,
     workbenchProfileId: 'cad-dark',
     followProfileOverlay: true,
     followProfileRoleFilter: true,
@@ -52,6 +87,7 @@ class WorkbenchPreferencesData {
 }
 
 class WorkbenchPreferencesStore {
+  static const _themePreferenceKey = 'relgeo.workbench.themePreference';
   static const _profileIdKey = 'relgeo.workbench.profileId';
   static const _followOverlayKey = 'relgeo.workbench.followOverlay';
   static const _followRoleFilterKey = 'relgeo.workbench.followRoleFilter';
@@ -64,6 +100,7 @@ class WorkbenchPreferencesStore {
   static Future<WorkbenchPreferencesData?> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final themePreference = prefs.getString(_themePreferenceKey);
       final profileId = prefs.getString(_profileIdKey);
       final followOverlay = prefs.getBool(_followOverlayKey);
       final followRoleFilter = prefs.getBool(_followRoleFilterKey);
@@ -72,7 +109,8 @@ class WorkbenchPreferencesStore {
       final showBoundingBoxes = prefs.getBool(_showBoundingBoxesKey);
       final hiddenRoles = prefs.getStringList(_hiddenRolesKey);
 
-      if (profileId == null &&
+      if (themePreference == null &&
+          profileId == null &&
           followOverlay == null &&
           followRoleFilter == null &&
           showAnchors == null &&
@@ -83,6 +121,7 @@ class WorkbenchPreferencesStore {
       }
 
       return WorkbenchPreferencesData(
+        themePreference: RelGeoThemePreference.fromStorage(themePreference),
         workbenchProfileId:
             profileId ?? WorkbenchPreferencesData.defaults.workbenchProfileId,
         followProfileOverlay:
@@ -109,6 +148,10 @@ class WorkbenchPreferencesStore {
   static Future<void> save(WorkbenchPreferencesData data) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _themePreferenceKey,
+        data.themePreference.storageValue,
+      );
       await prefs.setString(_profileIdKey, data.workbenchProfileId);
       await prefs.setBool(_followOverlayKey, data.followProfileOverlay);
       await prefs.setBool(_followRoleFilterKey, data.followProfileRoleFilter);
@@ -124,6 +167,7 @@ class WorkbenchPreferencesStore {
   static Future<void> clear() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_themePreferenceKey);
       await prefs.remove(_profileIdKey);
       await prefs.remove(_followOverlayKey);
       await prefs.remove(_followRoleFilterKey);

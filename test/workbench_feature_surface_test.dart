@@ -1,0 +1,64 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:re_editor/re_editor.dart';
+import 'package:relgeo_flutter/src/features/editor/workbench_editor_feature.dart';
+import 'package:relgeo_flutter/src/features/editor/workbench_editor_contract.dart';
+import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_feature.dart';
+import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_contract.dart';
+import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
+
+void main() {
+  testWidgets('editor feature forwards its contract to the editor panel', (
+    tester,
+  ) async {
+    final controller = CodeLineEditingController.fromText('scene: {}');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          height: 400,
+          child: WorkbenchEditorFeature(
+            contract: WorkbenchEditorContract(
+              controller: controller,
+              paramValues: const {},
+              paramOverrides: const {},
+              targetUnit: 'mm',
+              onParamChanged: (_, _) {},
+              onParamReset: () {},
+              visualProfile: WorkbenchVisualProfile.cadDark,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('DSL EDITOR'), findsOneWidget);
+    controller.dispose();
+  });
+
+  testWidgets('inspector feature forwards scene and diagnostics contract', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          height: 400,
+          child: WorkbenchInspectorFeature(
+            contract: WorkbenchInspectorContract(
+              scene: null,
+              yamlError: null,
+              compilerError: 'compile error',
+              targetUnit: 'mm',
+              visualProfile: WorkbenchVisualProfile.cadDark,
+              themeTokens: null,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('ERRORS'));
+    await tester.pumpAndSettle();
+    expect(find.text('compile error'), findsOneWidget);
+  });
+}

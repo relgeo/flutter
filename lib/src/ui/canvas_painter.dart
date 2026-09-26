@@ -7,9 +7,17 @@ import 'render_hierarchy.dart';
 import 'render_presentational.dart';
 import 'render_style.dart';
 import 'render_typography.dart';
+import 'relgeo_theme_extension.dart';
 import 'workbench_visual_profile.dart';
 
 const _activeRelGeoVersion = 'v0.5';
+
+// These colors are compatibility/output constants, not application theme tokens:
+// the former preserves the legacy constructor fallback and the latter two describe
+// the technical sheet/title-block paper surfaces when no ThemeExtension is present.
+const _legacyCanvasBackgroundColor = Color(0xFF0F172A);
+const _legacySheetBackgroundColor = Color(0xFFF3F4F6);
+const _titleBlockPaperColor = Color(0xFFFFFFFF);
 
 /// CanvasPainter untuk merender ResolvedScene dari RelGeo secara visual pada Canvas Flutter.
 ///
@@ -48,19 +56,47 @@ class CanvasPainter extends CustomPainter {
   final String? sheetId;
   final Set<String> hiddenRoles;
   final WorkbenchVisualProfile visualProfile;
+  final RelGeoThemeExtension? themeTokens;
   double _activeSheetPresentationalScale = 1.0;
 
   CanvasPainter({
     required this.scene,
-    this.backgroundColor = const Color(0xFF0F172A), // Slate 900
+    this.backgroundColor = _legacyCanvasBackgroundColor,
     this.overlay = const OverlayOptions(),
     this.zoomScale = 1.0,
     this.showConstruction = false,
     this.sheetId,
     Set<String>? hiddenRoles,
     WorkbenchVisualProfile? visualProfile,
+    this.themeTokens,
   }) : hiddenRoles = hiddenRoles ?? const {'construction'},
        visualProfile = visualProfile ?? WorkbenchVisualProfile.cadDark;
+
+  Color _themeRoleColor(String role, Color fallback) {
+    final profileColor = visualProfile.roleColor(role);
+    return themeTokens?.roleColor(role, fallback: profileColor) ?? profileColor;
+  }
+
+  Color get _canvasTextColor =>
+      themeTokens?.canvasTextColor ?? visualProfile.roleColor('final');
+
+  Color get _canvasMutedTextColor =>
+      themeTokens?.canvasMutedTextColor ?? visualProfile.mutedColor;
+
+  Color get _canvasBorderColor =>
+      themeTokens?.borderColor ?? visualProfile.borderColor;
+
+  Color get _canvasAccentColor =>
+      themeTokens?.accentColor ?? visualProfile.accentColor;
+
+  Color get _canvasOverlayColor =>
+      themeTokens?.canvasOverlayColor ?? visualProfile.overlayBackgroundColor;
+
+  Color get _diagnosticColor =>
+      themeTokens?.diagnosticColor ?? visualProfile.roleColor('centerline');
+
+  Color get _diagnosticOverlayColor =>
+      themeTokens?.diagnosticOverlayColor ?? _canvasOverlayColor;
 
   bool _shouldRenderRole(String role) {
     if (role == 'construction' && showConstruction) return true;
@@ -105,9 +141,11 @@ class CanvasPainter extends CustomPainter {
   }
 
   void _paintSheet(Canvas canvas, Size size, ResolvedSheet sheet) {
-    final pagePaint = Paint()..color = const Color(0xFFF3F4F6);
+    final pagePaint = Paint()
+      ..color =
+          themeTokens?.canvasBackgroundColor ?? _legacySheetBackgroundColor;
     final borderPaint = Paint()
-      ..color = const Color(0xFF333333)
+      ..color = _canvasBorderColor
       ..strokeWidth = 0.8 / zoomScale
       ..style = PaintingStyle.stroke;
     double p = 10;
@@ -178,7 +216,7 @@ class CanvasPainter extends CustomPainter {
       _activeSheetPresentationalScale = previousPresentationalScale;
 
       final viewportFramePaint = Paint()
-        ..color = const Color(0xFF666666)
+        ..color = _canvasMutedTextColor
         ..strokeWidth = 0.5 * mm / zoomScale
         ..style = PaintingStyle.stroke;
       final viewportFramePath = Path()
@@ -199,7 +237,7 @@ class CanvasPainter extends CustomPainter {
         '${placement.use} (Scale ${view.scale})',
         placement.x,
         placement.y + placement.height + 8 * mm,
-        const Color(0xFF666666),
+        _canvasMutedTextColor,
         6 * mm / zoomScale,
       );
     }
@@ -437,11 +475,11 @@ class CanvasPainter extends CustomPainter {
     final tx = sheet.width - marginSize - 80 * mm;
     final ty = sheet.height - marginSize - 25 * mm;
     final framePaint = Paint()
-      ..color = const Color(0xFF333333)
+      ..color = _canvasBorderColor
       ..strokeWidth = 0.8 * mm / zoomScale
       ..style = PaintingStyle.stroke;
     final lightPaint = Paint()
-      ..color = const Color(0xFFFFFFFF)
+      ..color = _titleBlockPaperColor
       ..style = PaintingStyle.fill;
 
     canvas.save();
@@ -459,7 +497,7 @@ class CanvasPainter extends CustomPainter {
       'SHEET: $sheetNameText',
       4 * mm,
       6 * mm,
-      const Color(0xFF333333),
+      _canvasTextColor,
       4.5 * mm / zoomScale,
     );
     _paintSheetLabel(
@@ -467,7 +505,7 @@ class CanvasPainter extends CustomPainter {
       'RELGEO: $relgeoVersionText',
       4 * mm,
       14 * mm,
-      const Color(0xFF666666),
+      _canvasMutedTextColor,
       3.5 * mm / zoomScale,
     );
     _paintSheetLabel(
@@ -475,7 +513,7 @@ class CanvasPainter extends CustomPainter {
       'DATE: $dateText',
       4 * mm,
       20 * mm,
-      const Color(0xFF666666),
+      _canvasMutedTextColor,
       3.5 * mm / zoomScale,
     );
     _paintSheetLabel(
@@ -483,7 +521,7 @@ class CanvasPainter extends CustomPainter {
       'SIZE: $sheetSizeText',
       49 * mm,
       14 * mm,
-      const Color(0xFF666666),
+      _canvasMutedTextColor,
       3.5 * mm / zoomScale,
     );
     _paintSheetLabel(
@@ -491,7 +529,7 @@ class CanvasPainter extends CustomPainter {
       'DOC VER: $documentVersionText',
       49 * mm,
       20 * mm,
-      const Color(0xFF666666),
+      _canvasMutedTextColor,
       3.5 * mm / zoomScale,
     );
     canvas.restore();
@@ -502,12 +540,12 @@ class CanvasPainter extends CustomPainter {
     canvas.translate(-scene.bbox.x, -scene.bbox.y);
 
     final violationLinePaint = Paint()
-      ..color = const Color(0xFFFF4444)
+      ..color = _diagnosticColor
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
     final violationDotPaint = Paint()
-      ..color = const Color(0xFFFF4444)
+      ..color = _diagnosticColor
       ..style = PaintingStyle.fill;
 
     for (final violation in scene.violations) {
@@ -530,11 +568,11 @@ class CanvasPainter extends CustomPainter {
         final tp = TextPainter(
           text: TextSpan(
             text: '⚠ ${violation.type}',
-            style: const TextStyle(
-              color: Color(0xFFFF4444),
+            style: TextStyle(
+              color: _diagnosticColor,
               fontSize: 9,
               fontFamily: 'monospace',
-              backgroundColor: Color(0x99000000),
+              backgroundColor: _diagnosticOverlayColor,
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -636,12 +674,12 @@ class CanvasPainter extends CustomPainter {
     }
 
     final anchorPaint = Paint()
-      ..color = visualProfile.accentColor.withOpacity(0.5)
+      ..color = _canvasAccentColor.withValues(alpha: 0.5)
       ..strokeWidth = 1.5 / zoomScale
       ..style = PaintingStyle.stroke;
 
     final bboxPaint = Paint()
-      ..color = visualProfile.accentColor.withOpacity(0.45)
+      ..color = _canvasAccentColor.withValues(alpha: 0.45)
       ..strokeWidth = 0.6 / zoomScale
       ..style = PaintingStyle.stroke;
 
@@ -685,7 +723,7 @@ class CanvasPainter extends CustomPainter {
             Offset(wx, wy),
             1.0 / zoomScale,
             Paint()
-              ..color = visualProfile.accentColor
+              ..color = _canvasAccentColor
               ..style = PaintingStyle.fill,
           );
         }
@@ -713,14 +751,14 @@ class CanvasPainter extends CustomPainter {
           fontFamily: 'Courier',
           fontSize: 7 / zoomScale,
           fontWeight: FontWeight.bold,
-          color: visualProfile.accentColor,
+          color: _canvasAccentColor,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
 
     final bgPaint = Paint()
-      ..color = visualProfile.overlayBackgroundColor.withOpacity(0.8)
+      ..color = _canvasOverlayColor.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
 
     final padding = EdgeInsets.symmetric(
@@ -885,7 +923,7 @@ class CanvasPainter extends CustomPainter {
     if (pointShape == 'circle') {
       final fillPaint = pt.meta.fill != null
           ? getPaintForMeta(pt.meta, isFill: true)
-          : (paint.color.alpha > 0
+          : (paint.color.a > 0
                   ? (Paint()
                       ..color = paint.color
                       ..style = PaintingStyle.fill)
@@ -898,7 +936,7 @@ class CanvasPainter extends CustomPainter {
               ..style = PaintingStyle.stroke
               ..strokeWidth = 0);
       canvas.drawCircle(Offset(x, y), markerSize, fillPaint);
-      if (strokePaint.color.alpha > 0 && strokePaint.strokeWidth > 0) {
+      if (strokePaint.color.a > 0 && strokePaint.strokeWidth > 0) {
         canvas.drawCircle(Offset(x, y), markerSize, strokePaint);
       }
       return;
@@ -968,7 +1006,7 @@ class CanvasPainter extends CustomPainter {
       path.addPath(holePath, Offset.zero);
     }
 
-    if (fillPaint.color.alpha > 0) {
+    if (fillPaint.color.a > 0) {
       canvas.drawPath(path, fillPaint);
     }
     drawDashedPath(canvas, path, strokePaint, dashPattern);
@@ -1007,7 +1045,7 @@ class CanvasPainter extends CustomPainter {
       path.addPath(holePath, Offset.zero);
     }
 
-    if (fillPaint.color.alpha > 0) {
+    if (fillPaint.color.a > 0) {
       canvas.drawPath(path, fillPaint);
     }
     drawDashedPath(canvas, path, strokePaint, dashPattern);
@@ -1029,9 +1067,9 @@ class CanvasPainter extends CustomPainter {
         ),
       );
     final matrix = Matrix4.identity()
-      ..translate(ellipse.cx, ellipse.cy)
+      ..translateByDouble(ellipse.cx, ellipse.cy, 0, 1.0)
       ..rotateZ(ellipse.rotation)
-      ..translate(-ellipse.cx, -ellipse.cy);
+      ..translateByDouble(-ellipse.cx, -ellipse.cy, 0, 1.0);
     final rotated = base.transform(matrix.storage);
 
     final path = Path()..addPath(rotated, Offset.zero);
@@ -1054,7 +1092,7 @@ class CanvasPainter extends CustomPainter {
       path.addPath(holePath, Offset.zero);
     }
 
-    if (fillPaint.color.alpha > 0) {
+    if (fillPaint.color.a > 0) {
       canvas.drawPath(path, fillPaint);
     }
     drawDashedPath(canvas, path, strokePaint, dashPattern);
@@ -1178,7 +1216,7 @@ class CanvasPainter extends CustomPainter {
       path.addPath(holePath, Offset.zero);
     }
 
-    if (closed && fillPaint.color.alpha > 0) {
+    if (closed && fillPaint.color.a > 0) {
       canvas.drawPath(path, fillPaint);
     }
     drawDashedPath(canvas, path, strokePaint, dashPattern);
@@ -1195,7 +1233,7 @@ class CanvasPainter extends CustomPainter {
     final resolvedTextColor = RenderTypography.textColor(
       textObj.meta,
       fallback: textColor,
-      defaultFill: const Color(0xFF000000),
+      defaultFill: _themeRoleColor('final', _canvasTextColor),
     );
     final tp = TextPainter(
       text: TextSpan(
@@ -1240,7 +1278,7 @@ class CanvasPainter extends CustomPainter {
     final textColor = RenderTypography.textColor(
       dim.meta,
       fallback: color,
-      defaultFill: const Color(0xFF444444),
+      defaultFill: _themeRoleColor('dimension', _canvasTextColor),
     );
 
     switch (dim.kind) {
@@ -1296,7 +1334,7 @@ class CanvasPainter extends CustomPainter {
         )..layout();
 
         final textBgPaint = Paint()
-          ..color = backgroundColor
+          ..color = themeTokens?.canvasBackgroundColor ?? backgroundColor
           ..style = PaintingStyle.fill;
 
         canvas.save();
@@ -1457,7 +1495,7 @@ class CanvasPainter extends CustomPainter {
           tp.height + 4.0 / effectiveZoom,
         ),
         Paint()
-          ..color = backgroundColor
+          ..color = themeTokens?.canvasBackgroundColor ?? backgroundColor
           ..style = PaintingStyle.fill,
       );
     }
@@ -1474,7 +1512,7 @@ class CanvasPainter extends CustomPainter {
       final textColor = RenderTypography.textColor(
         ann.meta,
         fallback: color,
-        defaultFill: const Color(0xFF333333),
+        defaultFill: _themeRoleColor('annotation', _canvasTextColor),
       );
       final layout = RenderPresentational.annotationLeaderLayout(
         from: leader.fromPoint,
@@ -1551,7 +1589,7 @@ class CanvasPainter extends CustomPainter {
       final textColor = RenderTypography.textColor(
         ann.meta,
         fallback: color,
-        defaultFill: const Color(0xFF333333),
+        defaultFill: _themeRoleColor('annotation', _canvasTextColor),
       );
       final targetBBox = geom.calculateBoundingBox({targetObj.id: targetObj});
       final layout = RenderPresentational.annotationTargetFallbackLayout(
@@ -1620,7 +1658,7 @@ class CanvasPainter extends CustomPainter {
   // ─────────────────────────────────────────────
 
   Color getDefaultRoleColor(String role) {
-    return visualProfile.roleColor(role);
+    return _themeRoleColor(role, visualProfile.roleColor(role));
   }
 
   double getDefaultRoleStrokeWidth(String role) {
@@ -1636,7 +1674,10 @@ class CanvasPainter extends CustomPainter {
       meta,
       isFill: isFill,
       zoomScale: zoomScale,
-      fallbackRoleColor: visualProfile.roleColor(meta.role),
+      fallbackRoleColor: _themeRoleColor(
+        meta.role,
+        visualProfile.roleColor(meta.role),
+      ),
     );
   }
 

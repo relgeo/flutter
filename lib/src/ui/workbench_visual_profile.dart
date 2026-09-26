@@ -16,9 +16,13 @@ class WorkbenchBehaviorPreset {
   });
 }
 
-class WorkbenchVisualProfile {
-  final String id;
-  final String label;
+/// Appearance tokens for the technical drawing surface.
+///
+/// Keeping this model separate from [WorkbenchBehaviorPreset] lets a profile
+/// combine the same canvas look with a different interaction preset later,
+/// without making theme or painter code depend on behavior flags.
+@immutable
+class WorkbenchCanvasAppearance {
   final Color viewportBackgroundColor;
   final Color toolbarBackgroundColor;
   final Color overlayBackgroundColor;
@@ -29,11 +33,8 @@ class WorkbenchVisualProfile {
   final Color borderColor;
   final Color mutedColor;
   final Map<String, Color> roleColors;
-  final WorkbenchBehaviorPreset behavior;
 
-  const WorkbenchVisualProfile({
-    required this.id,
-    required this.label,
+  const WorkbenchCanvasAppearance({
     required this.viewportBackgroundColor,
     required this.toolbarBackgroundColor,
     required this.overlayBackgroundColor,
@@ -44,37 +45,65 @@ class WorkbenchVisualProfile {
     required this.borderColor,
     required this.mutedColor,
     required this.roleColors,
+  });
+
+  Color roleColor(String role) => roleColors[role] ?? Colors.white;
+}
+
+class WorkbenchVisualProfile {
+  final String id;
+  final String label;
+  final WorkbenchCanvasAppearance canvasAppearance;
+  final WorkbenchBehaviorPreset behavior;
+
+  const WorkbenchVisualProfile({
+    required this.id,
+    required this.label,
+    required this.canvasAppearance,
     required this.behavior,
   });
 
-  Color roleColor(String role) {
-    return roleColors[role] ?? Colors.white;
-  }
+  // Legacy getters keep existing callers source-compatible while migration
+  // moves ownership to [canvasAppearance].
+  Color get viewportBackgroundColor => canvasAppearance.viewportBackgroundColor;
+  Color get toolbarBackgroundColor => canvasAppearance.toolbarBackgroundColor;
+  Color get overlayBackgroundColor => canvasAppearance.overlayBackgroundColor;
+  Color get gridMinorColor => canvasAppearance.gridMinorColor;
+  Color get gridMajorColor => canvasAppearance.gridMajorColor;
+  Color get accentColor => canvasAppearance.accentColor;
+  Color get accentSoftColor => canvasAppearance.accentSoftColor;
+  Color get borderColor => canvasAppearance.borderColor;
+  Color get mutedColor => canvasAppearance.mutedColor;
+  Map<String, Color> get roleColors => canvasAppearance.roleColors;
+
+  Color roleColor(String role) => canvasAppearance.roleColor(role);
 
   static const cadDark = WorkbenchVisualProfile(
     id: 'cad-dark',
     label: 'CAD Dark',
-    viewportBackgroundColor: Color(0xFF0A0F1D),
-    toolbarBackgroundColor: Color(0xFF0F172A),
-    overlayBackgroundColor: Color(0xFF0A0F1D),
-    gridMinorColor: Color(0xFF1E293B),
-    gridMajorColor: Color(0xFF334155),
-    accentColor: Color(0xFF00FFCC),
-    accentSoftColor: Color(0x1A00FFCC),
-    borderColor: Color(0xFF1E293B),
-    mutedColor: Color(0xFF64748B),
-    roleColors: {
-      'final': Color(0xFF00FFCC),
-      'construction': Color(0x6694A3B8),
-      'guide': Color(0xFFE2E8F0),
-      'centerline': Color(0xFFF43F5E),
-      'hidden': Color(0xFFF59E0B),
-      'section': Color(0xFFEC4899),
-      'cut': Color(0xFFEC4899),
-      'fold': Color(0xFF3B82F6),
-      'dimension': Color(0xFF10B981),
-      'annotation': Color(0xFF10B981),
-    },
+    canvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFF0A0F1D),
+      toolbarBackgroundColor: Color(0xFF0F172A),
+      overlayBackgroundColor: Color(0xFF0A0F1D),
+      gridMinorColor: Color(0xFF1E293B),
+      gridMajorColor: Color(0xFF334155),
+      accentColor: Color(0xFF00FFCC),
+      accentSoftColor: Color(0x1A00FFCC),
+      borderColor: Color(0xFF1E293B),
+      mutedColor: Color(0xFF64748B),
+      roleColors: {
+        'final': Color(0xFF00FFCC),
+        'construction': Color(0x6694A3B8),
+        'guide': Color(0xFFE2E8F0),
+        'centerline': Color(0xFFF43F5E),
+        'hidden': Color(0xFFF59E0B),
+        'section': Color(0xFFEC4899),
+        'cut': Color(0xFFEC4899),
+        'fold': Color(0xFF3B82F6),
+        'dimension': Color(0xFF10B981),
+        'annotation': Color(0xFF10B981),
+      },
+    ),
     behavior: WorkbenchBehaviorPreset(
       showAnchors: false,
       showLabels: false,
@@ -87,27 +116,29 @@ class WorkbenchVisualProfile {
   static const blueprint = WorkbenchVisualProfile(
     id: 'blueprint',
     label: 'Blueprint',
-    viewportBackgroundColor: Color(0xFF071A2E),
-    toolbarBackgroundColor: Color(0xFF0B2744),
-    overlayBackgroundColor: Color(0xFF0A223A),
-    gridMinorColor: Color(0xFF214A73),
-    gridMajorColor: Color(0xFF3A6C9A),
-    accentColor: Color(0xFF93C5FD),
-    accentSoftColor: Color(0x1A93C5FD),
-    borderColor: Color(0xFF234766),
-    mutedColor: Color(0xFF8FB3D9),
-    roleColors: {
-      'final': Color(0xFFE0F2FE),
-      'construction': Color(0x668FB3D9),
-      'guide': Color(0xFFBAE6FD),
-      'centerline': Color(0xFFFDE68A),
-      'hidden': Color(0xFFFFD166),
-      'section': Color(0xFFF9A8D4),
-      'cut': Color(0xFFF9A8D4),
-      'fold': Color(0xFFA5B4FC),
-      'dimension': Color(0xFF86EFAC),
-      'annotation': Color(0xFF86EFAC),
-    },
+    canvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFF071A2E),
+      toolbarBackgroundColor: Color(0xFF0B2744),
+      overlayBackgroundColor: Color(0xFF0A223A),
+      gridMinorColor: Color(0xFF214A73),
+      gridMajorColor: Color(0xFF3A6C9A),
+      accentColor: Color(0xFF93C5FD),
+      accentSoftColor: Color(0x1A93C5FD),
+      borderColor: Color(0xFF234766),
+      mutedColor: Color(0xFF8FB3D9),
+      roleColors: {
+        'final': Color(0xFFE0F2FE),
+        'construction': Color(0x668FB3D9),
+        'guide': Color(0xFFBAE6FD),
+        'centerline': Color(0xFFFDE68A),
+        'hidden': Color(0xFFFFD166),
+        'section': Color(0xFFF9A8D4),
+        'cut': Color(0xFFF9A8D4),
+        'fold': Color(0xFFA5B4FC),
+        'dimension': Color(0xFF86EFAC),
+        'annotation': Color(0xFF86EFAC),
+      },
+    ),
     behavior: WorkbenchBehaviorPreset(
       showAnchors: false,
       showLabels: true,
@@ -120,27 +151,29 @@ class WorkbenchVisualProfile {
   static const paper = WorkbenchVisualProfile(
     id: 'paper',
     label: 'Paper',
-    viewportBackgroundColor: Color(0xFFF8FAFC),
-    toolbarBackgroundColor: Color(0xFFE2E8F0),
-    overlayBackgroundColor: Color(0xFFF1F5F9),
-    gridMinorColor: Color(0xFFCBD5E1),
-    gridMajorColor: Color(0xFF94A3B8),
-    accentColor: Color(0xFF0F172A),
-    accentSoftColor: Color(0x140F172A),
-    borderColor: Color(0xFFCBD5E1),
-    mutedColor: Color(0xFF475569),
-    roleColors: {
-      'final': Color(0xFF0F172A),
-      'construction': Color(0x66848CA0),
-      'guide': Color(0xFF64748B),
-      'centerline': Color(0xFFDC2626),
-      'hidden': Color(0xFF7C2D12),
-      'section': Color(0xFF9D174D),
-      'cut': Color(0xFF9D174D),
-      'fold': Color(0xFF1D4ED8),
-      'dimension': Color(0xFF166534),
-      'annotation': Color(0xFF166534),
-    },
+    canvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFFF8FAFC),
+      toolbarBackgroundColor: Color(0xFFE2E8F0),
+      overlayBackgroundColor: Color(0xFFF1F5F9),
+      gridMinorColor: Color(0xFFCBD5E1),
+      gridMajorColor: Color(0xFF94A3B8),
+      accentColor: Color(0xFF0F172A),
+      accentSoftColor: Color(0x140F172A),
+      borderColor: Color(0xFFCBD5E1),
+      mutedColor: Color(0xFF475569),
+      roleColors: {
+        'final': Color(0xFF0F172A),
+        'construction': Color(0x66848CA0),
+        'guide': Color(0xFF64748B),
+        'centerline': Color(0xFFDC2626),
+        'hidden': Color(0xFF7C2D12),
+        'section': Color(0xFF9D174D),
+        'cut': Color(0xFF9D174D),
+        'fold': Color(0xFF1D4ED8),
+        'dimension': Color(0xFF166534),
+        'annotation': Color(0xFF166534),
+      },
+    ),
     behavior: WorkbenchBehaviorPreset(
       showAnchors: false,
       showLabels: false,
