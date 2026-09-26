@@ -283,7 +283,8 @@ belum dilakukan.
   belum dilakukan;
 - [~] initial native window sekarang diarahkan ke policy default `1440×900`;
   minimum `1024×640` juga ditetapkan pada macOS, Linux, dan Windows runner,
-  tetapi build/runtime verification tiap host masih terbuka;
+  dan host Dart kini memiliki `MethodChannel` bridge dengan handler macOS;
+  build/runtime verification tiap host serta bridge Linux/Windows masih terbuka;
 - [ ] isolasi kode macOS/Linux/Windows;
 - [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
 - [ ] siapkan checklist Windows 11 untuk verifikasi eksternal.
@@ -394,3 +395,4 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap D — Window host contract (local, verification pending) | `WorkbenchWindowHost` dan `WorkbenchWindowConfiguration` ditambahkan sebagai boundary injectable; `RelGeoCADApp` meneruskan konfigurasi default/minimum ke host dan mengonfigurasi ulang bila host berubah. Contract test ditambahkan. Verifikasi `dart format`, `flutter analyze`, test target/full suite, dan `git diff --check` dari terminal VSCode belum dapat ditutup pada sesi ini karena remote terminal timeout; implementasi native macOS/Linux/Windows tetap terbuka. |
 | 2026-09-27 | Tahap D — Native runner audit | Runner macOS, Linux, dan Windows diperiksa. macOS masih mendefinisikan content window `800×600`, sementara Linux dan Windows membuat window awal `1280×720`; belum ada satu penerapan minimum `1024×640` lintas host. Temuan ini dicatat sebagai pekerjaan implementasi native berikutnya, bukan dianggap selesai hanya karena kontrak Dart sudah ada. |
 | 2026-09-27 | Tahap D — Native runner sizing alignment | Ukuran awal runner diselaraskan ke policy `1440×900`; minimum `1024×640` ditambahkan pada macOS XIB, GTK Linux, dan Win32 `WM_GETMINMAXINFO`. Ini adalah source-level alignment dan belum menggantikan build/runtime verification pada masing-masing OS. |
+| 2026-09-27 | Tahap D — Dart/native window bridge partial | `MethodChannelWorkbenchWindowHost` sekarang mengirim konfigurasi default/minimum melalui channel `relgeo/window`; bridge macOS memasang handler pada `MainFlutterWindow`. Missing-plugin dibuat aman untuk web/runner yang belum memiliki handler. Bridge Linux/Windows, build, dan runtime verification masih terbuka. |

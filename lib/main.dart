@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'src/ui/cad_workbench.dart';
 import 'src/ui/app_theme.dart';
@@ -5,10 +6,15 @@ import 'src/ui/workbench_preferences.dart';
 import 'src/ui/workbench_preferences_controller.dart';
 import 'src/ui/workbench_visual_profile.dart';
 import 'src/ui/workbench_window_host.dart';
+import 'src/ui/workbench_method_channel_window_host.dart';
 import 'src/ui/workbench_window_policy.dart';
 
 void main() {
-  runApp(const RelGeoCADApp());
+  runApp(
+    RelGeoCADApp(
+      windowHost: kIsWeb ? null : const MethodChannelWorkbenchWindowHost(),
+    ),
+  );
 }
 
 class RelGeoCADApp extends StatefulWidget {
