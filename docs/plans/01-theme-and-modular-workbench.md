@@ -281,6 +281,9 @@ belum dilakukan.
 - [~] compact layout sekarang memakai horizontal scroll dengan lebar minimum
   terkontrol pada composition shell; uji resize runtime pada native window masih
   belum dilakukan;
+- [ ] selaraskan initial native window dengan policy: audit runner menemukan
+  macOS masih memakai `800×600`, sedangkan Linux dan Windows memakai
+  `1280×720`; target policy adalah default `1440×900` dan minimum `1024×640`;
 - [ ] isolasi kode macOS/Linux/Windows;
 - [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
 - [ ] siapkan checklist Windows 11 untuk verifikasi eksternal.
@@ -389,3 +392,4 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap B/E — Workbench light/dark golden baselines | Golden test `test/workbench_theme_golden_test.dart` dan baseline `test/goldens/workbench_shell_light.png` serta `test/goldens/workbench_shell_dark.png` ditambahkan pada viewport deterministik `1440×900`. Kedua golden berhasil dibuat dan diverifikasi ulang; analyzer lulus, full suite lulus dengan **174 test**, dan `git diff --check` lulus. Golden ini menjadi regression evidence, bukan pengganti inspeksi visual lintas platform. |
 | 2026-09-27 | Tahap B/E — Golden visual review | Kedua baseline golden diperiksa secara visual setelah dibuat; tidak terlihat overflow, panel terpotong, atau artefak layout yang jelas pada shell, editor, preview, inspector, dan graph. Review ini tetap terbatas pada renderer test deterministik; validasi resize native dan accessibility runtime masih memerlukan host/perangkat nyata. |
 | 2026-09-27 | Tahap D — Window host contract (local, verification pending) | `WorkbenchWindowHost` dan `WorkbenchWindowConfiguration` ditambahkan sebagai boundary injectable; `RelGeoCADApp` meneruskan konfigurasi default/minimum ke host dan mengonfigurasi ulang bila host berubah. Contract test ditambahkan. Verifikasi `dart format`, `flutter analyze`, test target/full suite, dan `git diff --check` dari terminal VSCode belum dapat ditutup pada sesi ini karena remote terminal timeout; implementasi native macOS/Linux/Windows tetap terbuka. |
+| 2026-09-27 | Tahap D — Native runner audit | Runner macOS, Linux, dan Windows diperiksa. macOS masih mendefinisikan content window `800×600`, sementara Linux dan Windows membuat window awal `1280×720`; belum ada satu penerapan minimum `1024×640` lintas host. Temuan ini dicatat sebagai pekerjaan implementasi native berikutnya, bukan dianggap selesai hanya karena kontrak Dart sudah ada. |
