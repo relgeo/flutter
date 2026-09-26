@@ -283,8 +283,9 @@ belum dilakukan.
   belum dilakukan;
 - [~] initial native window sekarang diarahkan ke policy default `1440×900`;
   minimum `1024×640` juga ditetapkan pada macOS, Linux, dan Windows runner,
-  dan host Dart kini memiliki `MethodChannel` bridge dengan handler macOS;
-  build/runtime verification tiap host serta bridge Linux/Windows masih terbuka;
+  dan host Dart kini memiliki `MethodChannel` bridge dengan handler macOS dan
+  Windows; build/runtime verification tiap host serta bridge Linux masih
+  terbuka;
 - [ ] isolasi kode macOS/Linux/Windows;
 - [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
 - [ ] siapkan checklist Windows 11 untuk verifikasi eksternal.
@@ -396,3 +397,4 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap D — Native runner audit | Runner macOS, Linux, dan Windows diperiksa. macOS masih mendefinisikan content window `800×600`, sementara Linux dan Windows membuat window awal `1280×720`; belum ada satu penerapan minimum `1024×640` lintas host. Temuan ini dicatat sebagai pekerjaan implementasi native berikutnya, bukan dianggap selesai hanya karena kontrak Dart sudah ada. |
 | 2026-09-27 | Tahap D — Native runner sizing alignment | Ukuran awal runner diselaraskan ke policy `1440×900`; minimum `1024×640` ditambahkan pada macOS XIB, GTK Linux, dan Win32 `WM_GETMINMAXINFO`. Ini adalah source-level alignment dan belum menggantikan build/runtime verification pada masing-masing OS. |
 | 2026-09-27 | Tahap D — Dart/native window bridge partial | `MethodChannelWorkbenchWindowHost` sekarang mengirim konfigurasi default/minimum melalui channel `relgeo/window`; bridge macOS memasang handler pada `MainFlutterWindow`. Missing-plugin dibuat aman untuk web/runner yang belum memiliki handler. Bridge Linux/Windows, build, dan runtime verification masih terbuka. |
+| 2026-09-27 | Tahap D — Windows window bridge partial | Runner Windows sekarang memasang `MethodChannel<EncodableValue>` pada `relgeo/window`, menerapkan ukuran default dengan DPI scaling, dan mempertahankan minimum tracking size. Kode belum diverifikasi melalui build Windows; bridge Linux dan runtime resize lintas host masih terbuka. |
