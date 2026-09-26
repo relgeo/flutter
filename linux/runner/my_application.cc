@@ -21,6 +21,7 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 static void window_method_call_handler(FlMethodChannel* channel,
                                        FlMethodCall* method_call,
                                        gpointer user_data) {
+  (void)channel;
   g_autoptr(FlMethodResponse) response = nullptr;
   if (std::strcmp(fl_method_call_get_name(method_call), "configure") == 0) {
     auto* self = MY_APPLICATION(user_data);
