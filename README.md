@@ -68,7 +68,8 @@ relgeo_flutter/
 
 ### Rencana Pengembangan
 
-Rencana modularisasi workbench dan dukungan theme `System / Light / Dark` tersedia di:
+Rencana modularisasi workbench dan dukungan toggle `Light / Dark` dengan default
+yang mengikuti system tersedia di:
 
 - [Modular Workbench dan Theme System](docs/plans/01-theme-and-modular-workbench.md)
 

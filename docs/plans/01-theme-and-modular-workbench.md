@@ -1,6 +1,6 @@
 # Sub-Rencana 01 — Modular Workbench dan Theme System
 
-**Status:** Tahap A selesai; Tahap B selesai sebagian; Tahap C berjalan sebagian; Tahap D berjalan sebagian; Tahap E berjalan sebagian  
+**Status:** Tahap A selesai sebagian dan perlu koreksi kontrak UX; Tahap B selesai sebagian; Tahap C berjalan sebagian; Tahap D berjalan sebagian; Tahap E berjalan sebagian
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x  
@@ -14,7 +14,8 @@ Mematangkan Flutter Workbench sebagai aplikasi desktop yang:
 
 - memiliki pembagian widget, feature, state, dan platform boundary yang jelas;
 - mendukung light mode dan dark mode secara konsisten;
-- memakai **System** sebagai default dan mengikuti perubahan theme OS;
+- memulai dari mode system secara implisit, lalu mengikuti perubahan theme OS
+  sampai pengguna memilih override Light atau Dark;
 - tetap membedakan theme UI aplikasi dari appearance canvas teknis;
 - dapat dikembangkan tanpa membuat `CADWorkbenchPage` menjadi pusat semua tanggung jawab.
 
@@ -30,9 +31,12 @@ Baseline saat ini sudah memiliki beberapa pemisahan yang berguna:
 - `workbench_preferences.dart` untuk persistence preference;
 - `workbench_visual_profile.dart` untuk warna dan behavior preset.
 
-Tahap A telah menutup dua temuan awal: `main.dart` sekarang memasok
-`theme`, `darkTheme`, dan `themeMode`, sedangkan preference baru memakai
-`system` sebagai default. Sisa boundary yang masih perlu diperjelas:
+Tahap A sebelumnya membuat `main.dart` memasok `theme`, `darkTheme`, dan
+`themeMode`, dengan preference tiga nilai `system`, `light`, dan `dark`.
+Kontrak UX kini dikoreksi: `system` hanya menjadi keadaan internal ketika belum
+ada override, bukan pilihan ketiga pada kontrol utama. Implementasi preference
+dan selector yang ada harus diselaraskan dengan kontrak dua-state tersebut.
+Sisa boundary yang masih perlu diperjelas:
 
 - `WorkbenchVisualProfile` masih menjadi composition object untuk Material theme, `canvasAppearance`, dan `behavior`, sehingga builder Material masih perlu dipisahkan lebih lanjut;
 - `CADWorkbenchPage` masih memegang state editor, preview, file operation, inspector, preference, dan layout sekaligus;
@@ -52,7 +56,8 @@ Theme system harus memisahkan tiga konsep berikut:
 
 ```mermaid
 flowchart TD
-  preference["Theme preference: System / Light / Dark"] --> appTheme["Application ThemeData"]
+  override["Theme override: none / Light / Dark"] --> appTheme["Application ThemeData"]
+  os["OS brightness"] --> appTheme
   appTheme --> chrome["Toolbar, panels, dialogs, editor"]
   appTheme --> shared["Shared components"]
   canvas["Canvas appearance"] --> canvasTokens["Grid, role, overlay, selection colors"]
@@ -74,13 +79,16 @@ MaterialApp(
 )
 ```
 
-Nilai preference yang disimpan:
+Nilai preference yang disimpan secara konseptual:
 
-- `system` — default;
-- `light`;
-- `dark`.
+- `null`/key tidak ada — belum pernah dipilih; gunakan `ThemeMode.system`;
+- `light` — override Light;
+- `dark` — override Dark.
 
-Yang disimpan adalah pilihan pengguna, bukan mode hasil resolusi. Dengan begitu `system` tetap dapat mengikuti perubahan mode OS saat aplikasi berjalan.
+`System` tidak ditampilkan sebagai pilihan ketiga pada toggle utama. Jika belum
+ada override, root memakai `ThemeMode.system` sehingga perubahan brightness OS
+tetap diikuti. Setelah toggle dipakai, pilihan eksplisit disimpan dan menjadi
+override sampai pengguna memakai aksi sekunder **Reset to system appearance**.
 
 ### 3.3 ThemeExtension
 
@@ -173,47 +181,53 @@ Layout workbench perlu memiliki kontrak minimal:
 
 ## 6. Rencana theme UX
 
-Theme switcher ditempatkan di Settings atau View/Appearance menu dengan tiga pilihan:
+Theme control ditempatkan di Settings atau View/Appearance menu sebagai toggle
+dua-state:
 
-- System;
 - Light;
 - Dark.
 
 Perilaku:
 
-1. instalasi baru dimulai pada System;
-2. perubahan pilihan diterapkan tanpa restart;
-3. pilihan disimpan melalui `SharedPreferences` bersama preference lain;
-4. reset preference mengembalikan System;
-5. label dan state pilihan terbaca keyboard serta accessibility tree;
+1. instalasi baru tidak memiliki override dan mengikuti system;
+2. toggle Light/Dark diterapkan tanpa restart;
+3. pilihan eksplisit disimpan melalui `SharedPreferences` bersama preference lain;
+4. aksi sekunder **Reset to system appearance** menghapus override;
+5. label, value, dan state toggle terbaca keyboard serta accessibility tree;
 6. canvas appearance tidak berubah secara tak terduga kecuali memang dikontrak mengikuti theme.
 
 ```mermaid
 stateDiagram-v2
-  [*] --> System
-  System --> Light: pilih Light
-  System --> Dark: pilih Dark
-  Light --> System: pilih System
-  Light --> Dark: pilih Dark
-  Dark --> System: pilih System
-  Dark --> Light: pilih Light
-  System --> System: OS brightness berubah
+  [*] --> FollowSystem
+  FollowSystem --> Light: toggle ke Light
+  FollowSystem --> Dark: toggle ke Dark
+  Light --> Dark: toggle ke Dark
+  Dark --> Light: toggle ke Light
+  Light --> FollowSystem: reset override
+  Dark --> FollowSystem: reset override
+  FollowSystem --> FollowSystem: OS brightness berubah
 ```
 
 ## 7. Urutan implementasi
 
 ### Tahap A — Theme foundation
 
-- [x] buat enum/model preference `system`, `light`, `dark`;
+- [ ] ganti model preference tiga nilai menjadi nullable override `light`/`dark`;
 - [x] tambahkan `theme`, `darkTheme`, dan `themeMode` pada app root;
-- [x] persist dan load theme preference;
-- [x] tambahkan Settings/View control;
-- [x] reset mengembalikan System;
-- [x] test system brightness dan explicit mode.
+- [~] persist dan load theme preference; mekanisme persistence sudah ada, tetapi
+  semantik key yang tidak ada harus berarti mengikuti system;
+- [ ] ubah Settings/View control menjadi toggle Light/Dark tanpa opsi System;
+- [ ] sediakan aksi sekunder untuk menghapus override dan kembali mengikuti system;
+- [ ] test initial system default, explicit override, reset, dan perubahan OS.
 
-**Status:** selesai. `RelGeoThemePreference` menyimpan nilai `system`, `light`, atau `dark` melalui `SharedPreferences`. Root `MaterialApp` menyediakan light theme, dark theme, dan `ThemeMode`; selector toolbar dapat mengubah mode tanpa restart. Test widget memverifikasi default System, resolusi brightness OS, mode Dark, dan mode Light; test preference memverifikasi round-trip serta fallback nilai tidak dikenal.
+**Status:** fondasi teknis tersedia, tetapi kontrak UX belum selesai. Implementasi
+`RelGeoThemePreference` saat ini masih menyimpan `system`, `light`, atau `dark`
+sebagai tiga nilai dan selector masih memodelkan pilihan tersebut. Ini harus
+diubah menjadi override nullable dua-state; `ThemeMode.system` tetap dipakai
+secara internal ketika override belum ada.
 
-**Exit gate:** terpenuhi untuk fondasi theme mode. Modularisasi token visual dan pemisahan warna canvas tetap menjadi Tahap B.
+**Exit gate:** belum terpenuhi sampai toggle dua-state, reset override, dan test
+system-aware default memiliki evidence.
 
 ### Tahap B — Visual token migration
 
@@ -317,9 +331,10 @@ digantikan oleh golden.
 
 | Area | Bukti minimal |
 | --- | --- |
-| Default | instalasi baru memakai System |
+| Default | tanpa override tersimpan, instalasi baru memakai brightness system |
 | Explicit mode | Light dan Dark dapat dipilih serta bertahan setelah restart |
-| OS change | System mengikuti perubahan brightness OS |
+| OS change | brightness OS diikuti selama belum ada override |
+| Control model | kontrol utama hanya toggle Light/Dark; reset system adalah aksi sekunder |
 | Chrome | toolbar, panel, dialog, editor, dan menu terbaca di kedua mode |
 | Canvas | grid, role, selection, annotation, dan diagnostic tetap terbaca |
 | Profile boundary | canvas preset tidak diam-diam mengubah app theme |
@@ -398,6 +413,7 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap B/E — Full workbench light/dark smoke contract | Test widget pada `test/widget_test.dart` sekarang merender seluruh workbench pada System-light dan System-dark dengan fixture RelGeo aktif, memeriksa panel utama, brightness efektif, dan exception runtime. Analyzer lulus, full suite lulus dengan **172 test**, dan `git diff --check` lulus. Verifikasi visual golden lintas panel serta accessibility runtime pada desktop nyata masih terbuka. |
 | 2026-09-27 | Tahap B/E — Workbench light/dark golden baselines | Golden test `test/workbench_theme_golden_test.dart` dan baseline `test/goldens/workbench_shell_light.png` serta `test/goldens/workbench_shell_dark.png` ditambahkan pada viewport deterministik `1440×900`. Kedua golden berhasil dibuat dan diverifikasi ulang; analyzer lulus, full suite lulus dengan **174 test**, dan `git diff --check` lulus. Golden ini menjadi regression evidence, bukan pengganti inspeksi visual lintas platform. |
 | 2026-09-27 | Tahap B/E — Golden visual review | Kedua baseline golden diperiksa secara visual setelah dibuat; tidak terlihat overflow, panel terpotong, atau artefak layout yang jelas pada shell, editor, preview, inspector, dan graph. Review ini tetap terbatas pada renderer test deterministik; validasi resize native dan accessibility runtime masih memerlukan host/perangkat nyata. |
+| 2026-09-27 | Koreksi kontrak theme UX | Keputusan maintainer diperjelas: kontrol utama hanya toggle `Light`/`Dark`; sebelum user memilih, mode efektif mengikuti system melalui `ThemeMode.system`. `System` bukan opsi ketiga pada selector. Aksi reset boleh menghapus override secara sekunder. Implementasi tiga nilai lama dan test terkait perlu diselaraskan sebelum Tahap A dapat ditutup kembali. |
 | 2026-09-27 | Tahap D — Window host contract (local, verification pending) | `WorkbenchWindowHost` dan `WorkbenchWindowConfiguration` ditambahkan sebagai boundary injectable; `RelGeoCADApp` meneruskan konfigurasi default/minimum ke host dan mengonfigurasi ulang bila host berubah. Contract test ditambahkan. Verifikasi `dart format`, `flutter analyze`, test target/full suite, dan `git diff --check` dari terminal VSCode belum dapat ditutup pada sesi ini karena remote terminal timeout; implementasi native macOS/Linux/Windows tetap terbuka. |
 | 2026-09-27 | Tahap D — Native runner audit | Runner macOS, Linux, dan Windows diperiksa. macOS masih mendefinisikan content window `800×600`, sementara Linux dan Windows membuat window awal `1280×720`; belum ada satu penerapan minimum `1024×640` lintas host. Temuan ini dicatat sebagai pekerjaan implementasi native berikutnya, bukan dianggap selesai hanya karena kontrak Dart sudah ada. |
 | 2026-09-27 | Tahap D — Native runner sizing alignment | Ukuran awal runner diselaraskan ke policy `1440×900`; minimum `1024×640` ditambahkan pada macOS XIB, GTK Linux, dan Win32 `WM_GETMINMAXINFO`. Ini adalah source-level alignment dan belum menggantikan build/runtime verification pada masing-masing OS. |
