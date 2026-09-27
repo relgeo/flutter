@@ -342,6 +342,67 @@ void main() {
     expect(service.lastCurrentName, 'example.relgeo');
   });
 
+  testWidgets(
+    'typed host save acknowledgement clears dirty state and identity',
+    (WidgetTester tester) async {
+      final requests = <WorkbenchDocumentSaveRequest>[];
+      final dirtyStates = <bool>[];
+
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CADWorkbenchPage(
+            initialDsl: _sheetDsl,
+            onSaveDocumentWithResult: (request) async {
+              requests.add(request);
+              return WorkbenchDocumentSaveResult(
+                saved: true,
+                path: request.saveAs
+                    ? '/documents/renamed.relgeo'
+                    : '/documents/saved.relgeo',
+                name: request.saveAs ? 'renamed.relgeo' : 'saved.relgeo',
+              );
+            },
+            onDocumentDirtyChanged: dirtyStates.add,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final editor = _editorPanel(tester).controller;
+      editor.text = '${editor.text}\n# typed save';
+      await tester.pump();
+
+      await tester.tap(find.text('File'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save document'));
+      await tester.pumpAndSettle();
+
+      expect(requests, hasLength(1));
+      expect(requests.single.saveAs, isFalse);
+      expect(requests.single.source, contains('# typed save'));
+      expect(requests.single.currentPath, isNull);
+      expect(requests.single.currentName, isNull);
+      expect(dirtyStates, containsAllInOrder(<bool>[true, false]));
+
+      editor.text = '${editor.text}\n# typed save as';
+      await tester.pump();
+      await tester.tap(find.text('File'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save document as…'));
+      await tester.pumpAndSettle();
+
+      expect(requests, hasLength(2));
+      expect(requests.last.saveAs, isTrue);
+      expect(requests.last.currentPath, '/documents/saved.relgeo');
+      expect(requests.last.currentName, 'saved.relgeo');
+      expect(dirtyStates.last, isFalse);
+    },
+  );
+
   testWidgets('theme mode follows system until explicitly overridden', (
     WidgetTester tester,
   ) async {

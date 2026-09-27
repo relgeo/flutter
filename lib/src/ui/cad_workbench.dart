@@ -35,6 +35,7 @@ class CADWorkbenchPage extends StatefulWidget {
     this.onOpenDocument,
     this.onSaveDocument,
     this.onSaveAsDocument,
+    this.onSaveDocumentWithResult,
     this.onCloseDocument,
     this.onQuitApplication,
     this.onConfirmDiscardChanges,
@@ -54,6 +55,7 @@ class CADWorkbenchPage extends StatefulWidget {
   final VoidCallback? onOpenDocument;
   final VoidCallback? onSaveDocument;
   final VoidCallback? onSaveAsDocument;
+  final WorkbenchDocumentSaveHandler? onSaveDocumentWithResult;
   final VoidCallback? onCloseDocument;
   final VoidCallback? onQuitApplication;
   final Future<bool> Function()? onConfirmDiscardChanges;
@@ -187,6 +189,27 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         name: _documentName,
       );
     }
+  }
+
+  Future<void> _saveDocumentWithHostResult({required bool saveAs}) async {
+    final handler = widget.onSaveDocumentWithResult;
+    if (handler == null) return;
+    final result = await handler(
+      WorkbenchDocumentSaveRequest(
+        source: _editorController.text,
+        saveAs: saveAs,
+        currentPath: _documentPath,
+        currentName: _documentName,
+      ),
+    );
+    if (!result.saved) return;
+    _documentPath = result.path ?? _documentPath;
+    _documentName = result.name ?? _documentName;
+    _documentSession.markSaved(
+      source: _editorController.text,
+      path: _documentPath,
+      name: _documentName,
+    );
   }
 
   WorkbenchVisualProfile get _workbenchProfile =>
@@ -851,9 +874,14 @@ objects:
         id: WorkbenchCommandId.saveDocument,
         menu: 'File',
         label: 'Save document',
-        enabled: widget.onSaveDocument != null || widget.fileService != null,
+        enabled:
+            widget.onSaveDocument != null ||
+            widget.onSaveDocumentWithResult != null ||
+            widget.fileService != null,
         onInvoke: () {
-          if (widget.onSaveDocument != null) {
+          if (widget.onSaveDocumentWithResult != null) {
+            unawaited(_saveDocumentWithHostResult(saveAs: false));
+          } else if (widget.onSaveDocument != null) {
             widget.onSaveDocument!.call();
           } else {
             unawaited(_saveDocumentToFileService(saveAs: false));
@@ -864,9 +892,14 @@ objects:
         id: WorkbenchCommandId.saveAsDocument,
         menu: 'File',
         label: 'Save document as…',
-        enabled: widget.onSaveAsDocument != null || widget.fileService != null,
+        enabled:
+            widget.onSaveAsDocument != null ||
+            widget.onSaveDocumentWithResult != null ||
+            widget.fileService != null,
         onInvoke: () {
-          if (widget.onSaveAsDocument != null) {
+          if (widget.onSaveDocumentWithResult != null) {
+            unawaited(_saveDocumentWithHostResult(saveAs: true));
+          } else if (widget.onSaveAsDocument != null) {
             widget.onSaveAsDocument!.call();
           } else {
             unawaited(_saveDocumentToFileService(saveAs: true));

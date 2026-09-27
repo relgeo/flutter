@@ -14,17 +14,46 @@ abstract interface class WorkbenchFileService {
   Future<bool> saveDocument(String source, {required bool saveAs});
 }
 
+/// Request passed to a host-owned asynchronous Save or Save As operation.
+class WorkbenchDocumentSaveRequest {
+  const WorkbenchDocumentSaveRequest({
+    required this.source,
+    required this.saveAs,
+    this.currentPath,
+    this.currentName,
+  });
+
+  final String source;
+  final bool saveAs;
+  final String? currentPath;
+  final String? currentName;
+}
+
+/// Result returned by a host-owned asynchronous Save operation.
+class WorkbenchDocumentSaveResult {
+  const WorkbenchDocumentSaveResult({
+    required this.saved,
+    this.path,
+    this.name,
+  });
+
+  final bool saved;
+  final String? path;
+  final String? name;
+}
+
+typedef WorkbenchDocumentSaveHandler =
+    Future<WorkbenchDocumentSaveResult> Function(
+      WorkbenchDocumentSaveRequest request,
+    );
+
 /// Source and identity returned by a file service that can track documents.
 ///
 /// Web hosts may not have a filesystem path, so [path] is intentionally
 /// nullable. [name] remains useful for a tab, window title, or suggested save
 /// filename in those hosts.
 class WorkbenchDocumentFile {
-  const WorkbenchDocumentFile({
-    required this.source,
-    this.path,
-    this.name,
-  });
+  const WorkbenchDocumentFile({required this.source, this.path, this.name});
 
   final String source;
   final String? path;

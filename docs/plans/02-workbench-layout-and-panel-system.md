@@ -307,8 +307,10 @@ ruang lingkup Tahap D.
   secara opsional; New/Close/Quit tetap callback aplikasi, sedangkan
   undo/redo editor kini aktif melalui history native `re_editor`, dan shortcut
   parity penuh masih tertunda. `WorkbenchDocumentSession` kini melacak dirty
-  state; jalur file service menandai sesi bersih setelah Save, sedangkan host
-  callback lama masih perlu API acknowledgement tersendiri.
+  state; jalur file service menandai sesi bersih setelah Save. Host juga dapat
+  memakai `onSaveDocumentWithResult` untuk mengembalikan acknowledgement typed
+  beserta identitas file; callback `VoidCallback` lama tetap tersedia sebagai
+  jalur kompatibilitas tetapi tidak dapat melaporkan hasil Save.
 
 ### Tahap G — Accessibility dan regression
 
@@ -340,8 +342,9 @@ ruang lingkup Tahap D.
   native window masih tertunda;
 - [~] lifecycle dokumen memiliki dirty-state dan guard konfirmasi untuk
   New/Open/Close/Quit; persistence identity dan file-service Save sudah
-  mengembalikan state bersih, tetapi callback Save legacy belum memiliki
-  acknowledgement sukses yang typed;
+  mengembalikan state bersih, dan host kini memiliki callback Save typed yang
+  dapat mengembalikan `saved`, path, serta name. Callback Save legacy tetap
+  didukung, tetapi sengaja tidak dapat memberi acknowledgement hasil;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
 - [x] panel dapat di-collapse, di-dock melalui command maupun drag-to-dock,
@@ -417,6 +420,8 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap F parsial — Document dirty lifecycle | Menambahkan `WorkbenchDocumentSession` untuk membedakan source tersimpan dan source aktif. New/Open/Close/Quit kini dapat meminta konfirmasi discard melalui callback async; file-service Save/Save As menandai sesi bersih dan host dapat mengamati perubahan dirty state. Callback Save legacy belum dapat meng-acknowledge keberhasilan secara typed. |
 | 2026-09-28 | Tahap G — Dirty lifecycle quality gate | Setelah dirty-state boundary dan guard lifecycle, `flutter analyze` lulus tanpa issue dan seluruh 219 test lulus. Callback Save legacy masih memerlukan acknowledgement typed sebelum lifecycle host dianggap penuh. |
 | 2026-09-28 | Tahap G — Dirty lifecycle web gate | `flutter build web --no-pub` berhasil setelah dirty-state boundary; hasil ini tidak menggantikan validasi lifecycle pada runtime native. |
+| 2026-09-28 | Tahap F — Typed host save acknowledgement | Menambahkan `WorkbenchDocumentSaveRequest`, `WorkbenchDocumentSaveResult`, dan `onSaveDocumentWithResult`. Host dapat melaporkan keberhasilan Save/Save As beserta path/name sehingga sesi ditandai bersih secara aman; callback `VoidCallback` legacy tetap dipertahankan untuk kompatibilitas. |
+| 2026-09-28 | Tahap G — Typed save quality gate | Setelah kontrak Save typed dan regression test Save/Save As, `flutter analyze` lulus tanpa issue, seluruh 220 test lulus, dan `flutter build web --no-pub` berhasil. Validasi native runtime lintas platform tetap tertunda. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
