@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
@@ -58,6 +59,59 @@ void main() {
     expect(find.text('Area'), findsOneWidget);
     expect(find.text('628.3 mm²'), findsOneWidget);
     expect(find.text('Perimeter'), findsOneWidget);
+  });
+
+  testWidgets('inspector object headers expose expansion semantics', (
+    WidgetTester tester,
+  ) async {
+    final semanticsHandle = tester.ensureSemantics();
+
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: {
+        'ellipse1': ResolvedEllipse(
+          id: 'ellipse1',
+          meta: Meta(role: 'final'),
+          cx: 50,
+          cy: 40,
+          rx: 20,
+          ry: 10,
+          rotation: 0,
+        ),
+      },
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 30, y: 30, width: 40, height: 20),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 420,
+            height: 720,
+            child: InspectorPanel(
+              scene: scene,
+              yamlError: null,
+              compilerError: null,
+              targetUnit: 'mm',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final object = tester.getSemantics(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics && widget.properties.label == 'Object ellipse1',
+      ),
+    );
+    expect(object.value, 'ELLIPSE');
+    expect(object.hint, 'Expand object details');
+    expect(object.getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+    semanticsHandle.dispose();
   });
 
   testWidgets('inspector BOM tab includes ellipse profile summary', (
