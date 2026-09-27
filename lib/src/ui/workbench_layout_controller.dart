@@ -97,15 +97,52 @@ class WorkbenchLayoutController extends ChangeNotifier {
     WorkbenchPanelId id, {
     required double dx,
     required double dy,
+    double? canvasWidth,
+    double? canvasHeight,
   }) {
     final current = _layout.floatingBounds[id] ?? panel(id).bounds;
+    final width = current.width ?? 320;
+    final height = current.height ?? 260;
+    final nextLeft = (current.left ?? 24) + dx;
+    final nextTop = (current.top ?? 24) + dy;
     setFloatingBounds(
       id,
       current.copyWith(
-        left: (current.left ?? 24) + dx,
-        top: (current.top ?? 24) + dy,
+        left: _clampPosition(nextLeft, canvasWidth, width),
+        top: _clampPosition(nextTop, canvasHeight, height),
       ),
     );
+  }
+
+  void resizeFloatingPanel(
+    WorkbenchPanelId id, {
+    required double dx,
+    required double dy,
+    double? canvasWidth,
+    double? canvasHeight,
+  }) {
+    final current = _layout.floatingBounds[id] ?? panel(id).bounds;
+    final minWidth = current.minWidth ?? 240;
+    final minHeight = current.minHeight ?? 160;
+    final maxWidth = _availableSize(
+      canvasWidth,
+      640,
+      origin: current.left ?? 24,
+      minimum: minWidth,
+    );
+    final maxHeight = _availableSize(
+      canvasHeight,
+      600,
+      origin: current.top ?? 24,
+      minimum: minHeight,
+    );
+    final width = ((current.width ?? 320) + dx)
+        .clamp(minWidth, maxWidth)
+        .toDouble();
+    final height = ((current.height ?? 260) + dy)
+        .clamp(minHeight, maxHeight)
+        .toDouble();
+    setFloatingBounds(id, current.copyWith(width: width, height: height));
   }
 
   void setSplitRatio(String region, double ratio) {
@@ -192,5 +229,27 @@ class WorkbenchLayoutController extends ChangeNotifier {
     if (next == _layout) return;
     _layout = next;
     notifyListeners();
+  }
+
+  double _clampPosition(double value, double? canvasSize, double panelSize) {
+    if (canvasSize == null || !canvasSize.isFinite || canvasSize <= 0) {
+      return value;
+    }
+    return value.clamp(
+      0.0,
+      (canvasSize - panelSize).clamp(0.0, double.infinity),
+    );
+  }
+
+  double _availableSize(
+    double? canvasSize,
+    double fallback, {
+    required double origin,
+    required double minimum,
+  }) {
+    if (canvasSize == null || !canvasSize.isFinite || canvasSize <= 0) {
+      return fallback;
+    }
+    return (canvasSize - origin).clamp(minimum, double.infinity).toDouble();
   }
 }

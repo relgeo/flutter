@@ -105,29 +105,108 @@ void main() {
     expect(controller.layout.activeProfileId, 'custom');
   });
 
-  test(
-    'floating panel movement updates persisted position',
-    () {
-      final controller = WorkbenchLayoutController();
-      controller.setPlacement(
-        WorkbenchPanelId.inspector,
-        WorkbenchPanelPlacement.floating,
-      );
-      controller.setFloatingBounds(
-        WorkbenchPanelId.inspector,
-        const WorkbenchPanelBounds(left: 32, top: 24, width: 320, height: 240),
-      );
+  test('floating panel movement updates persisted position', () {
+    final controller = WorkbenchLayoutController();
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.floating,
+    );
+    controller.setFloatingBounds(
+      WorkbenchPanelId.inspector,
+      const WorkbenchPanelBounds(left: 32, top: 24, width: 320, height: 240),
+    );
 
-      controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 16, dy: 12);
+    controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 16, dy: 12);
 
-      expect(
-        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
-        48,
-      );
-      expect(
-        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.top,
-        36,
-      );
-    },
-  );
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
+      48,
+    );
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.top,
+      36,
+    );
+  });
+
+  test('floating movement and resize respect canvas bounds', () {
+    final controller = WorkbenchLayoutController();
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.floating,
+    );
+    controller.setFloatingBounds(
+      WorkbenchPanelId.inspector,
+      const WorkbenchPanelBounds(
+        left: 40,
+        top: 40,
+        width: 320,
+        height: 240,
+        minWidth: 240,
+        minHeight: 160,
+      ),
+    );
+
+    controller.moveFloatingPanel(
+      WorkbenchPanelId.inspector,
+      dx: 1000,
+      dy: 1000,
+      canvasWidth: 800,
+      canvasHeight: 600,
+    );
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
+      480,
+    );
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.top,
+      360,
+    );
+
+    controller.resizeFloatingPanel(
+      WorkbenchPanelId.inspector,
+      dx: 1000,
+      dy: 1000,
+      canvasWidth: 800,
+      canvasHeight: 600,
+    );
+    final bounds =
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!;
+    expect(bounds.width, 320);
+    expect(bounds.height, 240);
+
+    controller.setFloatingBounds(
+      WorkbenchPanelId.inspector,
+      const WorkbenchPanelBounds(
+        left: 40,
+        top: 40,
+        width: 320,
+        height: 240,
+        minWidth: 240,
+        minHeight: 160,
+      ),
+    );
+    controller.resizeFloatingPanel(
+      WorkbenchPanelId.inspector,
+      dx: 1000,
+      dy: 1000,
+      canvasWidth: 800,
+      canvasHeight: 600,
+    );
+    final expanded =
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!;
+    expect(expanded.width, 760);
+    expect(expanded.height, 560);
+
+    controller.resizeFloatingPanel(
+      WorkbenchPanelId.inspector,
+      dx: -1000,
+      dy: -1000,
+      canvasWidth: 800,
+      canvasHeight: 600,
+    );
+    final minimum =
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!;
+    expect(minimum.width, 240);
+    expect(minimum.height, 160);
+  });
 }

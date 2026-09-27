@@ -249,13 +249,33 @@ class WorkbenchCompositionShell extends StatelessWidget {
           id,
           dx: details.delta.dx,
           dy: details.delta.dy,
+          canvasWidth: canvasWidth,
+          canvasHeight: canvasHeight,
         ),
         child: Material(
           elevation: state.placement == WorkbenchPanelPlacement.overlay ? 8 : 4,
           clipBehavior: Clip.antiAlias,
-          child: Semantics(
-            label: '${id.name} ${state.placement.name} panel',
-            child: _panelWidget(id),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Semantics(
+                label: '${id.name} ${state.placement.name} panel',
+                child: _panelWidget(id),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: _FloatingPanelResizeHandle(
+                  onDrag: (delta) => controller.resizeFloatingPanel(
+                    id,
+                    dx: delta.dx,
+                    dy: delta.dy,
+                    canvasWidth: canvasWidth,
+                    canvasHeight: canvasHeight,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -323,6 +343,39 @@ class WorkbenchCompositionShell extends StatelessWidget {
       _isCompact(width) && width < WorkbenchWindowPolicy.minimumWindowSize.width
       ? WorkbenchWindowPolicy.minimumWindowSize.width
       : width;
+}
+
+class _FloatingPanelResizeHandle extends StatelessWidget {
+  const _FloatingPanelResizeHandle({required this.onDrag});
+
+  final ValueChanged<Offset> onDrag;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeDownRight,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: (details) => onDrag(details.delta),
+        child: Semantics(
+          label: 'Resize floating workbench panel',
+          slider: true,
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Icon(
+                Icons.drag_handle,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _WorkbenchPanelDivider extends StatelessWidget {

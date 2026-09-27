@@ -194,7 +194,10 @@ void main() {
       ),
     );
 
-    expect(find.byType(Positioned), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Resize floating workbench panel'),
+      findsOneWidget,
+    );
     expect(find.text('inspector'), findsOneWidget);
     controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 20, dy: 10);
     await tester.pump();

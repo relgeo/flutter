@@ -254,13 +254,13 @@ ruang lingkup Tahap D.
 
 ### Tahap D — Floating, overlay, dan docking
 
-- [x] dukung panel floating dengan bounds terkontrol dan posisi yang dapat
-  dipindahkan;
+- [x] dukung panel floating dengan bounds terkontrol, posisi yang dapat
+  dipindahkan, dan resize handle dengan batas ukuran;
 - [~] dukung overlay panel dengan z-order yang jelas; dismiss behavior dan
   focus policy masih tertunda;
 - [ ] dukung dock kembali ke region asal atau region pilihan;
-- [~] cegah panel keluar sepenuhnya dari batas window pada tahap rendering;
-  clamp posisi tersimpan dan resize handle masih tertunda.
+- [x] cegah panel keluar sepenuhnya dari batas canvas saat drag/resize dan
+  pertahankan batas ukuran minimum/maksimum;
 
 ### Tahap E — Profiles dan autosave
 
@@ -349,4 +349,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap E parsial — Profiles dan autosave | Menambahkan preset layout immutable (`Standard`, `Writing`, `Preview`, `Inspect`, `Minimal`) serta persistence JSON versioned dengan debounce 400 ms, flush, dan fallback corruption ke Standard. `CADWorkbenchPage` memulihkan layout dan menjadwalkan autosave; native restart proof masih tertunda. |
 | 2026-09-27 | Tahap B/C selesai — Resizing dan Parameters | Menambahkan vertical splitter untuk Parameters dengan min/max height, serta mempertahankan ukuran panel saat availability Parameters berubah. Seluruh panel utama kini memiliki jalur resize yang dapat diuji pada controller/shell. |
 | 2026-09-27 | Tahap E/F parsial — Profile commands | Menu `Workbench` menyediakan preset layout dan menu `View` menyediakan reset layout serta toggle Parameters yang disabled ketika dokumen tidak memiliki parameter. Edit manual mengubah active profile menjadi `Custom`. |
-| 2026-09-27 | Tahap D parsial — Floating/overlay foundation | Menambahkan `left`/`top` pada bounds, layer `Stack`, renderer `Positioned` yang menjaga panel tetap terlihat, pembedaan elevation untuk floating/overlay, semantics label, dan drag gesture yang tersimpan melalui controller. Docking ulang, resize handle, clamp pada state tersimpan, serta dismiss/focus policy overlay masih tertunda. |
+| 2026-09-27 | Tahap D parsial — Floating/overlay foundation | Menambahkan `left`/`top` pada bounds, layer `Stack`, renderer `Positioned`, pembedaan elevation untuk floating/overlay, semantics label, drag gesture, serta resize handle dengan clamp canvas dan batas ukuran. Docking ulang dan dismiss/focus policy overlay masih tertunda. |
