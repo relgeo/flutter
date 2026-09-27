@@ -65,7 +65,8 @@ hanya hidup di tombol toolbar.
 Struktur menu awal:
 
 ```text
-File        New, Open, Save, Save As, Recent, Export SVG, Close, Quit
+File        New, Open, Save, Save As, Recent, Export, Close, Quit
+            Export > SVG > Model / Sheet View
 Edit        Undo, Redo, Cut, Copy, Paste, Select All, Find
 View        Workbench Profile, Panels, Reset Layout, Full Screen
 Appearance  App Theme, Canvas Appearance
@@ -77,6 +78,11 @@ Setiap command memiliki enabled/disabled state, label, shortcut, dan optional
 checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
 `Parameters` disabled atau tidak ditawarkan ketika dokumen tidak memiliki
 parameter, dan panel visible ditandai checkmark pada menu `View`.
+
+SVG adalah format export, bukan aksi khusus milik Preview. Toolbar Preview tidak
+menampilkan tombol `SVG MODEL`; exporter dan filesystem boundary tetap menjadi
+service/command backend yang dapat dipanggil dari `File → Export → SVG`.
+Target export mengikuti konteks aktif, yaitu model atau sheet/view.
 
 ## 3. Target capability
 
@@ -252,6 +258,8 @@ preference, misalnya `workbench.layout.v1`.
 
 - [ ] definisikan command ID, label, shortcut, enabled state, dan checked state;
 - [ ] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`, dan `Help`;
+- [ ] tempatkan SVG di `File → Export → SVG → Model / Sheet View`, bukan sebagai
+  tombol khusus pada Preview;
 - [ ] hubungkan menu dengan document, layout, theme, canvas, dan native services;
 - [ ] pastikan toolbar dan keyboard shortcut memakai command yang sama;
 - [ ] dukung checkmark untuk panel dan appearance yang aktif;
@@ -283,6 +291,7 @@ preference, misalnya `workbench.layout.v1`.
 - [ ] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command yang sama;
 - [ ] command disabled tidak dapat dijalankan melalui shortcut maupun menu;
 - [ ] state checkmark menu selalu mengikuti state layout/theme aktual.
+- [ ] tidak ada aksi `SVG MODEL` khusus pada toolbar Preview;
 
 ## 9. Risiko dan keputusan yang ditunda
 
@@ -302,3 +311,9 @@ preference, misalnya `workbench.layout.v1`.
 Sub-plan ini selesai jika pengguna dapat menyusun empat panel sesuai workflow,
 menyimpan susunan itu melalui autosave, memulihkannya setelah restart, dan
 berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas.
+
+## 11. Decision log
+
+| Tanggal | Keputusan |
+| --- | --- |
+| 2026-09-27 | Tombol khusus `Download SVG Model` tidak menjadi bagian dari Preview. SVG diposisikan sebagai salah satu format pada command `File → Export`, dengan target Model atau Sheet/View. |
