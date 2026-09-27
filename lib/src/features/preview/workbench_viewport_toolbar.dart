@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../ui/workbench_dropdown_field.dart';
+import '../../ui/workbench_commands.dart';
 import '../../ui/workbench_icon_button.dart';
 import '../../ui/workbench_preferences.dart';
 import '../../ui/workbench_visual_profile.dart';
@@ -9,6 +10,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   const WorkbenchViewportToolbar({
     super.key,
     required this.visualProfile,
+    required this.commandRegistry,
     required this.zoomLevel,
     required this.targetUnitLabel,
     required this.previewRouteLabel,
@@ -22,7 +24,6 @@ class WorkbenchViewportToolbar extends StatelessWidget {
     required this.sheetIds,
     required this.selectedSheetId,
     required this.onSheetChanged,
-    required this.onResetWorkbenchPreferences,
     required this.onZoomIn,
     required this.onZoomOut,
     required this.onFitViewport,
@@ -30,11 +31,12 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   });
 
   final WorkbenchVisualProfile visualProfile;
+  final WorkbenchCommandRegistry commandRegistry;
   final double zoomLevel;
   final String targetUnitLabel;
   final String previewRouteLabel;
   final String workbenchProfileId;
-  final RelGeoThemePreference themePreference;
+  final RelGeoThemePreference? themePreference;
   final ValueChanged<String>? onWorkbenchProfileChanged;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final List<String> documentProfileNames;
@@ -43,7 +45,6 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   final List<String> sheetIds;
   final String? selectedSheetId;
   final ValueChanged<String?> onSheetChanged;
-  final VoidCallback onResetWorkbenchPreferences;
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
   final VoidCallback onFitViewport;
@@ -130,10 +131,17 @@ class WorkbenchViewportToolbar extends StatelessWidget {
           WorkbenchDropdownField<RelGeoThemePreference>(
             semanticsKey: const Key('theme-mode-semantics'),
             buttonKey: const Key('theme-mode-selector'),
-            value: themePreference,
+            value:
+                themePreference ??
+                (Theme.of(context).brightness == Brightness.dark
+                    ? RelGeoThemePreference.dark
+                    : RelGeoThemePreference.light),
             semanticsLabel: 'Theme mode',
-            semanticsValue: themePreference.label,
-            semanticsHint: 'Choose System, Light, or Dark',
+            semanticsValue: themePreference == null
+                ? '${Theme.of(context).brightness == Brightness.dark ? 'Dark' : 'Light'} (System)'
+                : themePreference!.label,
+            semanticsHint:
+                'Choose Light or Dark. Reset to system appearance when an override is active.',
             backgroundColor: visualProfile.overlayBackgroundColor,
             borderColor: visualProfile.borderColor,
             mutedColor: visualProfile.mutedColor,
@@ -141,7 +149,13 @@ class WorkbenchViewportToolbar extends StatelessWidget {
             icon: Icons.brightness_6,
             iconSize: 15,
             onChanged: (value) {
-              if (value != null) onThemePreferenceChanged?.call(value);
+              if (value == RelGeoThemePreference.light) {
+                commandRegistry.find(WorkbenchCommandId.lightTheme)?.invoke();
+              } else if (value == RelGeoThemePreference.dark) {
+                commandRegistry.find(WorkbenchCommandId.darkTheme)?.invoke();
+              } else if (value != null) {
+                onThemePreferenceChanged?.call(value);
+              }
             },
             items: RelGeoThemePreference.values
                 .map(
@@ -153,6 +167,16 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                 )
                 .toList(),
           ),
+          if (themePreference != null)
+            IconButton(
+              key: const Key('theme-mode-reset'),
+              tooltip: 'Follow system appearance',
+              icon: const Icon(Icons.settings_backup_restore, size: 15),
+              color: visualProfile.mutedColor,
+              onPressed: commandRegistry
+                  .find(WorkbenchCommandId.followSystemTheme)
+                  ?.invoke,
+            ),
           if (documentProfileNames.isNotEmpty)
             WorkbenchDropdownField<String?>(
               value: activeProfile,
@@ -221,19 +245,35 @@ class WorkbenchViewportToolbar extends StatelessWidget {
           WorkbenchIconButton(
             Icons.restart_alt,
             'Reset Workbench Preferences',
-            onResetWorkbenchPreferences,
+            commandRegistry.find(WorkbenchCommandId.resetPreferences)?.invoke ??
+                () {},
             color: visualProfile.mutedColor,
             buttonKey: const Key('reset-workbench-preferences'),
           ),
-          WorkbenchIconButton(Icons.zoom_in, 'Perbesar', onZoomIn),
-          WorkbenchIconButton(Icons.zoom_out, 'Perkecil', onZoomOut),
+          WorkbenchIconButton(
+            Icons.zoom_in,
+            'Perbesar',
+            commandRegistry.find(WorkbenchCommandId.zoomIn)?.invoke ?? onZoomIn,
+          ),
+          WorkbenchIconButton(
+            Icons.zoom_out,
+            'Perkecil',
+            commandRegistry.find(WorkbenchCommandId.zoomOut)?.invoke ??
+                onZoomOut,
+          ),
           WorkbenchIconButton(
             Icons.center_focus_strong,
             'Fit',
-            onFitViewport,
+            commandRegistry.find(WorkbenchCommandId.fitViewport)?.invoke ??
+                onFitViewport,
             color: const Color(0xFF00FFCC),
           ),
-          WorkbenchIconButton(Icons.refresh, 'Reset', onResetViewport),
+          WorkbenchIconButton(
+            Icons.refresh,
+            'Reset',
+            commandRegistry.find(WorkbenchCommandId.resetViewport)?.invoke ??
+                onResetViewport,
+          ),
         ],
       ),
     );

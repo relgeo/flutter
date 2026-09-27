@@ -9,6 +9,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
   const WorkbenchCompositionShell({
     super.key,
     required this.navbar,
+    this.menuBar,
     required this.editor,
     required this.viewport,
     required this.inspector,
@@ -18,6 +19,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
   });
 
   final Widget navbar;
+  final Widget? menuBar;
   final Widget editor;
   final Widget viewport;
   final Widget inspector;
@@ -30,6 +32,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
+          ?menuBar,
           navbar,
           Expanded(
             child: LayoutBuilder(

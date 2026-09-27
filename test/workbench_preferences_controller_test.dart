@@ -10,7 +10,7 @@ void main() {
     );
 
     final loaded = await controller.load();
-    expect(loaded?.themePreference, RelGeoThemePreference.system);
+    expect(loaded?.themePreference, isNull);
     expect(loaded?.workbenchProfileId, 'cad');
   });
 

@@ -59,7 +59,9 @@ void main() {
           brightness;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const RelGeoCADApp(initialDsl: _goldenDsl));
+      await tester.pumpWidget(
+        const RelGeoCADApp(initialDsl: _goldenDsl, showInWindowMenu: true),
+      );
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);

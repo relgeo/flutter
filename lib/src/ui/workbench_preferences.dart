@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum RelGeoThemePreference {
-  system('system', 'System'),
   light('light', 'Light'),
   dark('dark', 'Dark');
 
@@ -13,8 +12,6 @@ enum RelGeoThemePreference {
 
   ThemeMode get themeMode {
     switch (this) {
-      case RelGeoThemePreference.system:
-        return ThemeMode.system;
       case RelGeoThemePreference.light:
         return ThemeMode.light;
       case RelGeoThemePreference.dark:
@@ -22,16 +19,19 @@ enum RelGeoThemePreference {
     }
   }
 
-  static RelGeoThemePreference fromStorage(String? value) {
+  static RelGeoThemePreference? fromStorage(String? value) {
     for (final preference in values) {
       if (preference.storageValue == value) return preference;
     }
-    return system;
+    // `system` was the old persisted value. Treat it as no override so an
+    // existing installation continues to follow the OS without exposing a
+    // third choice in the user-facing control.
+    return null;
   }
 }
 
 class WorkbenchPreferencesData {
-  final RelGeoThemePreference themePreference;
+  final RelGeoThemePreference? themePreference;
   final String workbenchProfileId;
   final bool followProfileOverlay;
   final bool followProfileRoleFilter;
@@ -53,6 +53,7 @@ class WorkbenchPreferencesData {
 
   WorkbenchPreferencesData copyWith({
     RelGeoThemePreference? themePreference,
+    bool clearThemePreference = false,
     String? workbenchProfileId,
     bool? followProfileOverlay,
     bool? followProfileRoleFilter,
@@ -62,7 +63,9 @@ class WorkbenchPreferencesData {
     Set<String>? hiddenRoles,
   }) {
     return WorkbenchPreferencesData(
-      themePreference: themePreference ?? this.themePreference,
+      themePreference: clearThemePreference
+          ? null
+          : themePreference ?? this.themePreference,
       workbenchProfileId: workbenchProfileId ?? this.workbenchProfileId,
       followProfileOverlay: followProfileOverlay ?? this.followProfileOverlay,
       followProfileRoleFilter:
@@ -75,7 +78,7 @@ class WorkbenchPreferencesData {
   }
 
   static const defaults = WorkbenchPreferencesData(
-    themePreference: RelGeoThemePreference.system,
+    themePreference: null,
     workbenchProfileId: 'cad',
     followProfileOverlay: true,
     followProfileRoleFilter: true,
@@ -148,10 +151,14 @@ class WorkbenchPreferencesStore {
   static Future<void> save(WorkbenchPreferencesData data) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _themePreferenceKey,
-        data.themePreference.storageValue,
-      );
+      if (data.themePreference == null) {
+        await prefs.remove(_themePreferenceKey);
+      } else {
+        await prefs.setString(
+          _themePreferenceKey,
+          data.themePreference!.storageValue,
+        );
+      }
       await prefs.setString(_profileIdKey, data.workbenchProfileId);
       await prefs.setBool(_followOverlayKey, data.followProfileOverlay);
       await prefs.setBool(_followRoleFilterKey, data.followProfileRoleFilter);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 import 'workbench_preferences.dart';
@@ -12,22 +13,29 @@ import 'workbench_document_controller.dart';
 import 'workbench_editor_controller.dart';
 import '../features/workbench_feature_surfaces.dart';
 import 'workbench_navbar.dart';
+import 'workbench_commands.dart';
+import 'workbench_menu_bar.dart';
+import 'workbench_platform_menu_bar.dart';
 import 'workbench_viewport_controller.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
     super.key,
     this.initialDsl,
-    this.themePreference = RelGeoThemePreference.system,
+    this.themePreference,
+    this.showInWindowMenu,
     this.onThemePreferenceChanged,
+    this.onResetThemePreference,
     this.workbenchProfileId = 'cad',
     this.onWorkbenchProfileChanged,
     this.onResetWorkbenchPreferences,
   });
 
   final String? initialDsl;
-  final RelGeoThemePreference themePreference;
+  final RelGeoThemePreference? themePreference;
+  final bool? showInWindowMenu;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
+  final VoidCallback? onResetThemePreference;
   final String workbenchProfileId;
   final ValueChanged<String>? onWorkbenchProfileChanged;
   final Future<void> Function()? onResetWorkbenchPreferences;
@@ -588,9 +596,15 @@ objects:
   @override
   Widget build(BuildContext context) {
     final hasError = _yamlError != null || _compilerError != null;
+    final commandRegistry = _buildCommandRegistry();
 
-    return WorkbenchCompositionShell(
-      navbar: _buildNavbar(hasError),
+    final shell = WorkbenchCompositionShell(
+      menuBar: WorkbenchPlatformMenuBar.usesNativeMenu
+          ? (widget.showInWindowMenu == true
+                ? WorkbenchMenuBar(registry: commandRegistry)
+                : null)
+          : WorkbenchMenuBar(registry: commandRegistry),
+      navbar: _buildNavbar(hasError, commandRegistry),
       editor: WorkbenchEditorFeature(
         contract: WorkbenchEditorContract(
           controller: _editorController.editingController,
@@ -608,7 +622,7 @@ objects:
           visualProfile: _workbenchProfile,
         ),
       ),
-      viewport: _buildViewportPanel(),
+      viewport: _buildViewportPanel(commandRegistry),
       inspector: WorkbenchInspectorFeature(
         contract: WorkbenchInspectorContract(
           scene: _scene,
@@ -620,23 +634,95 @@ objects:
         ),
       ),
     );
+
+    return WorkbenchPlatformMenuBar(registry: commandRegistry, child: shell);
+  }
+
+  WorkbenchCommandRegistry _buildCommandRegistry() {
+    return WorkbenchCommandRegistry([
+      WorkbenchCommand(
+        id: WorkbenchCommandId.exportSvg,
+        menu: 'File',
+        label: _exportButtonLabel,
+        enabled: _scene != null,
+        onInvoke: _exportSVG,
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyE, control: true),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.zoomIn,
+        menu: 'View',
+        label: 'Zoom in',
+        onInvoke: _zoomIn,
+        shortcut: const SingleActivator(LogicalKeyboardKey.add, control: true),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.zoomOut,
+        menu: 'View',
+        label: 'Zoom out',
+        onInvoke: _zoomOut,
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.minus,
+          control: true,
+        ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.fitViewport,
+        menu: 'View',
+        label: 'Fit viewport',
+        onInvoke: _fitViewport,
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.resetViewport,
+        menu: 'View',
+        label: 'Reset viewport',
+        onInvoke: _resetViewport,
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.lightTheme,
+        menu: 'Appearance',
+        label: 'Light',
+        onInvoke: () =>
+            widget.onThemePreferenceChanged?.call(RelGeoThemePreference.light),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.darkTheme,
+        menu: 'Appearance',
+        label: 'Dark',
+        onInvoke: () =>
+            widget.onThemePreferenceChanged?.call(RelGeoThemePreference.dark),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.followSystemTheme,
+        menu: 'Appearance',
+        label: 'Follow system appearance',
+        enabled: widget.onResetThemePreference != null,
+        onInvoke: () => widget.onResetThemePreference?.call(),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.resetPreferences,
+        menu: 'Workbench',
+        label: 'Reset workbench preferences',
+        onInvoke: _resetWorkbenchPreferences,
+      ),
+    ]);
   }
 
   // ── Navbar ─────────────────────────────────────
 
-  Widget _buildNavbar(bool hasError) {
+  Widget _buildNavbar(bool hasError, WorkbenchCommandRegistry commandRegistry) {
     return WorkbenchNavbar(
       hasError: hasError,
       exportButtonLabel: _exportButtonLabel,
       onExport: _exportSVG,
+      commandRegistry: commandRegistry,
     );
   }
 
   // ── Viewport Panel (tengah) ─────────────────
 
-  Widget _buildViewportPanel() {
+  Widget _buildViewportPanel(WorkbenchCommandRegistry commandRegistry) {
     return WorkbenchPreviewFeature(
-      toolbar: _buildViewportToolbar(),
+      toolbar: _buildViewportToolbar(commandRegistry),
       overlayToolbar: _buildOverlayToolbar(),
       panel: WorkbenchViewportPanel(
         visualProfile: _workbenchProfile,
@@ -660,9 +746,10 @@ objects:
     );
   }
 
-  Widget _buildViewportToolbar() {
+  Widget _buildViewportToolbar(WorkbenchCommandRegistry commandRegistry) {
     return WorkbenchViewportToolbar(
       visualProfile: _workbenchProfile,
+      commandRegistry: commandRegistry,
       zoomLevel: _viewportController.zoomLevel,
       targetUnitLabel: _targetUnit.name.toUpperCase(),
       previewRouteLabel: _activePreviewRouteLabel,
@@ -683,7 +770,6 @@ objects:
           if (mounted) _fitViewport();
         });
       },
-      onResetWorkbenchPreferences: _resetWorkbenchPreferences,
       onZoomIn: _zoomIn,
       onZoomOut: _zoomOut,
       onFitViewport: _fitViewport,

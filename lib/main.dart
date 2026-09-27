@@ -13,15 +13,22 @@ void main() {
   runApp(
     RelGeoCADApp(
       windowHost: kIsWeb ? null : const MethodChannelWorkbenchWindowHost(),
+      showInWindowMenu: kIsWeb || defaultTargetPlatform != TargetPlatform.macOS,
     ),
   );
 }
 
 class RelGeoCADApp extends StatefulWidget {
-  const RelGeoCADApp({super.key, this.initialDsl, this.windowHost});
+  const RelGeoCADApp({
+    super.key,
+    this.initialDsl,
+    this.windowHost,
+    this.showInWindowMenu,
+  });
 
   final String? initialDsl;
   final WorkbenchWindowHost? windowHost;
+  final bool? showInWindowMenu;
 
   @override
   State<RelGeoCADApp> createState() => _RelGeoCADAppState();
@@ -30,7 +37,7 @@ class RelGeoCADApp extends StatefulWidget {
 class _RelGeoCADAppState extends State<RelGeoCADApp> {
   final WorkbenchPreferencesController _preferencesController =
       WorkbenchPreferencesController();
-  RelGeoThemePreference _themePreference =
+  RelGeoThemePreference? _themePreference =
       WorkbenchPreferencesData.defaults.themePreference;
   String _workbenchProfileId = WorkbenchVisualProfile.cad.id;
 
@@ -76,6 +83,16 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
     );
   }
 
+  Future<void> _resetThemePreference() async {
+    await _preferencesController.update(
+      (current) => current.copyWith(clearThemePreference: true),
+    );
+    if (!mounted) return;
+    setState(() {
+      _themePreference = null;
+    });
+  }
+
   Future<void> _resetWorkbenchPreferences() async {
     await _preferencesController.clear();
     if (!mounted) return;
@@ -93,9 +110,10 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
       debugShowCheckedModeBanner: false,
       theme: buildRelGeoLightTheme(),
       darkTheme: buildRelGeoDarkTheme(),
-      themeMode: _themePreference.themeMode,
+      themeMode: _themePreference?.themeMode ?? ThemeMode.system,
       home: CADWorkbenchPage(
         initialDsl: widget.initialDsl,
+        showInWindowMenu: widget.showInWindowMenu,
         themePreference: _themePreference,
         onThemePreferenceChanged: (value) {
           setState(() {
@@ -103,6 +121,7 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
           });
           _persistThemePreference(value);
         },
+        onResetThemePreference: _resetThemePreference,
         workbenchProfileId: _workbenchProfileId,
         onWorkbenchProfileChanged: (value) {
           setState(() {

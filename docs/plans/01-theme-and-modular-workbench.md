@@ -1,12 +1,12 @@
 # Sub-Rencana 01 — Modular Workbench dan Theme System
 
-**Status:** Tahap A selesai sebagian dan perlu koreksi kontrak UX; Tahap B selesai sebagian; Tahap C berjalan sebagian; Tahap D berjalan sebagian; Tahap E berjalan sebagian
+**Status:** Tahap A selesai; Tahap B selesai untuk shell deterministik; Tahap C berjalan sebagian; Tahap D berjalan sebagian; Tahap E berjalan sebagian
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x  
 **Target utama:** macOS, Ubuntu/Linux, dan Windows 11
 
-> **Status snapshot — 2026-09-27:** Shell presentasional (navbar, toolbar, overlay, viewport panel), feature surface preview/editor/inspector, controller viewport, controller overlay, boundary hasil kompilasi dokumen, boundary editor, document settings parser, composition shell, orchestration persistence aplikasi/workbench, boundary ekspor SVG native, kontrak ukuran/window host, dan fallback compact layout sudah dipisahkan/didefinisikan. Gate kode yang sudah memiliki evidence: `flutter analyze` lulus, `flutter test` lulus (**176 test**), golden light/dark lulus, `flutter build web --debug --no-wasm-dry-run` lulus, smoke test `flutter run -d macos --debug` berhasil tanpa overflow warning, dan direct `xcodebuild` melalui `macos/Runner.xcworkspace` berhasil membangun app macOS Release universal (`arm64`/`x86_64`) setelah bridge native terbaru. Wrapper `flutter build macos` pada host ini masih gagal di discovery destination `macOS, arch=arm64` sebelum kompilasi source; fresh macOS CI tetap diperlukan sebagai evidence lintas-host. Implementasi/build Linux dan Windows, packaging lintas-host, serta validasi runtime aksesibilitas masih terbuka.
+> **Status snapshot — 2026-09-27:** Shell presentasional (menu bar, navbar, toolbar, overlay, viewport panel), feature surface preview/editor/inspector, controller viewport, controller overlay, boundary hasil kompilasi dokumen, boundary editor, document settings parser, composition shell, orchestration persistence aplikasi/workbench, boundary ekspor SVG native, kontrak ukuran/window host, dan fallback compact layout sudah dipisahkan/didefinisikan. Gate kode yang sudah memiliki evidence: `flutter analyze` lulus, `flutter test` lulus (**178 test**), golden light/dark lulus, `flutter build web --debug --no-wasm-dry-run` lulus, smoke test `flutter run -d macos --debug` sebelumnya berhasil tanpa overflow warning, dan direct `xcodebuild` melalui `macos/Runner.xcworkspace` berhasil membangun app macOS Debug arm64 serta Release universal (`arm64`/`x86_64`) setelah bridge native dan platform-menu adapter terbaru. Wrapper `flutter build macos` pada host ini masih gagal di discovery destination `macOS, arch=arm64` sebelum kompilasi source; fresh macOS CI tetap diperlukan sebagai evidence lintas-host. Registry command sudah dipakai oleh menu, toolbar action, dan adapter `PlatformMenuBar` macOS pada level source. Implementasi/build Linux dan Windows, packaging lintas-host, verifikasi event/shortcut menu native macOS, serta validasi runtime aksesibilitas masih terbuka.
 
 ## 1. Tujuan
 
@@ -33,9 +33,10 @@ Baseline saat ini sudah memiliki beberapa pemisahan yang berguna:
 
 Tahap A sebelumnya membuat `main.dart` memasok `theme`, `darkTheme`, dan
 `themeMode`, dengan preference tiga nilai `system`, `light`, dan `dark`.
-Kontrak UX kini dikoreksi: `system` hanya menjadi keadaan internal ketika belum
-ada override, bukan pilihan ketiga pada kontrol utama. Implementasi preference
-dan selector yang ada harus diselaraskan dengan kontrak dua-state tersebut.
+Kontrak UX kini dikoreksi: preference publik hanya menyimpan override `light`
+atau `dark`; `null` berarti belum pernah memilih dan `system` hanya menjadi
+keadaan internal, bukan pilihan ketiga pada kontrol utama. Implementasi
+preference dan selector sudah diselaraskan dengan kontrak dua-state tersebut.
 Sisa boundary yang masih perlu diperjelas:
 
 - `WorkbenchVisualProfile` masih menjadi composition object untuk Material theme, `canvasAppearance`, dan `behavior`, sehingga builder Material masih perlu dipisahkan lebih lanjut;
@@ -260,14 +261,19 @@ flowchart LR
 
 ### Tahap menu/chrome
 
-- [ ] ekstrak `WorkbenchCommandRegistry` dan command metadata dari callback
+- [x] ekstrak `WorkbenchCommandRegistry` dan command metadata dari callback
   page/toolbar yang tersebar;
-- [ ] buat menu model untuk File, Edit, View, Appearance, Workbench, dan Help;
-- [ ] render menu Flutter di workbench pada Windows/Linux dengan dukungan
+- [x] buat menu model untuk File, View, Appearance, dan Workbench yang sudah
+  memiliki command nyata;
+- [x] render menu Flutter di workbench pada Windows/Linux dengan dukungan
   keyboard traversal dan shortcut;
-- [ ] hubungkan toolbar ke command registry;
-- [ ] tambahkan adapter `PlatformMenuBar` macOS dan uji enablement/shortcut;
-- [ ] dokumentasikan bahwa custom title bar bukan bagian dari fase awal;
+- [x] hubungkan action toolbar dan kontrol theme ke command registry; selector
+  state seperti profile, surface, dan unit tetap memakai callback state karena
+  bukan command action;
+- [~] tambahkan adapter `PlatformMenuBar` macOS dan mapping enablement/shortcut;
+  adapter source sudah ada dan memakai registry yang sama, tetapi event menu
+  native serta shortcut perlu diuji pada runtime macOS nyata/CI;
+- [x] dokumentasikan bahwa custom title bar bukan bagian dari fase awal;
 - [ ] buat keputusan baru hanya jika kebutuhan custom chrome muncul setelah
   menu, panel, dan shortcut stabil.
 
@@ -279,22 +285,21 @@ tidak mengalami regresi.
 
 ### Tahap A — Theme foundation
 
-- [ ] ganti model preference tiga nilai menjadi nullable override `light`/`dark`;
+- [x] ganti model preference tiga nilai menjadi nullable override `light`/`dark`;
 - [x] tambahkan `theme`, `darkTheme`, dan `themeMode` pada app root;
-- [~] persist dan load theme preference; mekanisme persistence sudah ada, tetapi
-  semantik key yang tidak ada harus berarti mengikuti system;
-- [ ] ubah Settings/View control menjadi toggle Light/Dark tanpa opsi System;
-- [ ] sediakan aksi sekunder untuk menghapus override dan kembali mengikuti system;
-- [ ] test initial system default, explicit override, reset, dan perubahan OS.
+- [x] persist dan load theme preference; key yang tidak ada atau nilai legacy
+  `system` berarti mengikuti system;
+- [x] ubah Settings/View control menjadi toggle Light/Dark tanpa opsi System;
+- [x] sediakan aksi sekunder untuk menghapus override dan kembali mengikuti system;
+- [x] test initial system default, explicit override, reset, dan perubahan OS.
 
-**Status:** fondasi teknis tersedia, tetapi kontrak UX belum selesai. Implementasi
-`RelGeoThemePreference` saat ini masih menyimpan `system`, `light`, atau `dark`
-sebagai tiga nilai dan selector masih memodelkan pilihan tersebut. Ini harus
-diubah menjadi override nullable dua-state; `ThemeMode.system` tetap dipakai
-secara internal ketika override belum ada.
+**Status:** selesai untuk kontrak lokal. `RelGeoThemePreference` hanya menyimpan
+override `light` atau `dark`; `null` berarti belum pernah memilih dan root memakai
+`ThemeMode.system`. Selector utama hanya menampilkan Light/Dark dan reset system
+tersedia sebagai aksi sekunder.
 
-**Exit gate:** belum terpenuhi sampai toggle dua-state, reset override, dan test
-system-aware default memiliki evidence.
+**Exit gate:** terpenuhi untuk implementasi dan test lokal; verifikasi perubahan
+brightness pada runtime desktop nyata tetap termasuk evidence lintas perangkat.
 
 ### Tahap B — Visual token migration
 
@@ -370,8 +375,11 @@ digantikan oleh golden.
   minimum `1024×640` juga ditetapkan pada macOS, Linux, dan Windows runner,
   dan host Dart kini memiliki `MethodChannel` bridge dengan handler macOS dan
   Windows dan Linux; build/runtime verification tiap host masih terbuka;
-- [ ] isolasi kode macOS/Linux/Windows;
-- [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
+- [~] isolasi kode macOS/Linux/Windows; bridge native masing-masing runner
+  sudah memiliki boundary channel tersendiri, tetapi pengujian build dan
+  runtime per host belum cukup untuk menyatakan isolasi ini selesai;
+- [~] verifikasi shell pada macOS dan setidaknya Ubuntu; smoke macOS lokal
+  sudah lulus, sedangkan Ubuntu/Linux masih menunggu host yang sesuai;
 - [x] siapkan checklist Windows 11 untuk verifikasi eksternal; prosedur lintas
   desktop dan template evidence tersedia di
   [`workspace/docs/plans/10-desktop-runtime-smoke-checklist.md`](https://github.com/relgeo/workspace/blob/main/docs/plans/10-desktop-runtime-smoke-checklist.md).
@@ -389,7 +397,10 @@ digantikan oleh golden.
   traversal berurutan berbasis Tab, tetapi traversal penuh pada desktop nyata
   dan seluruh layout native belum diverifikasi;
 - [x] `flutter analyze` dan `flutter test`;
-- [ ] build target macOS/Linux/Windows;
+- [~] build target macOS/Linux/Windows; direct macOS Debug/Release melalui
+  Xcode workspace sudah lulus dan web sudah lulus, tetapi wrapper Flutter
+  macOS pada host ini masih memiliki masalah discovery destination, sementara
+  build Linux dan Windows belum diverifikasi;
 - [x] update evidence dan status pada dokumentasi Flutter.
 
 **Exit gate:** theme dan modularisasi memiliki bukti test yang dapat diulang, bukan hanya pemeriksaan visual manual.
@@ -496,3 +507,13 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap C/E — Web compilation follow-up | Setelah fallback scroll compact dan bridge Dart diperbaiki, `flutter build web --debug --no-wasm-dry-run` berhasil menghasilkan `build/web` dalam **35,7 detik**. Ini menutup regresi kompilasi web untuk perubahan putaran ini; native Linux/Windows build dan macOS destination verification tetap menunggu runner yang sesuai. |
 | 2026-09-27 | Keputusan scope — menu bar dan window chrome | Dipilih pendekatan non-overkill: command registry bersama, menu Flutter di dalam workbench untuk Ubuntu/Linux dan Windows, adapter `PlatformMenuBar` native untuk macOS, serta native title bar dipertahankan pada fase awal. Custom title bar terpadu ala VSCode/ChatGPT ditunda sampai kebutuhan dan bukti manfaatnya jelas. |
 | 2026-09-27 | Product naming — end-user application name | Nama yang tampil pada window, launcher, bundle, executable metadata, Android/iOS label, dan web/PWA diselaraskan menjadi `RelGeo`. Identifier teknis `relgeo_flutter` dipertahankan pada package/import, namespace, application ID, dan struktur internal agar tidak memicu rename teknis yang tidak diperlukan. |
+| 2026-09-27 | Tahap A — Theme contract closure | Preference theme diubah menjadi nullable override `light`/`dark`; `null` berarti mengikuti `ThemeMode.system`. Selector utama tidak lagi memiliki opsi System, reset system tersedia sebagai aksi sekunder, dan legacy storage `system` dibaca sebagai no override. Analyzer lulus, test terfokus serta full suite lulus dengan **177 test**. |
+| 2026-09-27 | Tahap C/D — Shared command surface and macOS menu adapter | `WorkbenchCommandRegistry` kini dibuat sekali per composition build dan dipakai bersama oleh menu Flutter, navbar export, viewport action toolbar, theme control, dan reset preference. Adapter `WorkbenchPlatformMenuBar` mengekspor registry yang sama ke `PlatformMenuBar` pada macOS; pada platform lain menu Flutter tetap menjadi fallback. `flutter analyze` lulus tanpa issue, full suite lulus dengan **177 test**, dan `git diff --check` bersih. Verifikasi event/shortcut menu native macOS, build/runtime Linux dan Windows, packaging lintas-host, serta accessibility runtime masih tersisa. |
+| 2026-09-27 | Tahap D/E — Web target after platform adapter | `flutter build web --debug --no-wasm-dry-run` berhasil menghasilkan `build/web` setelah adapter platform menu ditambahkan. Dependency resolution memberi informasi versi yang lebih baru tetapi tidak mengubah lockfile atau source. |
+| 2026-09-27 | Tahap D — Platform menu visibility boundary | Entry point produksi sekarang memilih menu native-only pada macOS dan menu Flutter in-workbench pada Linux, Windows, serta web. Pilihan tersebut diinjeksikan ke composition root agar test/golden tidak perlu memodifikasi global platform debug state; duplicate menu pada macOS dihindari. `flutter analyze` lulus, focused theme/menu tests lulus (**22 test**), full suite lulus (**178 test**), dan `git diff --check` bersih. |
+| 2026-09-27 | Tahap D/E — Final web compilation and platform-menu contract test | Setelah batas visibilitas menu platform diselesaikan, `flutter build web --debug --no-wasm-dry-run` kembali berhasil menghasilkan `build/web` dari source final. Contract test baru memverifikasi child tetap dirender, registry dapat menemukan serta menjalankan command, dan adapter hanya membuat `PlatformMenuBar` ketika target native macOS. Informasi 22 dependency yang memiliki versi lebih baru tetap hanya informational dan tidak mengubah lockfile. |
+| 2026-09-27 | Tahap D — macOS runtime retry | Retry `flutter run -d macos --debug --no-pub` dengan `LANG/LC_ALL=en_US.UTF-8` berhasil melewati `pod install`, tetapi build berhenti sebelum kompilasi source karena Flutter meminta destination `platform=macOS, arch=arm64`, sedangkan Xcode host hanya mengekspos `x86_64` dan `Any Mac`. Ini tetap blocker toolchain/destination host; direct Xcode build sebelumnya tetap menjadi evidence kompilasi source lokal. |
+| 2026-09-27 | Tahap D — Direct macOS Debug build after platform-menu changes | Direct `xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Debug -destination 'platform=macOS,arch=arm64'` berhasil dengan `** BUILD SUCCEEDED **` setelah penambahan command registry dan adapter `PlatformMenuBar`. Artifact `build/macos/xcode-final/Build/Products/Debug/RelGeo.app` hadir dan executable utama terverifikasi sebagai Mach-O `arm64`. Ini memverifikasi kompilasi source serta native bridge pada perubahan terbaru; runtime event menu native, fresh CI, dan verifikasi lintas-host tetap terbuka. |
+| 2026-09-27 | Tahap D — Flutter wrapper retry after direct build | `/Users/agusmade/development/flutter/bin/flutter build macos --debug --no-pub` kembali berhenti sebelum kompilasi source: Xcode tidak menemukan destination `{ platform:macOS, arch:arm64 }` dan hanya mengekspos `x86_64` serta `Any Mac`. Ini mengonfirmasi blocker discovery wrapper Flutter/Xcode pada host lokal; direct workspace build tetap menjadi evidence source/native bridge yang valid. |
+| 2026-09-27 | Tahap B/E — Final analyzer dan regression suite | Analyzer Flutter absolut `/Users/agusmade/development/flutter/bin/flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos` lulus dengan `No issues found!`; full suite `/Users/agusmade/development/flutter/bin/flutter test --no-pub --reporter compact` lulus dengan **178 test**. Artifact Debug macOS tetap terverifikasi Mach-O `arm64`, dan `git diff --check` bersih. |
+| 2026-09-27 | Tahap D/E — macOS artifact UI smoke attempt | Artifact `build/macos/xcode-final/Build/Products/Debug/RelGeo.app` berhasil diluncurkan dan terdeteksi sebagai proses `RelGeo` pada host macOS. Binding accessibility terhadap jendela Flutter melalui automation timeout, sehingga event/shortcut menu native dan traversal runtime tidak dapat dinyatakan terverifikasi; source/build evidence tetap valid. |

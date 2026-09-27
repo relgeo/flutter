@@ -76,14 +76,15 @@ void main() {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(const RelGeoCADApp());
+    await tester.pumpWidget(const RelGeoCADApp(showInWindowMenu: true));
 
+    expect(find.byKey(const Key('workbench-menu-bar')), findsOneWidget);
     expect(find.text('DSL EDITOR'), findsOneWidget);
     expect(find.text('VIEWPORT'), findsOneWidget);
     expect(find.text('INSPECTOR'), findsOneWidget);
   });
 
-  testWidgets('theme mode defaults to system and can switch explicitly', (
+  testWidgets('theme mode follows system until explicitly overridden', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1920, 1080);
@@ -121,6 +122,13 @@ void main() {
       Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
       Brightness.light,
     );
+
+    await tester.tap(find.byKey(const Key('theme-mode-reset')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.system,
+    );
   });
 
   testWidgets('theme selector exposes semantic state', (
@@ -139,7 +147,7 @@ void main() {
     );
     expect(node.label, contains('Theme mode'));
     expect(node.value, contains('System'));
-    expect(node.hint, contains('Choose System, Light, or Dark'));
+    expect(node.hint, contains('Choose Light or Dark'));
     semanticsHandle.dispose();
   });
 

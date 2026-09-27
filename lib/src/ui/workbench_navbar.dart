@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'workbench_commands.dart';
+
 /// Header for the CAD workbench shell.
 class WorkbenchNavbar extends StatelessWidget {
   const WorkbenchNavbar({
@@ -7,11 +9,13 @@ class WorkbenchNavbar extends StatelessWidget {
     required this.hasError,
     required this.exportButtonLabel,
     required this.onExport,
+    this.commandRegistry,
   });
 
   final bool hasError;
   final String exportButtonLabel;
   final VoidCallback onExport;
+  final WorkbenchCommandRegistry? commandRegistry;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +133,9 @@ class WorkbenchNavbar extends StatelessWidget {
                 letterSpacing: 0.4,
               ),
             ),
-            onPressed: onExport,
+            onPressed:
+                commandRegistry?.find(WorkbenchCommandId.exportSvg)?.invoke ??
+                onExport,
           ),
         ],
       ),

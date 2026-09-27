@@ -10,12 +10,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('theme preference defaults to system and maps to Flutter ThemeMode', () {
-    expect(
-      WorkbenchPreferencesData.defaults.themePreference,
-      RelGeoThemePreference.system,
-    );
-    expect(RelGeoThemePreference.system.themeMode, ThemeMode.system);
+  test('theme preference defaults to no override and maps explicitly', () {
+    expect(WorkbenchPreferencesData.defaults.themePreference, isNull);
     expect(RelGeoThemePreference.light.themeMode, ThemeMode.light);
     expect(RelGeoThemePreference.dark.themeMode, ThemeMode.dark);
   });
@@ -31,12 +27,30 @@ void main() {
     expect(loaded?.themePreference, RelGeoThemePreference.dark);
   });
 
-  test('unknown stored theme preference safely falls back to system', () async {
-    SharedPreferences.setMockInitialValues({
-      'relgeo.workbench.themePreference': 'future-mode',
-    });
+  test('clearing the theme override removes the stored value', () async {
+    await WorkbenchPreferencesStore.save(
+      WorkbenchPreferencesData.defaults.copyWith(
+        themePreference: RelGeoThemePreference.dark,
+      ),
+    );
+
+    await WorkbenchPreferencesStore.save(
+      WorkbenchPreferencesData.defaults.copyWith(clearThemePreference: true),
+    );
 
     final loaded = await WorkbenchPreferencesStore.load();
-    expect(loaded?.themePreference, RelGeoThemePreference.system);
+    expect(loaded?.themePreference, isNull);
   });
+
+  test(
+    'legacy or unknown stored theme preference safely follows system',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'relgeo.workbench.themePreference': 'future-mode',
+      });
+
+      final loaded = await WorkbenchPreferencesStore.load();
+      expect(loaded?.themePreference, isNull);
+    },
+  );
 }
