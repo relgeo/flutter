@@ -759,6 +759,7 @@ objects:
         label: 'Reset layout',
         onInvoke: _layoutController.reset,
       ),
+      ..._buildPanelPlacementCommands(),
       for (final profile in WorkbenchLayoutProfiles.all)
         WorkbenchCommand(
           id: switch (profile.id) {
@@ -801,6 +802,103 @@ objects:
         onInvoke: _resetWorkbenchPreferences,
       ),
     ]);
+  }
+
+  List<WorkbenchCommand> _buildPanelPlacementCommands() {
+    WorkbenchCommand placementCommand({
+      required WorkbenchCommandId id,
+      required WorkbenchPanelId panel,
+      required WorkbenchPanelPlacement placement,
+      required String label,
+      bool enabled = true,
+    }) {
+      return WorkbenchCommand(
+        id: id,
+        menu: 'Workbench',
+        label: label,
+        enabled: enabled,
+        onInvoke: () => _layoutController.setPlacement(panel, placement),
+      );
+    }
+
+    final parametersAvailable = _paramValues.isNotEmpty;
+    return [
+      placementCommand(
+        id: WorkbenchCommandId.dockEditorLeft,
+        panel: WorkbenchPanelId.editor,
+        placement: WorkbenchPanelPlacement.left,
+        label: 'Dock Code editor left',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.dockPreviewCenter,
+        panel: WorkbenchPanelId.preview,
+        placement: WorkbenchPanelPlacement.center,
+        label: 'Dock Preview center',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.dockInspectorRight,
+        panel: WorkbenchPanelId.inspector,
+        placement: WorkbenchPanelPlacement.right,
+        label: 'Dock Inspector right',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.dockParametersBottom,
+        panel: WorkbenchPanelId.parameters,
+        placement: WorkbenchPanelPlacement.bottom,
+        label: 'Dock Parameters bottom',
+        enabled: parametersAvailable,
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.floatEditor,
+        panel: WorkbenchPanelId.editor,
+        placement: WorkbenchPanelPlacement.floating,
+        label: 'Float Code editor',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.floatPreview,
+        panel: WorkbenchPanelId.preview,
+        placement: WorkbenchPanelPlacement.floating,
+        label: 'Float Preview',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.floatInspector,
+        panel: WorkbenchPanelId.inspector,
+        placement: WorkbenchPanelPlacement.floating,
+        label: 'Float Inspector',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.floatParameters,
+        panel: WorkbenchPanelId.parameters,
+        placement: WorkbenchPanelPlacement.floating,
+        label: 'Float Parameters',
+        enabled: parametersAvailable,
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.overlayEditor,
+        panel: WorkbenchPanelId.editor,
+        placement: WorkbenchPanelPlacement.overlay,
+        label: 'Overlay Code editor',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.overlayPreview,
+        panel: WorkbenchPanelId.preview,
+        placement: WorkbenchPanelPlacement.overlay,
+        label: 'Overlay Preview',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.overlayInspector,
+        panel: WorkbenchPanelId.inspector,
+        placement: WorkbenchPanelPlacement.overlay,
+        label: 'Overlay Inspector',
+      ),
+      placementCommand(
+        id: WorkbenchCommandId.overlayParameters,
+        panel: WorkbenchPanelId.parameters,
+        placement: WorkbenchPanelPlacement.overlay,
+        label: 'Overlay Parameters',
+        enabled: parametersAvailable,
+      ),
+    ];
   }
 
   // ── Navbar ─────────────────────────────────────

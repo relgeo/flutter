@@ -82,6 +82,13 @@ void main() {
     expect(find.text('DSL EDITOR'), findsOneWidget);
     expect(find.text('VIEWPORT'), findsOneWidget);
     expect(find.text('INSPECTOR'), findsOneWidget);
+
+    await tester.tap(find.text('Workbench'));
+    await tester.pumpAndSettle();
+    expect(find.text('Overlay Inspector'), findsOneWidget);
+    await tester.tap(find.text('Overlay Inspector'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
   });
 
   testWidgets('theme mode follows system until explicitly overridden', (

@@ -258,7 +258,7 @@ ruang lingkup Tahap D.
   dipindahkan, dan resize handle dengan batas ukuran;
 - [~] dukung overlay panel dengan z-order yang jelas dan explicit close action;
   focus policy dan activation order masih tertunda;
-- [ ] dukung dock kembali ke region asal atau region pilihan;
+- [x] dukung dock kembali ke region pilihan melalui command `Workbench`;
 - [x] cegah panel keluar sepenuhnya dari batas canvas saat drag/resize dan
   pertahankan batas ukuran minimum/maksimum;
 
@@ -305,8 +305,8 @@ ruang lingkup Tahap D.
 - [ ] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
-- [~] panel dapat di-collapse dan di-overlay; dock/undock serta transisi
-  floating yang lengkap masih tertunda;
+- [~] panel dapat di-collapse, di-dock melalui command, di-float, dan di-overlay;
+  drag-to-dock serta transisi floating interaktif masih tertunda;
 - [ ] preset dapat diterapkan tanpa mengubah dokumen;
 - [ ] perubahan layout dipulihkan setelah restart;
 - [ ] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
@@ -351,3 +351,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap E/F parsial — Profile commands | Menu `Workbench` menyediakan preset layout dan menu `View` menyediakan reset layout serta toggle Parameters yang disabled ketika dokumen tidak memiliki parameter. Edit manual mengubah active profile menjadi `Custom`. |
 | 2026-09-27 | Tahap D parsial — Floating/overlay foundation | Menambahkan `left`/`top` pada bounds, layer `Stack`, renderer `Positioned`, pembedaan elevation untuk floating/overlay, semantics label, drag gesture, resize handle dengan clamp canvas dan batas ukuran, serta tombol close eksplisit untuk overlay. Docking ulang dan focus/activation order masih tertunda. |
 | 2026-09-27 | Tahap D parsial — Floating collapse | State `collapsed` kini konsisten pada panel docked maupun floating/overlay: panel berubah menjadi rail/header ringkas, ukuran dan posisi floating tetap dapat dipulihkan, dan resize handle disembunyikan saat collapsed. |
+| 2026-09-27 | Tahap D parsial — Placement commands | Menu `Workbench` kini menyediakan perintah dock ke region pilihan, float, dan overlay untuk setiap panel. Parameters otomatis disabled ketika dokumen aktif tidak memiliki parameter. Drag-to-dock dan focus/activation order multi-panel masih tertunda. |
