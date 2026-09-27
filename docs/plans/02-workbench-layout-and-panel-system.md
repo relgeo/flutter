@@ -321,9 +321,8 @@ ruang lingkup Tahap D.
   floating, dan restoration ke panel docked setelah drop sudah tersedia;
 - [x] reduced-motion dihormati pada transisi workbench yang sudah memiliki
   motion policy;
-- [~] golden dan widget test mencakup setiap preset utama; shell golden light/
-  dark dan profile/widget coverage sudah tersedia, tetapi golden khusus setiap
-  preset belum dibuat;
+- [x] golden dan widget test mencakup setiap preset utama; tersedia baseline
+  golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
 - [~] validasi native window baru sebagian: build macOS berhasil melalui Xcode
   pada target `x86_64`, tetapi `flutter build macos --debug --no-pub` pada mesin
   ini meminta target `macOS arm64` yang tidak tersedia di Xcode; runtime window
@@ -414,3 +413,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap G — Floating resize keyboard | Floating/overlay resize handle kini juga menerima arrow key dengan clamp ukuran yang sama seperti pointer gesture. Regression shell test memastikan lebar floating panel berubah saat handle menerima ArrowRight. |
 | 2026-09-27 | Tahap G — Collapsed floating semantic restore | Floating/overlay panel yang collapsed kini mengekspose semantic button action untuk mengembalikan panel ke state visible; test menjalankan aksi `SemanticsAction.tap` secara langsung. |
 | 2026-09-27 | Tahap G — Collapsed panel pointer restore | Collapsed docked, Parameters, dan floating/overlay panel kini juga dapat dipulihkan lewat pointer tap. Regression shell test mencakup pemulihan floating panel; full suite pada checkpoint ini: 213 test lulus. |
+| 2026-09-27 | Tahap G — Layout profile golden baselines | Menambahkan golden regression untuk lima preset layout utama (Standard, Writing, Preview, Inspect, Minimal). Full Flutter suite pada checkpoint ini: 218 test lulus. |
