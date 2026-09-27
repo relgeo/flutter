@@ -33,17 +33,88 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
         for (final menu in WorkbenchCommandRegistry.menuOrder)
           PlatformMenu(
             label: menu,
-            menus: [
-              for (final command in registry.forMenu(menu))
-                PlatformMenuItem(
-                  label: command.label,
-                  shortcut: command.shortcut,
-                  onSelected: command.enabled ? command.invoke : null,
-                ),
-            ],
+            menus: _buildMenus(registry.forMenu(menu).toList()),
           ),
       ],
       child: child,
     );
+  }
+
+  List<PlatformMenuItem> _buildMenus(List<WorkbenchCommand> commands) {
+    final menus = <PlatformMenuItem>[];
+    for (final command in commands.where(
+      (command) => command.submenuPath.isEmpty,
+    )) {
+      menus.add(
+        PlatformMenuItem(
+          label: command.label,
+          shortcut: command.shortcut,
+          onSelected: command.enabled ? command.invoke : null,
+        ),
+      );
+    }
+
+    final groups = <String>[];
+    for (final command in commands) {
+      if (command.submenuPath.isNotEmpty &&
+          !groups.contains(command.submenuPath.first)) {
+        groups.add(command.submenuPath.first);
+      }
+    }
+    for (final group in groups) {
+      menus.add(
+        PlatformMenu(label: group, menus: _buildNestedMenus(commands, [group])),
+      );
+    }
+    return menus;
+  }
+
+  List<PlatformMenuItem> _buildNestedMenus(
+    List<WorkbenchCommand> commands,
+    List<String> prefix,
+  ) {
+    final menus = <PlatformMenuItem>[];
+    for (final command in commands.where(
+      (command) => _samePath(command.submenuPath, prefix),
+    )) {
+      menus.add(
+        PlatformMenuItem(
+          label: command.label,
+          shortcut: command.shortcut,
+          onSelected: command.enabled ? command.invoke : null,
+        ),
+      );
+    }
+
+    final groups = <String>[];
+    for (final command in commands) {
+      if (command.submenuPath.length > prefix.length &&
+          _startsWith(command.submenuPath, prefix)) {
+        final group = command.submenuPath[prefix.length];
+        if (!groups.contains(group)) groups.add(group);
+      }
+    }
+    for (final group in groups) {
+      menus.add(
+        PlatformMenu(
+          label: group,
+          menus: _buildNestedMenus(commands, [...prefix, group]),
+        ),
+      );
+    }
+    return menus;
+  }
+
+  bool _samePath(List<String> left, List<String> right) {
+    if (left.length != right.length) return false;
+    return _startsWith(left, right);
+  }
+
+  bool _startsWith(List<String> value, List<String> prefix) {
+    if (value.length < prefix.length) return false;
+    for (var index = 0; index < prefix.length; index++) {
+      if (value[index] != prefix[index]) return false;
+    }
+    return true;
   }
 }

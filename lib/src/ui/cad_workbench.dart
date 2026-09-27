@@ -579,14 +579,6 @@ objects:
       ? 'Sheet/view physical preview route'
       : 'Scene model preview route';
 
-  String get _exportDialogTitle => _selectedSheetId != null
-      ? 'Simpan SVG Sheet/View'
-      : 'Simpan SVG Model Preview';
-
-  String get _exportFileName => _selectedSheetId != null
-      ? 'relgeo-sheet-${_selectedSheetId!}.svg'
-      : 'relgeo-model-preview.svg';
-
   String get _exportButtonLabel =>
       _selectedSheetId != null ? 'SVG SHEET' : 'SVG MODEL';
 
@@ -594,20 +586,40 @@ objects:
   // SVG Export
   // ─────────────────────────────────────────────
 
-  Future<void> _exportSVG() async {
+  Future<void> _exportSVG() => _exportSVGTarget(_selectedSheetId);
+
+  Future<void> _exportModelSVG() => _exportSVGTarget(null);
+
+  Future<void> _exportSheetSVG() {
+    final sheetId = _selectedSheetId;
+    if (sheetId == null) return Future<void>.value();
+    return _exportSVGTarget(sheetId);
+  }
+
+  Future<void> _exportSVGTarget(String? sheetId) async {
     try {
       final scene = _scene;
       if (scene == null) throw Exception('Scene belum dikompilasi.');
       final svg = SvgExporter.generateSVG(
         scene,
         hiddenRoles: _overlayController.hiddenRoles,
-        sheetId: _selectedSheetId,
+        sheetId: sheetId,
       );
       if (svg.isEmpty) throw Exception('Hasil kompilasi kosong.');
 
+      final surfaceLabel = sheetId != null
+          ? 'Sheet/View: $sheetId'
+          : 'Model Preview';
+      final dialogTitle = sheetId != null
+          ? 'Simpan SVG Sheet/View'
+          : 'Simpan SVG Model Preview';
+      final fileName = sheetId != null
+          ? 'relgeo-sheet-$sheetId.svg'
+          : 'relgeo-model-preview.svg';
+
       final outputFile = await _svgExportController.saveSvg(
-        dialogTitle: _exportDialogTitle,
-        fileName: _exportFileName,
+        dialogTitle: dialogTitle,
+        fileName: fileName,
         svg: svg,
       );
       if (outputFile == null) return;
@@ -616,11 +628,11 @@ objects:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'SVG $_activeSurfaceLabel berhasil disimpan ke: $outputFile',
+              'SVG $surfaceLabel berhasil disimpan ke: $outputFile',
             ),
             action: SnackBarAction(
               label: 'LIHAT',
-              onPressed: () => _showSVGDialog(svg),
+              onPressed: () => _showSVGDialog(svg, surfaceLabel: surfaceLabel),
             ),
           ),
         );
@@ -637,11 +649,11 @@ objects:
     }
   }
 
-  void _showSVGDialog(String code) {
+  void _showSVGDialog(String code, {String? surfaceLabel}) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('SVG EXPORT · $_activeSurfaceLabel'),
+        title: Text('SVG EXPORT · ${surfaceLabel ?? _activeSurfaceLabel}'),
         content: SizedBox(
           width: 600,
           height: 400,
@@ -814,7 +826,7 @@ objects:
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.exportSvg,
-        menu: 'File',
+        menu: 'Toolbar',
         label: _exportButtonLabel,
         enabled: _scene != null,
         onInvoke: _exportSVG,
@@ -823,6 +835,22 @@ objects:
           LogicalKeyboardKey.keyE,
           control: true,
         ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.exportSvgModel,
+        menu: 'File',
+        submenuPath: const ['Export', 'SVG'],
+        label: 'Model',
+        enabled: _scene != null,
+        onInvoke: _exportModelSVG,
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.exportSvgSheet,
+        menu: 'File',
+        submenuPath: const ['Export', 'SVG'],
+        label: 'Sheet / View',
+        enabled: _scene?.sheets.isNotEmpty == true && _selectedSheetId != null,
+        onInvoke: _exportSheetSVG,
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.undo,

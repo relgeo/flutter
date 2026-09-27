@@ -117,6 +117,30 @@ void main() {
     expect(find.text('About RelGeo'), findsOneWidget);
   });
 
+  testWidgets('file menu exposes explicit model and sheet SVG targets', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(home: CADWorkbenchPage(initialDsl: _sheetDsl)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    expect(find.text('Export'), findsOneWidget);
+    await tester.tap(find.text('Export'));
+    await tester.pumpAndSettle();
+    expect(find.text('SVG'), findsOneWidget);
+    await tester.tap(find.text('SVG'));
+    await tester.pumpAndSettle();
+    expect(find.text('Model'), findsOneWidget);
+    expect(find.text('Sheet / View'), findsOneWidget);
+  });
+
   testWidgets('file menu exposes host document lifecycle callbacks', (
     WidgetTester tester,
   ) async {

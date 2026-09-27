@@ -13,19 +13,7 @@ class WorkbenchMenuBar extends StatelessWidget {
     final menus = WorkbenchCommandRegistry.menuOrder
         .map(
           (menu) => SubmenuButton(
-            menuChildren: registry
-                .forMenu(menu)
-                .map(
-                  (command) => MenuItemButton(
-                    shortcut: command.shortcut,
-                    onPressed: command.enabled ? command.invoke : null,
-                    leadingIcon: command.checked == true
-                        ? const Icon(Icons.check)
-                        : null,
-                    child: Text(command.label),
-                  ),
-                )
-                .toList(),
+            menuChildren: _buildMenuChildren(registry.forMenu(menu).toList()),
             child: Text(menu),
           ),
         )
@@ -46,5 +34,75 @@ class WorkbenchMenuBar extends StatelessWidget {
         children: menus,
       ),
     );
+  }
+
+  List<Widget> _buildMenuChildren(List<WorkbenchCommand> commands) {
+    final direct = commands.where((command) => command.submenuPath.isEmpty);
+    final groups = <String>[];
+    for (final command in commands) {
+      if (command.submenuPath.isEmpty) continue;
+      final root = command.submenuPath.first;
+      if (!groups.contains(root)) groups.add(root);
+    }
+
+    return [
+      ...direct.map(_menuItem),
+      ...groups.map(
+        (group) => SubmenuButton(
+          menuChildren: _buildNestedMenu(commands, [group]),
+          child: Text(group),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildNestedMenu(
+    List<WorkbenchCommand> commands,
+    List<String> prefix,
+  ) {
+    final direct = commands.where(
+      (command) => _samePath(command.submenuPath, prefix),
+    );
+    final groups = <String>[];
+    for (final command in commands) {
+      if (command.submenuPath.length <= prefix.length ||
+          !_startsWith(command.submenuPath, prefix)) {
+        continue;
+      }
+      final group = command.submenuPath[prefix.length];
+      if (!groups.contains(group)) groups.add(group);
+    }
+
+    return [
+      ...direct.map(_menuItem),
+      ...groups.map(
+        (group) => SubmenuButton(
+          menuChildren: _buildNestedMenu(commands, [...prefix, group]),
+          child: Text(group),
+        ),
+      ),
+    ];
+  }
+
+  Widget _menuItem(WorkbenchCommand command) {
+    return MenuItemButton(
+      shortcut: command.shortcut,
+      onPressed: command.enabled ? command.invoke : null,
+      leadingIcon: command.checked == true ? const Icon(Icons.check) : null,
+      child: Text(command.label),
+    );
+  }
+
+  bool _samePath(List<String> left, List<String> right) {
+    if (left.length != right.length) return false;
+    return _startsWith(left, right);
+  }
+
+  bool _startsWith(List<String> value, List<String> prefix) {
+    if (value.length < prefix.length) return false;
+    for (var index = 0; index < prefix.length; index++) {
+      if (value[index] != prefix[index]) return false;
+    }
+    return true;
   }
 }

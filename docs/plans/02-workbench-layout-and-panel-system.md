@@ -281,11 +281,13 @@ ruang lingkup Tahap D.
 - [x] definisikan command ID, label, shortcut, enabled state, dan checked state;
 - [x] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`,
   `Workbench`, dan `Help` pada menu bar in-window serta adapter native macOS;
-- [ ] tempatkan SVG di `File → Export → SVG → Model / Sheet View`, bukan sebagai
-  tombol khusus pada Preview;
+- [x] tempatkan SVG di `File → Export → SVG → Model / Sheet View`, bukan sebagai
+  tombol khusus pada Preview; toolbar tetap mengekspor surface aktif sebagai
+  affordance cepat.
 - [~] hubungkan menu dengan document, layout, theme, canvas, dan native
-  services; layout/theme/document actions sudah aktif, sedangkan native file
-  I/O dan export target Model/Sheet masih menunggu service host;
+  services; layout/theme/document actions dan export target Model/Sheet sudah
+  aktif, sedangkan native file I/O penuh dan host lifecycle masih bergantung
+  pada service/host aplikasi;
 - [~] pastikan toolbar dan keyboard shortcut memakai command yang sama; global
   shortcuts sekarang dipasang dari registry yang sama dengan menu dan command
   callback, tetapi parity seluruh toolbar/context menu belum selesai;
@@ -391,3 +393,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Panel collapse commands | Menu `View` kini menyediakan command collapse/expand terpisah untuk Editor, Preview, Inspector, dan Parameters. Checkmark mengikuti visibility state aktual dan Parameters tetap disabled tanpa parameter dokumen. |
 | 2026-09-27 | Tahap F parsial — File service boundary | Menambahkan `WorkbenchFileService` serta `FilePickerWorkbenchFileService` untuk Open, Save, dan Save As berbasis UTF-8 YAML/RelGeo. `CADWorkbenchPage` mengadopsi service secara opsional tanpa memutus callback lifecycle lama; New/Close/Quit tetap dimiliki host aplikasi. |
 | 2026-09-27 | Tahap F parsial — Editor history commands | Menu `Edit` dan shortcut global kini menyediakan Undo/Redo dengan enabled-state yang diturunkan dari history native `re_editor`; toolbar/context-menu parity dan kebijakan history lintas dokumen masih tertunda. |
+| 2026-09-27 | Tahap F parsial — Hierarchical SVG export | Menu File kini memiliki jalur `Export → SVG → Model / Sheet View`; command target Sheet disabled tanpa sheet aktif. Tombol toolbar tetap menjadi shortcut untuk export surface aktif, bukan menu export terpisah. |

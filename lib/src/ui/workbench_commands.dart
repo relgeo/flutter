@@ -8,6 +8,8 @@ enum WorkbenchCommandId {
   closeDocument,
   quitApplication,
   exportSvg,
+  exportSvgModel,
+  exportSvgSheet,
   undo,
   redo,
   copySource,
@@ -60,6 +62,7 @@ class WorkbenchCommand {
     this.checked,
     this.shortcut,
     this.shortcutActivator,
+    this.submenuPath = const [],
   });
 
   final WorkbenchCommandId id;
@@ -70,6 +73,7 @@ class WorkbenchCommand {
   final bool? checked;
   final MenuSerializableShortcut? shortcut;
   final ShortcutActivator? shortcutActivator;
+  final List<String> submenuPath;
 
   void invoke() {
     if (enabled) onInvoke();
