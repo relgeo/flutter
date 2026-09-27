@@ -117,4 +117,63 @@ void main() {
 
     expect(invoked, isFalse);
   });
+
+  testWidgets('file and document shortcuts dispatch through the registry', (
+    tester,
+  ) async {
+    final invoked = <WorkbenchCommandId>[];
+    final registry = WorkbenchCommandRegistry([
+      for (final entry in <(WorkbenchCommandId, LogicalKeyboardKey)>[
+        (WorkbenchCommandId.newDocument, LogicalKeyboardKey.keyN),
+        (WorkbenchCommandId.openDocument, LogicalKeyboardKey.keyO),
+        (WorkbenchCommandId.saveDocument, LogicalKeyboardKey.keyS),
+      ])
+        WorkbenchCommand(
+          id: entry.$1,
+          menu: 'File',
+          label: entry.$1.name,
+          shortcut: SingleActivator(entry.$2, control: true),
+          shortcutActivator: SingleActivator(entry.$2, control: true),
+          onInvoke: () => invoked.add(entry.$1),
+        ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.recompileDocument,
+        menu: 'Document',
+        label: 'Recompile document',
+        shortcut: const SingleActivator(LogicalKeyboardKey.f5),
+        shortcutActivator: const SingleActivator(LogicalKeyboardKey.f5),
+        onInvoke: () => invoked.add(WorkbenchCommandId.recompileDocument),
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCommandSurface(
+          registry: registry,
+          child: const Focus(
+            autofocus: true,
+            child: SizedBox(key: Key('file-shortcut-surface')),
+          ),
+        ),
+      ),
+    );
+
+    for (final key in <LogicalKeyboardKey>[
+      LogicalKeyboardKey.keyN,
+      LogicalKeyboardKey.keyO,
+      LogicalKeyboardKey.keyS,
+    ]) {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(key);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.f5);
+
+    expect(invoked, const [
+      WorkbenchCommandId.newDocument,
+      WorkbenchCommandId.openDocument,
+      WorkbenchCommandId.saveDocument,
+      WorkbenchCommandId.recompileDocument,
+    ]);
+  });
 }

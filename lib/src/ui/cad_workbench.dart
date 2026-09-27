@@ -877,6 +877,11 @@ objects:
         label: 'New document',
         enabled: widget.onNewDocument != null,
         onInvoke: () => unawaited(_runLifecycleAction(widget.onNewDocument)),
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyN, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyN,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.openDocument,
@@ -890,6 +895,11 @@ objects:
             unawaited(_openDocumentFromFileService());
           }
         },
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyO, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyO,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.saveDocument,
@@ -908,6 +918,11 @@ objects:
             unawaited(_saveDocumentToFileService(saveAs: false));
           }
         },
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyS, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyS,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.saveAsDocument,
@@ -1035,6 +1050,8 @@ objects:
         menu: 'Document',
         label: 'Recompile document',
         onInvoke: () => _compileDSL(_editorController.text),
+        shortcut: const SingleActivator(LogicalKeyboardKey.f5),
+        shortcutActivator: const SingleActivator(LogicalKeyboardKey.f5),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.resetDocumentParameters,

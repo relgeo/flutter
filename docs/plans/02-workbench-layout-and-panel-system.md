@@ -291,8 +291,10 @@ ruang lingkup Tahap D.
 - [~] pastikan toolbar, context menu, dan keyboard shortcut memakai command
   yang sama; global shortcuts dan toolbar utama/viewport sudah memakai registry,
   dan viewport/editor/inspector/parameters kini memiliki context menu berbasis
-  registry sesuai surface. Coverage shortcut seluruh command dan pemetaan
-  shortcut tambahan masih tertunda;
+  registry sesuai surface. Shortcut aman untuk New/Open/Save dan Recompile
+  sekarang juga terdaftar; command layout, appearance, dan sebagian navigasi
+  visual tetap sengaja diakses melalui menu, toolbar, atau context menu agar
+  tidak membebani keyboard global;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [x] sediakan reset layout, reset appearance override, dan reset parameters;
@@ -369,9 +371,10 @@ ruang lingkup Tahap D.
   `x86_64` juga lulus melalui Xcode, tetapi runtime window macOS, target arm64
   pada Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
-  yang sama; menu bar/native menu, toolbar utama/viewport, serta context menu
-  viewport/editor/inspector/parameters kini memakai registry yang sama. Parity
-  shortcut untuk seluruh command masih belum;
+  yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
+  shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
+  semua command memiliki shortcut keyboard karena command layout/appearance
+  dipertahankan sebagai menu-driven actions;
 - [x] command disabled tidak dapat dijalankan melalui menu maupun `invoke()`;
 - [x] state checkmark menu mengikuti state layout aktual untuk panel dan profile;
 - [x] tidak ada aksi `SVG MODEL` khusus pada toolbar Preview;
@@ -433,6 +436,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap F parsial — Editor context menu | Memasang context menu registry pada editor dengan Undo, Redo, Copy source, dan Recompile. Test integrasi secondary-click pada `RelGeoCADApp` lulus; Inspector, Parameters, dan shortcut seluruh command masih belum memiliki parity penuh. |
 | 2026-09-28 | Tahap F — Primary surface context menu coverage | Context menu registry kini dipasang pada empat surface utama: viewport, editor, inspector, dan parameters. Masing-masing hanya mengekspos command yang relevan; analyzer dan smoke/widget tests lulus. Shortcut coverage seluruh command tetap menjadi pekerjaan terpisah. |
 | 2026-09-28 | Tahap G — Primary context menu quality gate | Setelah integrasi context menu ke empat surface utama, `flutter analyze` lulus tanpa issue, seluruh 222 test lulus, dan `flutter build web --no-pub` berhasil. Validasi native runtime dan assistive technology nyata tetap tertunda. |
+| 2026-09-28 | Tahap F parsial — Core file/document shortcuts | New, Open, Save, dan Recompile kini memiliki binding registry global (`Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `F5`) dengan enabled-state yang sama seperti menu/action. Layout dan appearance tetap menu-driven untuk menghindari shortcut global yang mudah bentrok; native keyboard/runtime tetap menunggu validasi platform. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
