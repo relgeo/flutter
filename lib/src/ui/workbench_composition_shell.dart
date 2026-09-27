@@ -137,6 +137,15 @@ class WorkbenchCompositionShell extends StatelessWidget {
         return Column(
           children: [
             Expanded(child: main),
+            if (controller.panel(WorkbenchPanelId.parameters).visibility !=
+                    WorkbenchPanelVisibility.hidden &&
+                controller.panel(WorkbenchPanelId.parameters).visibility !=
+                    WorkbenchPanelVisibility.collapsed)
+              _WorkbenchHorizontalDivider(
+                key: const ValueKey('workbench-divider-parameters'),
+                onDrag: (delta) =>
+                    controller.resizeParameters(delta, constraints.maxHeight),
+              ),
             _buildParametersSlot(context, controller),
           ],
         );
@@ -165,7 +174,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
         ),
       );
     }
-    return SizedBox(height: 220, child: parameters);
+    return SizedBox(height: state.bounds.height ?? 220, child: parameters);
   }
 
   Widget _buildPanelSlot(
@@ -243,6 +252,33 @@ class _WorkbenchPanelDivider extends StatelessWidget {
           slider: true,
           child: SizedBox(
             width: 8,
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkbenchHorizontalDivider extends StatelessWidget {
+  const _WorkbenchHorizontalDivider({super.key, required this.onDrag});
+
+  final ValueChanged<double> onDrag;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeRow,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragUpdate: (details) => onDrag(details.delta.dy),
+        child: Semantics(
+          label: 'Resize parameters panel',
+          slider: true,
+          child: SizedBox(
+            height: 8,
             child: ColoredBox(
               color: Theme.of(context).colorScheme.outlineVariant,
             ),

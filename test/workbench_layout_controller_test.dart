@@ -87,4 +87,21 @@ void main() {
       );
     },
   );
+
+  test('manual layout edits move the active profile to Custom', () {
+    final controller = WorkbenchLayoutController();
+    controller.applyProfile(WorkbenchLayoutProfiles.writing);
+
+    controller.setSplitRatio('left', 0.5);
+
+    expect(controller.layout.activeProfileId, 'custom');
+  });
+
+  test('parameters can be resized within vertical bounds', () {
+    final controller = WorkbenchLayoutController();
+
+    controller.resizeParameters(80, 700);
+    expect(controller.panel(WorkbenchPanelId.parameters).bounds.height, 300);
+    expect(controller.layout.activeProfileId, 'custom');
+  });
 }

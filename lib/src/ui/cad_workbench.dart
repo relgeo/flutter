@@ -22,6 +22,7 @@ import 'workbench_viewport_controller.dart';
 import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_layout_persistence.dart';
+import 'workbench_layout_profiles.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -414,6 +415,10 @@ objects:
     if (mounted) setState(() {});
   }
 
+  void _applyLayoutProfile(WorkbenchLayoutProfile profile) {
+    _layoutController.applyProfile(profile);
+  }
+
   void _onCodeChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -733,6 +738,41 @@ objects:
         onInvoke: () =>
             _layoutController.togglePanel(WorkbenchPanelId.inspector),
       ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.toggleParametersPanel,
+        menu: 'View',
+        label: 'Parameters',
+        enabled: _paramValues.isNotEmpty,
+        checked:
+            _paramValues.isNotEmpty &&
+            _layoutController.isPanelVisible(WorkbenchPanelId.parameters),
+        onInvoke: () => _layoutController.togglePanel(
+          WorkbenchPanelId.parameters,
+          availability: _paramValues.isEmpty
+              ? WorkbenchPanelAvailability.unavailable
+              : WorkbenchPanelAvailability.available,
+        ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.resetLayout,
+        menu: 'View',
+        label: 'Reset layout',
+        onInvoke: _layoutController.reset,
+      ),
+      for (final profile in WorkbenchLayoutProfiles.all)
+        WorkbenchCommand(
+          id: switch (profile.id) {
+            'standard' => WorkbenchCommandId.standardLayoutProfile,
+            'writing' => WorkbenchCommandId.writingLayoutProfile,
+            'preview' => WorkbenchCommandId.previewLayoutProfile,
+            'inspect' => WorkbenchCommandId.inspectLayoutProfile,
+            _ => WorkbenchCommandId.minimalLayoutProfile,
+          },
+          menu: 'Workbench',
+          label: profile.label,
+          checked: _layoutController.layout.activeProfileId == profile.id,
+          onInvoke: () => _applyLayoutProfile(profile),
+        ),
       WorkbenchCommand(
         id: WorkbenchCommandId.lightTheme,
         menu: 'Appearance',

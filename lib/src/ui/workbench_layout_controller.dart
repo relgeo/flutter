@@ -90,12 +90,12 @@ class WorkbenchLayoutController extends ChangeNotifier {
       ..._layout.floatingBounds,
       id: bounds,
     };
-    _replace(_layout.copyWith(floatingBounds: floating));
+    _replaceAsCustom(_layout.copyWith(floatingBounds: floating));
   }
 
   void setSplitRatio(String region, double ratio) {
     if (!ratio.isFinite || ratio <= 0 || ratio > 1) return;
-    _replace(
+    _replaceAsCustom(
       _layout.copyWith(splitRatios: {..._layout.splitRatios, region: ratio}),
     );
   }
@@ -126,7 +126,21 @@ class WorkbenchLayoutController extends ChangeNotifier {
       leftRegion: nextLeft,
       rightRegion: combined - nextLeft,
     };
-    _replace(_layout.copyWith(splitRatios: nextRatios));
+    _replaceAsCustom(_layout.copyWith(splitRatios: nextRatios));
+  }
+
+  void resizeParameters(double delta, double availableHeight) {
+    if (!delta.isFinite || !availableHeight.isFinite || availableHeight <= 0) {
+      return;
+    }
+    final current = panel(WorkbenchPanelId.parameters).bounds.height ?? 220;
+    final maxHeight = (availableHeight - 120).clamp(120.0, 420.0);
+    final next = (current + delta).clamp(120.0, maxHeight);
+    if (next == current) return;
+    setBounds(
+      WorkbenchPanelId.parameters,
+      panel(WorkbenchPanelId.parameters).bounds.copyWith(height: next),
+    );
   }
 
   void setActiveProfile(String profileId) {
@@ -148,7 +162,15 @@ class WorkbenchLayoutController extends ChangeNotifier {
 
   void _updatePanel(WorkbenchPanelId id, WorkbenchPanelLayout value) {
     if (value == panel(id)) return;
-    _replace(_layout.copyWith(panels: {..._layout.panels, id: value}));
+    _replaceAsCustom(_layout.copyWith(panels: {..._layout.panels, id: value}));
+  }
+
+  void _replaceAsCustom(WorkbenchLayoutModel next) {
+    _replace(
+      next.activeProfileId == 'custom'
+          ? next
+          : next.copyWith(activeProfileId: 'custom'),
+    );
   }
 
   void _replace(WorkbenchLayoutModel next) {

@@ -141,6 +141,16 @@ void main() {
     );
 
     expect(find.text('parameters'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('workbench-divider-parameters')),
+      findsOneWidget,
+    );
+    controller.resizeParameters(70, 600);
+    await tester.pump();
+    expect(
+      controller.panel(WorkbenchPanelId.parameters).bounds.height,
+      greaterThan(220),
+    );
     controller.setPanelVisibility(
       WorkbenchPanelId.parameters,
       WorkbenchPanelVisibility.hidden,
