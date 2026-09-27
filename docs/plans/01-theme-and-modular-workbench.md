@@ -213,6 +213,68 @@ stateDiagram-v2
   FollowSystem --> FollowSystem: OS brightness berubah
 ```
 
+## 6.1 Menu bar dan window chrome — keputusan scope
+
+Untuk menjaga manfaat versus kompleksitas, implementasi awal tidak mengambil
+alih title bar native OS. Workbench tetap menggunakan native window chrome,
+sementara menu dan toolbar dibangun sebagai surface Flutter di dalam aplikasi.
+
+Fondasi yang dipakai:
+
+- satu `WorkbenchCommandRegistry` sebagai source of truth untuk File, Edit,
+  View, Appearance, Workbench, Help, dan keyboard shortcuts;
+- `MenuBar`/`MenuAnchor` Flutter untuk menu di dalam workbench, terutama pada
+  Windows dan Ubuntu/Linux;
+- `PlatformMenuBar` sebagai adapter menu native macOS, tanpa menduplikasi
+  seluruh menu di header aplikasi;
+- toolbar menggunakan command yang sama dengan menu, bukan callback terpisah;
+- title bar custom ala VSCode/ChatGPT Desktop ditunda sampai ada kebutuhan
+  produk yang jelas dan bukti bahwa kompleksitas native window chrome layak
+  ditanggung.
+
+Kontrak lintas platform awal:
+
+| Platform | Menu | Title bar |
+| --- | --- | --- |
+| macOS | menu native system melalui adapter platform | native; integrasi visual lanjutan ditunda |
+| Ubuntu/Linux | menu Flutter di dalam workbench | native |
+| Windows 11 | menu Flutter di dalam workbench | native |
+
+Pendekatan ini sengaja memprioritaskan keyboard navigation, accessibility,
+window controls, multi-monitor, HiDPI, dan kompatibilitas Wayland/desktop
+environment sebelum mengejar title bar terpadu. Jika kelak custom chrome
+dipilih, implementasinya harus menjadi fase terpisah dengan drag region,
+window controls, hit testing, accessibility, dan runtime verification per OS.
+
+```mermaid
+flowchart LR
+  commands["WorkbenchCommandRegistry"] --> shortcuts["Keyboard shortcuts"]
+  commands --> toolbar["Toolbar"]
+  commands --> flutterMenu["Flutter MenuBar"]
+  commands --> macMenu["macOS PlatformMenuBar"]
+  nativeChrome["Native OS title bar"] --> window["Window controls and drag behavior"]
+  flutterMenu --> workbench["Workbench surface"]
+  toolbar --> workbench
+  macMenu --> macOS["macOS system menu"]
+```
+
+### Tahap menu/chrome
+
+- [ ] ekstrak `WorkbenchCommandRegistry` dan command metadata dari callback
+  page/toolbar yang tersebar;
+- [ ] buat menu model untuk File, Edit, View, Appearance, Workbench, dan Help;
+- [ ] render menu Flutter di workbench pada Windows/Linux dengan dukungan
+  keyboard traversal dan shortcut;
+- [ ] hubungkan toolbar ke command registry;
+- [ ] tambahkan adapter `PlatformMenuBar` macOS dan uji enablement/shortcut;
+- [ ] dokumentasikan bahwa custom title bar bukan bagian dari fase awal;
+- [ ] buat keputusan baru hanya jika kebutuhan custom chrome muncul setelah
+  menu, panel, dan shortcut stabil.
+
+**Exit gate:** seluruh command penting dapat dijalankan dari menu dan toolbar,
+menu macOS native bekerja, menu Windows/Linux tetap usable, dan title bar native
+tidak mengalami regresi.
+
 ## 7. Urutan implementasi
 
 ### Tahap A — Theme foundation
@@ -432,3 +494,5 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap D — macOS Release artifact recheck | Direct `xcodebuild` melalui `macos/Runner.xcworkspace` dengan konfigurasi `Release` dan destination `platform=macOS,arch=arm64` berhasil (`Project ... built and packaged successfully`). App bundle `build/macos/xcode-release/Build/Products/Release/relgeo_flutter.app` hadir; executable utama terverifikasi Mach-O universal `arm64`/`x86_64`. Audit source Flutter tidak menemukan path lokal, private key, token, atau pola password yang terdeteksi. Ini menutup bukti kompilasi Release lokal dan kebersihan source-level untuk artifact; fresh macOS CI, packaging lintas-host, dan runtime/accessibility smoke tetap terbuka. |
 | 2026-09-27 | Tahap B/E — CI-parity local verification | Setelah cleanup formatting pada 19 file, `dart format --output=none --set-exit-if-changed lib test` melaporkan **101 file, 0 changed**; `flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos` lulus tanpa issue; `flutter test --no-pub --reporter compact` lulus dengan **176 test**; dan `git diff --check` bersih. |
 | 2026-09-27 | Tahap C/E — Web compilation follow-up | Setelah fallback scroll compact dan bridge Dart diperbaiki, `flutter build web --debug --no-wasm-dry-run` berhasil menghasilkan `build/web` dalam **35,7 detik**. Ini menutup regresi kompilasi web untuk perubahan putaran ini; native Linux/Windows build dan macOS destination verification tetap menunggu runner yang sesuai. |
+| 2026-09-27 | Keputusan scope — menu bar dan window chrome | Dipilih pendekatan non-overkill: command registry bersama, menu Flutter di dalam workbench untuk Ubuntu/Linux dan Windows, adapter `PlatformMenuBar` native untuk macOS, serta native title bar dipertahankan pada fase awal. Custom title bar terpadu ala VSCode/ChatGPT ditunda sampai kebutuhan dan bukti manfaatnya jelas. |
+| 2026-09-27 | Product naming — end-user application name | Nama yang tampil pada window, launcher, bundle, executable metadata, Android/iOS label, dan web/PWA diselaraskan menjadi `RelGeo`. Identifier teknis `relgeo_flutter` dipertahankan pada package/import, namespace, application ID, dan struktur internal agar tidak memicu rename teknis yang tidak diperlukan. |

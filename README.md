@@ -1,4 +1,4 @@
-# RelGeo Flutter Workbench (v0.5 Dart/Flutter Port)
+# RelGeo Workbench (v0.5 Dart/Flutter Application)
 
 Workbench dan port Flutter untuk surface aktif `RelGeo DSL v0.5`.
 

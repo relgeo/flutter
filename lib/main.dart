@@ -89,7 +89,7 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RelGeo CAD Workbench',
+      title: 'RelGeo',
       debugShowCheckedModeBanner: false,
       theme: buildRelGeoLightTheme(),
       darkTheme: buildRelGeoDarkTheme(),
