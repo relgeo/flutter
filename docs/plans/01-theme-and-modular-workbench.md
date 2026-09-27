@@ -293,7 +293,7 @@ digantikan oleh golden.
 - [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
 - [x] siapkan checklist Windows 11 untuk verifikasi eksternal; prosedur lintas
   desktop dan template evidence tersedia di
-  [`workspace/docs/plans/09-desktop-runtime-smoke-checklist.md`](https://github.com/relgeo/workspace/blob/main/docs/plans/09-desktop-runtime-smoke-checklist.md).
+  [`workspace/docs/plans/10-desktop-runtime-smoke-checklist.md`](https://github.com/relgeo/workspace/blob/main/docs/plans/10-desktop-runtime-smoke-checklist.md).
 
 **Exit gate:** aplikasi dapat dibangun dan dijalankan dengan shell yang konsisten pada target desktop yang tersedia.
 
