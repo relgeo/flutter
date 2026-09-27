@@ -298,8 +298,9 @@ ruang lingkup Tahap D.
   serta toggle panel utama;
 - [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
   dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
-  About. File I/O host lintas platform, undo/redo editor, dan shortcut parity
-  penuh masih tertunda.
+  About. Callback Save As/Close/Quit kini juga tersedia; implementasi file I/O
+  native lintas platform, undo/redo editor, dan shortcut parity penuh masih
+  tertunda.
 
 ### Tahap G — Accessibility dan regression
 
@@ -384,3 +385,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap G parsial — Floating keyboard focus | Floating/overlay panel memiliki focus boundary, aktivasi pointer membawa focus, dan `Escape` menutup overlay aktif. Keyboard traversal antar-region dan focus restoration setelah docking masih tertunda. |
 | 2026-09-27 | Tahap F parsial — Global command shortcuts | Menambahkan `WorkbenchCommandSurface` yang memasang shortcut global dari command registry. Menu, shortcut global, dan callback command kini melewati enabled-state yang sama; parity toolbar/context menu dan shortcut untuk seluruh command masih tertunda. |
 | 2026-09-27 | Tahap D — Drag-to-dock | Floating/overlay panel kini mengevaluasi zona drop dari posisi center panel dan berpindah ke placement kiri, tengah, kanan, atau bottom untuk Parameters. Keputusan ini berada di controller agar gesture pointer/touch/pen konsisten. |
+| 2026-09-27 | Tahap F parsial — File lifecycle callbacks | Command registry dan `CADWorkbenchPage` kini menyediakan `New`, `Open`, `Save`, `Save As`, `Close`, dan `Quit` melalui callback host opsional. Command otomatis disabled ketika host belum memasang handler; dialog/file picker native masih menjadi tanggung jawab host service. |

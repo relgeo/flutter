@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/main.dart';
+import 'package:relgeo_flutter/src/ui/cad_workbench.dart';
 import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
 import 'package:relgeo_flutter/src/features/editor/editor_panel.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
@@ -93,6 +94,52 @@ void main() {
     await tester.tap(find.text('Help'));
     await tester.pumpAndSettle();
     expect(find.text('About RelGeo'), findsOneWidget);
+  });
+
+  testWidgets('file menu exposes host document lifecycle callbacks', (
+    WidgetTester tester,
+  ) async {
+    var saveAsCount = 0;
+    var closeCount = 0;
+    var quitCount = 0;
+
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          onSaveAsDocument: () => saveAsCount++,
+          onCloseDocument: () => closeCount++,
+          onQuitApplication: () => quitCount++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    expect(find.text('Save document as…'), findsOneWidget);
+    expect(find.text('Close document'), findsOneWidget);
+    expect(find.text('Quit RelGeo'), findsOneWidget);
+
+    await tester.tap(find.text('Save document as…'));
+    await tester.pump();
+    expect(saveAsCount, 1);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Close document'));
+    await tester.pump();
+    expect(closeCount, 1);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quit RelGeo'));
+    await tester.pump();
+    expect(quitCount, 1);
   });
 
   testWidgets('theme mode follows system until explicitly overridden', (

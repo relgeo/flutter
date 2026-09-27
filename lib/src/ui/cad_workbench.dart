@@ -33,6 +33,9 @@ class CADWorkbenchPage extends StatefulWidget {
     this.onNewDocument,
     this.onOpenDocument,
     this.onSaveDocument,
+    this.onSaveAsDocument,
+    this.onCloseDocument,
+    this.onQuitApplication,
     this.onThemePreferenceChanged,
     this.onResetThemePreference,
     this.workbenchProfileId = 'cad',
@@ -46,6 +49,9 @@ class CADWorkbenchPage extends StatefulWidget {
   final VoidCallback? onNewDocument;
   final VoidCallback? onOpenDocument;
   final VoidCallback? onSaveDocument;
+  final VoidCallback? onSaveAsDocument;
+  final VoidCallback? onCloseDocument;
+  final VoidCallback? onQuitApplication;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final VoidCallback? onResetThemePreference;
   final String workbenchProfileId;
@@ -731,6 +737,47 @@ objects:
         label: 'Save document',
         enabled: widget.onSaveDocument != null,
         onInvoke: () => widget.onSaveDocument?.call(),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.saveAsDocument,
+        menu: 'File',
+        label: 'Save document as…',
+        enabled: widget.onSaveAsDocument != null,
+        onInvoke: () => widget.onSaveAsDocument?.call(),
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyS,
+          control: true,
+          shift: true,
+        ),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyS,
+          control: true,
+          shift: true,
+        ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.closeDocument,
+        menu: 'File',
+        label: 'Close document',
+        enabled: widget.onCloseDocument != null,
+        onInvoke: () => widget.onCloseDocument?.call(),
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyW, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyW,
+          control: true,
+        ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.quitApplication,
+        menu: 'File',
+        label: 'Quit RelGeo',
+        enabled: widget.onQuitApplication != null,
+        onInvoke: () => widget.onQuitApplication?.call(),
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyQ, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyQ,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.exportSvg,
