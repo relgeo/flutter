@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -399,6 +401,16 @@ void main() {
     await tester.pump();
 
     expect(controller.layout.splitRatios['left'], greaterThan(before));
+
+    final afterKeyboard = controller.layout.splitRatios['left']!;
+    final dividerSemanticsNode = tester.semantics.find(divider);
+    dividerSemanticsNode.owner!.performAction(
+      dividerSemanticsNode.id,
+      ui.SemanticsAction.decrease,
+    );
+    await tester.pump();
+
+    expect(controller.layout.splitRatios['left'], lessThan(afterKeyboard));
   });
 
   testWidgets('floating resize handle responds to keyboard arrows', (
@@ -449,6 +461,20 @@ void main() {
     expect(
       controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width,
       greaterThan(before),
+    );
+
+    final afterKeyboard =
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width!;
+    final handleSemanticsNode = tester.semantics.find(handle);
+    handleSemanticsNode.owner!.performAction(
+      handleSemanticsNode.id,
+      ui.SemanticsAction.decrease,
+    );
+    await tester.pump();
+
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width,
+      lessThan(afterKeyboard),
     );
   });
 

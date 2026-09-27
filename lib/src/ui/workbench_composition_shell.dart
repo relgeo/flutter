@@ -478,6 +478,9 @@ class _FloatingPanelResizeHandle extends StatelessWidget {
           child: Semantics(
             label: 'Resize floating workbench panel',
             slider: true,
+            hint: 'Increase or decrease panel size',
+            onIncrease: () => onDrag(const Offset(16, 16)),
+            onDecrease: () => onDrag(const Offset(-16, -16)),
             child: SizedBox(
               width: 20,
               height: 20,
@@ -524,6 +527,9 @@ class _WorkbenchPanelDivider extends StatelessWidget {
           child: Semantics(
             label: 'Resize workbench panels',
             slider: true,
+            hint: 'Increase or decrease the left panel width',
+            onIncrease: () => onDrag(16),
+            onDecrease: () => onDrag(-16),
             child: SizedBox(
               width: 8,
               child: ColoredBox(
@@ -564,6 +570,9 @@ class _WorkbenchHorizontalDivider extends StatelessWidget {
           child: Semantics(
             label: 'Resize parameters panel',
             slider: true,
+            hint: 'Increase or decrease the parameters panel height',
+            onIncrease: () => onDrag(16),
+            onDecrease: () => onDrag(-16),
             child: SizedBox(
               height: 8,
               child: ColoredBox(
