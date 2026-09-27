@@ -116,9 +116,27 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   final WorkbenchLayoutPersistenceController _layoutPersistenceController =
       WorkbenchLayoutPersistenceController();
 
+  String? _documentPath;
+  String? _documentName;
+
   Future<void> _openDocumentFromFileService() async {
-    final source = await widget.fileService?.openDocument();
+    final service = widget.fileService;
+    if (service == null) return;
+
+    if (service is WorkbenchDocumentFileService) {
+      final document = await service.openDocumentWithIdentity();
+      if (!mounted || document == null) return;
+      _documentPath = document.path;
+      _documentName = document.name;
+      _editorController.editingController.text = document.source;
+      _compileDSL(document.source);
+      return;
+    }
+
+    final source = await service.openDocument();
     if (!mounted || source == null) return;
+    _documentPath = null;
+    _documentName = null;
     _editorController.editingController.text = source;
     _compileDSL(source);
   }
@@ -126,6 +144,20 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   Future<void> _saveDocumentToFileService({required bool saveAs}) async {
     final service = widget.fileService;
     if (service == null) return;
+    if (service is WorkbenchDocumentFileService) {
+      final saved = await service.saveDocumentWithIdentity(
+        _editorController.text,
+        saveAs: saveAs,
+        currentPath: _documentPath,
+        currentName: _documentName,
+      );
+      if (saved != null) {
+        _documentPath = saved.path;
+        _documentName = saved.name;
+      }
+      return;
+    }
+
     await service.saveDocument(_editorController.text, saveAs: saveAs);
   }
 

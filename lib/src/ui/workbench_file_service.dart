@@ -14,11 +14,44 @@ abstract interface class WorkbenchFileService {
   Future<bool> saveDocument(String source, {required bool saveAs});
 }
 
+/// Source and identity returned by a file service that can track documents.
+///
+/// Web hosts may not have a filesystem path, so [path] is intentionally
+/// nullable. [name] remains useful for a tab, window title, or suggested save
+/// filename in those hosts.
+class WorkbenchDocumentFile {
+  const WorkbenchDocumentFile({
+    required this.source,
+    this.path,
+    this.name,
+  });
+
+  final String source;
+  final String? path;
+  final String? name;
+}
+
+/// Optional extension for hosts that can preserve document identity.
+///
+/// Implementing this extension does not replace [WorkbenchFileService], so
+/// existing integrations can migrate without a breaking API change.
+abstract interface class WorkbenchDocumentFileService
+    implements WorkbenchFileService {
+  Future<WorkbenchDocumentFile?> openDocumentWithIdentity();
+
+  Future<WorkbenchDocumentFile?> saveDocumentWithIdentity(
+    String source, {
+    required bool saveAs,
+    String? currentPath,
+    String? currentName,
+  });
+}
+
 /// Portable file-picker implementation for YAML/RelGeo source files.
 ///
 /// New/Close/Quit remain application lifecycle concerns and stay as host
 /// callbacks on [CADWorkbenchPage].
-class FilePickerWorkbenchFileService implements WorkbenchFileService {
+class FilePickerWorkbenchFileService implements WorkbenchDocumentFileService {
   const FilePickerWorkbenchFileService({this.defaultFileName = 'relgeo.yaml'});
 
   final String defaultFileName;
@@ -27,6 +60,12 @@ class FilePickerWorkbenchFileService implements WorkbenchFileService {
 
   @override
   Future<String?> openDocument() async {
+    final document = await openDocumentWithIdentity();
+    return document?.source;
+  }
+
+  @override
+  Future<WorkbenchDocumentFile?> openDocumentWithIdentity() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: _extensions,
@@ -34,21 +73,47 @@ class FilePickerWorkbenchFileService implements WorkbenchFileService {
       lockParentWindow: true,
     );
     if (result == null || result.files.isEmpty) return null;
-    final bytes = result.files.single.bytes;
+    final file = result.files.single;
+    final bytes = file.bytes;
     if (bytes == null) return null;
-    return utf8.decode(bytes);
+    return WorkbenchDocumentFile(
+      source: utf8.decode(bytes),
+      path: file.path,
+      name: file.name,
+    );
   }
 
   @override
   Future<bool> saveDocument(String source, {required bool saveAs}) async {
+    return await saveDocumentWithIdentity(source, saveAs: saveAs) != null;
+  }
+
+  @override
+  Future<WorkbenchDocumentFile?> saveDocumentWithIdentity(
+    String source, {
+    required bool saveAs,
+    String? currentPath,
+    String? currentName,
+  }) async {
     final bytes = Uint8List.fromList(utf8.encode(source));
     final path = await FilePicker.platform.saveFile(
       type: FileType.custom,
       allowedExtensions: _extensions,
-      fileName: defaultFileName,
+      fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
       bytes: bytes,
       lockParentWindow: true,
     );
-    return path != null;
+    if (path == null) return null;
+    return WorkbenchDocumentFile(
+      source: source,
+      path: path,
+      name: _fileName(path) ?? currentName ?? defaultFileName,
+    );
+  }
+
+  String? _fileName(String path) {
+    final separator = path.lastIndexOf(RegExp(r'[/\\]'));
+    if (separator < 0 || separator == path.length - 1) return null;
+    return path.substring(separator + 1);
   }
 }

@@ -61,10 +61,12 @@ sheets:
           topLeft: [25, 25]
 ''';
 
-class _FakeFileService implements WorkbenchFileService {
+class _FakeFileService implements WorkbenchDocumentFileService {
   int openCount = 0;
   int saveCount = 0;
   bool? lastSaveAs;
+  String? lastCurrentPath;
+  String? lastCurrentName;
 
   @override
   Future<String?> openDocument() async {
@@ -73,11 +75,40 @@ class _FakeFileService implements WorkbenchFileService {
   }
 
   @override
+  Future<WorkbenchDocumentFile?> openDocumentWithIdentity() async {
+    openCount++;
+    return const WorkbenchDocumentFile(
+      source: _sheetDsl,
+      path: '/documents/example.relgeo',
+      name: 'example.relgeo',
+    );
+  }
+
+  @override
   Future<bool> saveDocument(String source, {required bool saveAs}) async {
     saveCount++;
     lastSaveAs = saveAs;
     expect(source, contains('scene:'));
     return true;
+  }
+
+  @override
+  Future<WorkbenchDocumentFile?> saveDocumentWithIdentity(
+    String source, {
+    required bool saveAs,
+    String? currentPath,
+    String? currentName,
+  }) async {
+    saveCount++;
+    lastSaveAs = saveAs;
+    lastCurrentPath = currentPath;
+    lastCurrentName = currentName;
+    expect(source, contains('scene:'));
+    return WorkbenchDocumentFile(
+      source: source,
+      path: currentPath ?? '/documents/new.relgeo',
+      name: currentName ?? 'new.relgeo',
+    );
   }
 }
 
@@ -256,6 +287,14 @@ void main() {
     await tester.tap(find.text('Open document…'));
     await tester.pumpAndSettle();
     expect(service.openCount, 1);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save document'));
+    await tester.pumpAndSettle();
+    expect(service.saveCount, 3);
+    expect(service.lastCurrentPath, '/documents/example.relgeo');
+    expect(service.lastCurrentName, 'example.relgeo');
   });
 
   testWidgets('theme mode follows system until explicitly overridden', (

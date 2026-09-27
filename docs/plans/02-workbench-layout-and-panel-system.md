@@ -302,9 +302,11 @@ ruang lingkup Tahap D.
   dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
   About. Callback Save As/Close/Quit kini juga tersedia; implementasi file I/O
   native untuk Open/Save/Save As kini memiliki `WorkbenchFileService`, adapter
-  `file_picker`, dan sudah dipasang pada aplikasi default; New/Close/Quit tetap callback aplikasi, sedangkan
-  undo/redo editor kini aktif melalui history native `re_editor`, sedangkan
-  shortcut parity penuh masih tertunda.
+  `file_picker`, dan sudah dipasang pada aplikasi default. Extension
+  `WorkbenchDocumentFileService` juga dapat mempertahankan nama/path dokumen
+  secara opsional; New/Close/Quit tetap callback aplikasi, sedangkan
+  undo/redo editor kini aktif melalui history native `re_editor`, dan shortcut
+  parity penuh masih tertunda.
 
 ### Tahap G — Accessibility dan regression
 
@@ -404,7 +406,8 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Editor history commands | Menu `Edit` dan shortcut global kini menyediakan Undo/Redo dengan enabled-state yang diturunkan dari history native `re_editor`; toolbar/context-menu parity dan kebijakan history lintas dokumen masih tertunda. |
 | 2026-09-27 | Tahap F parsial — Hierarchical SVG export | Menu File kini memiliki jalur `Export → SVG → Model / Sheet View`; command target Sheet disabled tanpa sheet aktif. Tombol toolbar tetap menjadi shortcut untuk export surface aktif, bukan menu export terpisah. |
 | 2026-09-27 | Tahap F — Unified workbench reset | `Reset workbench preferences` kini mereset layout ke Standard sekaligus appearance/overlay/role preferences; regression test memastikan panel yang di-collapse kembali tersedia setelah reset. |
-| 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan; identitas dokumen dan lifecycle New/Close/Quit masih menjadi tanggung jawab host. |
+| 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan. Extension `WorkbenchDocumentFileService` mempertahankan nama/path dokumen ketika adapter mampu menyediakannya; lifecycle New/Close/Quit tetap menjadi tanggung jawab host. |
+| 2026-09-27 | Tahap F parsial — Document identity boundary | Menambahkan boundary backward-compatible untuk metadata nama/path dokumen. `CADWorkbenchPage` meneruskan identitas saat Open dan Save/Save As, sementara implementasi legacy `WorkbenchFileService` tetap valid. Test widget memverifikasi Save setelah Open menerima identitas dokumen yang sama. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
