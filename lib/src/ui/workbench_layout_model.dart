@@ -235,9 +235,11 @@ class WorkbenchLayoutModel {
     required Map<WorkbenchPanelId, WorkbenchPanelLayout> panels,
     required Map<String, double> splitRatios,
     required Map<WorkbenchPanelId, WorkbenchPanelBounds> floatingBounds,
+    List<WorkbenchPanelId> floatingOrder = const [],
   }) : panels = Map.unmodifiable(panels),
        splitRatios = Map.unmodifiable(splitRatios),
-       floatingBounds = Map.unmodifiable(floatingBounds);
+       floatingBounds = Map.unmodifiable(floatingBounds),
+       floatingOrder = List.unmodifiable(floatingOrder);
 
   static const currentSchemaVersion = 1;
   static const standardProfileId = 'standard';
@@ -247,6 +249,7 @@ class WorkbenchLayoutModel {
   final Map<WorkbenchPanelId, WorkbenchPanelLayout> panels;
   final Map<String, double> splitRatios;
   final Map<WorkbenchPanelId, WorkbenchPanelBounds> floatingBounds;
+  final List<WorkbenchPanelId> floatingOrder;
 
   factory WorkbenchLayoutModel.standard({
     String profileId = standardProfileId,
@@ -287,6 +290,7 @@ class WorkbenchLayoutModel {
     Map<WorkbenchPanelId, WorkbenchPanelLayout>? panels,
     Map<String, double>? splitRatios,
     Map<WorkbenchPanelId, WorkbenchPanelBounds>? floatingBounds,
+    List<WorkbenchPanelId>? floatingOrder,
   }) {
     return WorkbenchLayoutModel(
       schemaVersion: schemaVersion ?? this.schemaVersion,
@@ -294,6 +298,7 @@ class WorkbenchLayoutModel {
       panels: panels ?? this.panels,
       splitRatios: splitRatios ?? this.splitRatios,
       floatingBounds: floatingBounds ?? this.floatingBounds,
+      floatingOrder: floatingOrder ?? this.floatingOrder,
     );
   }
 
@@ -311,6 +316,7 @@ class WorkbenchLayoutModel {
       for (final entry in floatingBounds.entries)
         entry.key.storageKey: entry.value.toJson(),
     },
+    'floatingOrder': [for (final panel in floatingOrder) panel.storageKey],
   };
 
   /// Invalid or future data falls back to a complete Standard layout rather
@@ -324,6 +330,7 @@ class WorkbenchLayoutModel {
     final rawPanels = value['panels'];
     final rawRatios = value['splitRatios'];
     final rawFloating = value['floatingBounds'];
+    final rawFloatingOrder = value['floatingOrder'];
     if (profile is! String || profile.isEmpty || rawPanels is! Map) {
       return WorkbenchLayoutModel.standard();
     }
@@ -361,12 +368,29 @@ class WorkbenchLayoutModel {
       }
     }
 
+    final floatingOrder = <WorkbenchPanelId>[];
+    if (rawFloatingOrder is List) {
+      for (final entry in rawFloatingOrder) {
+        final panel = WorkbenchPanelId.fromStorageKey(entry);
+        if (panel == null || floatingOrder.contains(panel)) {
+          return WorkbenchLayoutModel.standard();
+        }
+        floatingOrder.add(panel);
+      }
+    } else if (rawFloatingOrder != null) {
+      return WorkbenchLayoutModel.standard();
+    }
+    for (final panel in floating.keys) {
+      if (!floatingOrder.contains(panel)) floatingOrder.add(panel);
+    }
+
     return WorkbenchLayoutModel(
       schemaVersion: currentSchemaVersion,
       activeProfileId: profile,
       panels: panels,
       splitRatios: ratios,
       floatingBounds: floating,
+      floatingOrder: floatingOrder,
     );
   }
 
@@ -377,7 +401,8 @@ class WorkbenchLayoutModel {
       other.activeProfileId == activeProfileId &&
       mapEquals(other.panels, panels) &&
       mapEquals(other.splitRatios, splitRatios) &&
-      mapEquals(other.floatingBounds, floatingBounds);
+      mapEquals(other.floatingBounds, floatingBounds) &&
+      listEquals(other.floatingOrder, floatingOrder);
 
   @override
   int get hashCode => Object.hash(
@@ -386,5 +411,6 @@ class WorkbenchLayoutModel {
     Object.hashAll(panels.entries),
     Object.hashAll(splitRatios.entries),
     Object.hashAll(floatingBounds.entries),
+    Object.hashAll(floatingOrder),
   );
 }

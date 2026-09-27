@@ -128,6 +128,33 @@ void main() {
     );
   });
 
+  test('floating focus updates z-order without changing panel placement', () {
+    final controller = WorkbenchLayoutController();
+    controller.setPlacement(
+      WorkbenchPanelId.editor,
+      WorkbenchPanelPlacement.floating,
+    );
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.overlay,
+    );
+
+    expect(controller.layout.floatingOrder, const [
+      WorkbenchPanelId.editor,
+      WorkbenchPanelId.inspector,
+    ]);
+    controller.focusFloatingPanel(WorkbenchPanelId.editor);
+
+    expect(controller.layout.floatingOrder, const [
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelId.editor,
+    ]);
+    expect(
+      controller.panel(WorkbenchPanelId.editor).placement,
+      WorkbenchPanelPlacement.floating,
+    );
+  });
+
   test('floating movement and resize respect canvas bounds', () {
     final controller = WorkbenchLayoutController();
     controller.setPlacement(

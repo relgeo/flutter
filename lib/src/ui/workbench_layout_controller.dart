@@ -78,7 +78,32 @@ class WorkbenchLayoutController extends ChangeNotifier {
   }
 
   void setPlacement(WorkbenchPanelId id, WorkbenchPanelPlacement placement) {
-    _updatePanel(id, panel(id).copyWith(placement: placement));
+    final nextOrder = [..._layout.floatingOrder]..remove(id);
+    if (placement == WorkbenchPanelPlacement.floating ||
+        placement == WorkbenchPanelPlacement.overlay) {
+      nextOrder.add(id);
+    }
+    _replaceAsCustom(
+      _layout.copyWith(
+        panels: {
+          ..._layout.panels,
+          id: panel(id).copyWith(placement: placement),
+        },
+        floatingOrder: nextOrder,
+      ),
+    );
+  }
+
+  void focusFloatingPanel(WorkbenchPanelId id) {
+    final placement = panel(id).placement;
+    if (placement != WorkbenchPanelPlacement.floating &&
+        placement != WorkbenchPanelPlacement.overlay) {
+      return;
+    }
+    final nextOrder = [..._layout.floatingOrder]
+      ..remove(id)
+      ..add(id);
+    _replaceAsCustom(_layout.copyWith(floatingOrder: nextOrder));
   }
 
   void setBounds(WorkbenchPanelId id, WorkbenchPanelBounds bounds) {

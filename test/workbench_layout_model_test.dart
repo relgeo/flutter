@@ -40,9 +40,12 @@ void main() {
               top: 24,
             ),
           },
+          floatingOrder: const [WorkbenchPanelId.inspector],
         );
 
-    expect(WorkbenchLayoutModel.fromJson(original.toJson()), original);
+    final restored = WorkbenchLayoutModel.fromJson(original.toJson());
+    expect(restored, original);
+    expect(restored.floatingOrder, const [WorkbenchPanelId.inspector]);
   });
 
   test('unknown schema or incomplete panel data falls back to Standard', () {

@@ -202,21 +202,28 @@ class WorkbenchCompositionShell extends StatelessWidget {
     double canvasWidth,
     double canvasHeight,
   ) {
+    final floatingIds = panelIds
+        .where(
+          (id) =>
+              controller.panel(id).visibility !=
+                  WorkbenchPanelVisibility.hidden &&
+              (controller.panel(id).placement ==
+                      WorkbenchPanelPlacement.floating ||
+                  controller.panel(id).placement ==
+                      WorkbenchPanelPlacement.overlay),
+        )
+        .toList();
+    final order = controller.layout.floatingOrder;
+    floatingIds.sort((a, b) {
+      final aIndex = order.indexOf(a);
+      final bIndex = order.indexOf(b);
+      return (aIndex < 0 ? order.length : aIndex).compareTo(
+        bIndex < 0 ? order.length : bIndex,
+      );
+    });
     return [
-      for (final id in panelIds)
-        if (controller.panel(id).visibility !=
-                WorkbenchPanelVisibility.hidden &&
-            (controller.panel(id).placement ==
-                    WorkbenchPanelPlacement.floating ||
-                controller.panel(id).placement ==
-                    WorkbenchPanelPlacement.overlay))
-          _buildFloatingPanel(
-            context,
-            controller,
-            id,
-            canvasWidth,
-            canvasHeight,
-          ),
+      for (final id in floatingIds)
+        _buildFloatingPanel(context, controller, id, canvasWidth, canvasHeight),
     ];
   }
 
@@ -246,6 +253,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
       width: width,
       height: height,
       child: GestureDetector(
+        onTap: () => controller.focusFloatingPanel(id),
+        onPanStart: (_) => controller.focusFloatingPanel(id),
         onPanUpdate: (details) => controller.moveFloatingPanel(
           id,
           dx: details.delta.dx,
