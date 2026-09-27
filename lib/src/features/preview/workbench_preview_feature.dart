@@ -18,11 +18,30 @@ class WorkbenchPreviewFeature extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      // The viewport panel already owns the flex slot required by the
-      // composition row. Do not attach a second ParentDataWidget here.
-      children: [toolbar, overlayToolbar, panel],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final controls = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [toolbar, overlayToolbar],
+        );
+        final controlsSlot = constraints.maxHeight < 700
+            ? Flexible(
+                fit: FlexFit.loose,
+                // The two control bands can become tall at compact widths.
+                // Let them scroll instead of overflowing a short window.
+                child: SingleChildScrollView(child: controls),
+              )
+            : controls;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            controlsSlot,
+            // The viewport panel owns the remaining flex slot.
+            panel,
+          ],
+        );
+      },
     );
   }
 }

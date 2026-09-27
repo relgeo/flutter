@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 
 import 'workbench_window_host.dart';
+import 'workbench_window_policy.dart';
 
 /// Sends window configuration to a native desktop runner when one is present.
 ///
