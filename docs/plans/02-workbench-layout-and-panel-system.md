@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A, B, dan C selesai; Tahap D, E, dan F sebagian selesai; Tahap G belum selesai
+**Status:** Tahap A, B, dan C selesai; Tahap D, E, F, dan G sebagian selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -277,14 +277,19 @@ ruang lingkup Tahap D.
 ### Tahap F — Menu bar dan command registry
 
 - [x] definisikan command ID, label, shortcut, enabled state, dan checked state;
-- [ ] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`, dan `Help`;
+- [x] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`,
+  `Workbench`, dan `Help` pada menu bar in-window serta adapter native macOS;
 - [ ] tempatkan SVG di `File → Export → SVG → Model / Sheet View`, bukan sebagai
   tombol khusus pada Preview;
-- [ ] hubungkan menu dengan document, layout, theme, canvas, dan native services;
+- [~] hubungkan menu dengan document, layout, theme, canvas, dan native
+  services; layout/theme/document actions sudah aktif, sedangkan native file
+  I/O dan export target Model/Sheet masih menunggu service host;
 - [ ] pastikan toolbar dan keyboard shortcut memakai command yang sama;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
-- [ ] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
-- [ ] sediakan reset layout, reset appearance override, dan reset parameters;
+- [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
+- [~] sediakan reset layout, reset appearance override, dan reset parameters;
+  reset layout, reset parameter, dan kembali ke system appearance sudah ada,
+  tetapi reset global yang menyatukan seluruh preference masih tertunda;
 - [x] tambahkan test command availability dan activation untuk command registry
   serta toggle panel utama;
 - [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
@@ -294,30 +299,46 @@ ruang lingkup Tahap D.
 
 ### Tahap G — Accessibility dan regression
 
-- [ ] semua panel dan splitter memiliki label semantics;
-- [ ] keyboard dapat berpindah, collapse, dan mengaktifkan panel;
-- [ ] focus tidak hilang saat panel dipindah;
-- [ ] reduced-motion dihormati pada floating/collapse animation;
-- [ ] golden dan widget test mencakup setiap preset utama;
+- [~] semua panel dan splitter memiliki label semantics; surface floating,
+  collapsed, splitter, dan resize handle sudah berlabel, tetapi audit semantics
+  end-to-end untuk seluruh child feature belum selesai;
+- [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
+  shortcut, focus boundary floating/overlay, dan Escape sudah aktif, sedangkan
+  traversal antar-region serta keyboard resize/collapse langsung masih tertunda;
+- [~] focus tidak hilang saat panel dipindah; pointer activation dan focus
+  order floating sudah tersedia, tetapi restoration setelah docking belum;
+- [x] reduced-motion dihormati pada transisi workbench yang sudah memiliki
+  motion policy;
+- [~] golden dan widget test mencakup setiap preset utama; shell golden light/
+  dark dan profile/widget coverage sudah tersedia, tetapi golden khusus setiap
+  preset belum dibuat;
 - [ ] uji native window pada macOS, Ubuntu, dan Windows 11.
 
 ## 8. Acceptance criteria
 
-- [ ] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
+- [~] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
+  show/hide, resize, collapse, float, overlay, dan command placement sudah ada;
+  drag-to-dock serta native focus integration belum;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
 - [~] panel dapat di-collapse, di-dock melalui command, di-float, dan di-overlay;
   drag-to-dock serta transisi floating interaktif masih tertunda;
-- [ ] preset dapat diterapkan tanpa mengubah dokumen;
-- [ ] perubahan layout dipulihkan setelah restart;
-- [ ] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
-- [ ] layout preference terpisah dari theme dan document persistence;
-- [ ] keyboard dan accessibility state tetap dapat digunakan;
-- [ ] analyzer, test, golden, web build, dan native build tetap lulus.
-- [ ] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command yang sama;
-- [ ] command disabled tidak dapat dijalankan melalui shortcut maupun menu;
-- [ ] state checkmark menu selalu mengikuti state layout/theme aktual.
-- [ ] tidak ada aksi `SVG MODEL` khusus pada toolbar Preview;
+- [x] preset dapat diterapkan tanpa mengubah dokumen;
+- [x] perubahan layout dipulihkan melalui persistence reload; verifikasi restart
+  native penuh masih menjadi bagian uji platform;
+- [x] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
+- [x] layout preference terpisah dari theme dan document persistence;
+- [~] keyboard dan accessibility state tetap dapat digunakan; jalur menu,
+  shortcut, semantics, dan Escape sudah diuji, tetapi traversal menyeluruh
+  antar-region belum;
+- [~] analyzer, test, golden, dan web build tetap lulus; native build masih
+  menunggu validasi macOS/Ubuntu/Windows 11;
+- [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
+  yang sama; menu bar/native menu dan sebagian toolbar sudah memakai registry,
+  tetapi parity penuh toolbar/context/shortcut belum;
+- [x] command disabled tidak dapat dijalankan melalui menu maupun `invoke()`;
+- [x] state checkmark menu mengikuti state layout aktual untuk panel dan profile;
+- [x] tidak ada aksi `SVG MODEL` khusus pada toolbar Preview;
 
 ## 9. Risiko dan keputusan yang ditunda
 
