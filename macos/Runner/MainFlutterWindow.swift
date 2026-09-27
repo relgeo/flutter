@@ -15,6 +15,11 @@ class MainFlutterWindow: NSWindow {
       binaryMessenger: flutterViewController.engine.binaryMessenger
     )
     channel.setMethodCallHandler { [weak self] call, result in
+      if call.method == "close" {
+        self?.performClose(nil)
+        result(nil)
+        return
+      }
       guard call.method == "configure",
             let arguments = call.arguments as? [String: Any],
             let defaultWidth = arguments["defaultWidth"] as? Double,

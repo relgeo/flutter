@@ -309,9 +309,10 @@ ruang lingkup Tahap D.
   `file_picker`, dan sudah dipasang pada aplikasi default. Extension
   `WorkbenchDocumentFileService` juga dapat mempertahankan nama/path dokumen
   secara opsional; New kini memiliki fallback dokumen minimal lokal ketika file
-  service tersedia, sementara callback host tetap diprioritaskan dan Close/Quit
-  tetap callback aplikasi, sedangkan
-  undo/redo editor kini aktif melalui history native `re_editor`, dan shortcut
+  service tersedia, sementara callback host tetap diprioritaskan. Quit kini
+  dapat memakai lifecycle host native opsional, sedangkan Close document tetap
+  callback aplikasi; undo/redo editor kini aktif melalui history native
+  `re_editor`, dan shortcut
   parity penuh masih tertunda. `WorkbenchDocumentSession` kini melacak dirty
   state; jalur file service menandai sesi bersih setelah Save. Host juga dapat
   memakai `onSaveDocumentWithResult` untuk mengembalikan acknowledgement typed
@@ -446,6 +447,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G parsial — Editor autocomplete accessibility | Setiap suggestion autocomplete kini memiliki semantic label/value/selection state, keyboard activation Enter/Space, dan callback selection yang sama dengan pointer tap. Verifikasi pembaca layar nyata tetap tertunda. |
 | 2026-09-28 | Tahap F parsial — Local New document fallback | Aplikasi dengan file service kini mengaktifkan `New document` melalui fallback dokumen minimal valid yang tetap melewati dirty-state guard. Callback host New tetap memiliki prioritas; Close/Quit masih bergantung pada host lifecycle. |
 | 2026-09-28 | Tahap G — Local New dirty-state regression | Regression test memastikan fallback `New document` tidak mengganti source ketika perubahan belum dikonfirmasi, lalu mengganti ke dokumen minimal setelah host mengizinkan discard. Full suite 225 test dan web build kembali lulus. |
+| 2026-09-28 | Tahap F/G parsial — Native quit lifecycle bridge | Menambahkan `WorkbenchWindowLifecycleHost` backward-compatible dengan operasi `close`, wiring `Quit RelGeo` pada aplikasi utama, dan bridge method channel untuk macOS, Linux, serta Windows. Contract test Dart lulus; validasi runner native pada masing-masing OS masih tertunda. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |

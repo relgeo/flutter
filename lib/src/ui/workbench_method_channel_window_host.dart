@@ -8,7 +8,7 @@ import 'workbench_window_policy.dart';
 /// The missing-plugin case is intentionally a no-op so the same application
 /// composition remains safe on web and on runners that have not implemented
 /// the native bridge yet.
-class MethodChannelWorkbenchWindowHost implements WorkbenchWindowHost {
+class MethodChannelWorkbenchWindowHost implements WorkbenchWindowLifecycleHost {
   const MethodChannelWorkbenchWindowHost({
     this.channel = const MethodChannel('relgeo/window'),
   });
@@ -27,6 +27,16 @@ class MethodChannelWorkbenchWindowHost implements WorkbenchWindowHost {
     } on MissingPluginException {
       // Web and runners without the optional native bridge keep their
       // platform-default window behavior.
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    try {
+      await channel.invokeMethod<void>('close');
+    } on MissingPluginException {
+      // Web and runners without the optional native bridge keep their
+      // platform-default lifecycle behavior.
     }
   }
 }

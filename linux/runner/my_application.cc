@@ -23,7 +23,13 @@ static void window_method_call_handler(FlMethodChannel* channel,
                                        gpointer user_data) {
   (void)channel;
   g_autoptr(FlMethodResponse) response = nullptr;
-  if (std::strcmp(fl_method_call_get_name(method_call), "configure") == 0) {
+  const char* method = fl_method_call_get_name(method_call);
+  if (std::strcmp(method, "close") == 0) {
+    auto* self = MY_APPLICATION(user_data);
+    gtk_window_close(self->window);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_null()));
+  } else if (std::strcmp(method, "configure") == 0) {
     auto* self = MY_APPLICATION(user_data);
     GdkGeometry geometry = {};
     geometry.min_width = 1024;

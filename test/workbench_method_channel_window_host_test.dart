@@ -32,4 +32,26 @@ void main() {
       'minimumHeight': 640.0,
     });
   });
+
+  test('method channel window host sends close', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('relgeo/test-window-close');
+    MethodCall? receivedCall;
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          receivedCall = call;
+          return null;
+        });
+
+    try {
+      await const MethodChannelWorkbenchWindowHost(channel: channel).close();
+    } finally {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    }
+
+    expect(receivedCall?.method, 'close');
+    expect(receivedCall?.arguments, isNull);
+  });
 }

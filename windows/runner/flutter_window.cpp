@@ -53,6 +53,11 @@ bool FlutterWindow::OnCreate() {
       &flutter::StandardMethodCodec::GetInstance());
   window_channel_->SetMethodCallHandler(
       [this](const auto& call, auto result) {
+        if (call.method_name() == "close") {
+          PostMessage(GetHandle(), WM_CLOSE, 0, 0);
+          result->Success(flutter::EncodableValue());
+          return;
+        }
         if (call.method_name() != "configure") {
           result->NotImplemented();
           return;

@@ -13,6 +13,16 @@ class _RecordingWindowHost implements WorkbenchWindowHost {
   }
 }
 
+class _LifecycleWindowHost extends _RecordingWindowHost
+    implements WorkbenchWindowLifecycleHost {
+  int closeCount = 0;
+
+  @override
+  Future<void> close() async {
+    closeCount++;
+  }
+}
+
 void main() {
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -35,5 +45,21 @@ void main() {
       host.configuration?.minimumSize,
       WorkbenchWindowPolicy.minimumWindowSize,
     );
+  });
+
+  testWidgets('application exposes quit when the host supports lifecycle', (
+    WidgetTester tester,
+  ) async {
+    final host = _LifecycleWindowHost();
+
+    await tester.pumpWidget(RelGeoCADApp(windowHost: host));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quit RelGeo'));
+    await tester.pump();
+
+    expect(host.closeCount, 1);
   });
 }

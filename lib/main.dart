@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'src/ui/cad_workbench.dart';
@@ -53,6 +55,13 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
     await widget.windowHost?.configure(
       WorkbenchWindowPolicy.defaultConfiguration,
     );
+  }
+
+  void _quitApplication() {
+    final host = widget.windowHost;
+    if (host is WorkbenchWindowLifecycleHost) {
+      unawaited(host.close());
+    }
   }
 
   @override
@@ -116,6 +125,9 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
         initialDsl: widget.initialDsl,
         showInWindowMenu: widget.showInWindowMenu,
         fileService: const FilePickerWorkbenchFileService(),
+        onQuitApplication: widget.windowHost is WorkbenchWindowLifecycleHost
+            ? _quitApplication
+            : null,
         themePreference: _themePreference,
         onThemePreferenceChanged: (value) {
           setState(() {
