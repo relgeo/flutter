@@ -213,5 +213,16 @@ void main() {
       find.bySemanticsLabel('Resize floating workbench panel'),
       findsNothing,
     );
+
+    controller.toggleCollapsed(WorkbenchPanelId.inspector);
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.overlay,
+    );
+    await tester.pump();
+    expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close inspector overlay'));
+    await tester.pump();
+    expect(find.text('inspector'), findsNothing);
   });
 }

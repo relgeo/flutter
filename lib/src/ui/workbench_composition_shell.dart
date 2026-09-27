@@ -284,6 +284,22 @@ class WorkbenchCompositionShell extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (!isCollapsed &&
+                  state.placement == WorkbenchPanelPlacement.overlay)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: IconButton(
+                    key: ValueKey('close-overlay-${id.name}'),
+                    tooltip: 'Close ${id.name} overlay',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => controller.setPanelVisibility(
+                      id,
+                      WorkbenchPanelVisibility.hidden,
+                    ),
+                    icon: const Icon(Icons.close, size: 16),
+                  ),
+                ),
             ],
           ),
         ),
