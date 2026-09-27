@@ -77,6 +77,10 @@ Rencana tersebut adalah dokumen milik repository Flutter dan menjadi acuan untuk
 pemisahan app theme, canvas appearance, behavior preset, feature boundary, dan
 window/platform boundary.
 
+Rencana layout panel, docking, preset workbench, dan autosave tersedia di:
+
+- [Workbench Layout dan Panel System](docs/plans/02-workbench-layout-and-panel-system.md)
+
 ### Prerequisites
 * Flutter macOS SDK installed.
 * Standard Flutter CLI configuration.
