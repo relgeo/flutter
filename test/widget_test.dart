@@ -163,6 +163,41 @@ void main() {
     expect(quitCount, 1);
   });
 
+  testWidgets('edit menu reflects and invokes native editor history', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(home: CADWorkbenchPage(initialDsl: _sheetDsl)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    final initialUndo = tester.widget<MenuItemButton>(
+      find.widgetWithText(MenuItemButton, 'Undo'),
+    );
+    expect(initialUndo.onPressed, isNull);
+    await tester.tapAt(const Offset(600, 600));
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# edit';
+    await tester.pump();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    final undo = tester.widget<MenuItemButton>(
+      find.widgetWithText(MenuItemButton, 'Undo'),
+    );
+    expect(undo.onPressed, isNotNull);
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    expect(editor.text.toString(), _sheetDsl);
+  });
+
   testWidgets('file service powers open and save commands', (
     WidgetTester tester,
   ) async {
