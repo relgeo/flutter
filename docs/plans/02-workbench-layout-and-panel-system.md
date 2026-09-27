@@ -321,7 +321,10 @@ ruang lingkup Tahap D.
 - [~] golden dan widget test mencakup setiap preset utama; shell golden light/
   dark dan profile/widget coverage sudah tersedia, tetapi golden khusus setiap
   preset belum dibuat;
-- [ ] uji native window pada macOS, Ubuntu, dan Windows 11.
+- [~] validasi native window baru sebagian: build macOS berhasil melalui Xcode
+  pada target `x86_64`, tetapi `flutter build macos --debug --no-pub` pada mesin
+  ini meminta target `macOS arm64` yang tidak tersedia di Xcode; runtime window
+  macOS serta validasi Ubuntu dan Windows 11 masih tertunda;
 
 ## 8. Acceptance criteria
 
@@ -341,8 +344,9 @@ ruang lingkup Tahap D.
 - [~] keyboard dan accessibility state tetap dapat digunakan; jalur menu,
   shortcut, semantics, dan Escape sudah diuji, tetapi traversal menyeluruh
   antar-region belum;
-- [~] analyzer, test, golden, dan web build tetap lulus; native build masih
-  menunggu validasi macOS/Ubuntu/Windows 11;
+- [~] analyzer, test, golden, dan web build tetap lulus; build native macOS
+  `x86_64` juga lulus melalui Xcode, tetapi runtime window macOS, target arm64
+  pada Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu dan sebagian toolbar sudah memakai registry,
   tetapi parity penuh toolbar/context/shortcut belum;
@@ -396,3 +400,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Hierarchical SVG export | Menu File kini memiliki jalur `Export → SVG → Model / Sheet View`; command target Sheet disabled tanpa sheet aktif. Tombol toolbar tetap menjadi shortcut untuk export surface aktif, bukan menu export terpisah. |
 | 2026-09-27 | Tahap F — Unified workbench reset | `Reset workbench preferences` kini mereset layout ke Standard sekaligus appearance/overlay/role preferences; regression test memastikan panel yang di-collapse kembali tersedia setelah reset. |
 | 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan; identitas dokumen dan lifecycle New/Close/Quit masih menjadi tanggung jawab host. |
+| 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
