@@ -320,10 +320,12 @@ ruang lingkup Tahap D.
 
 - [~] semua panel dan splitter memiliki label semantics; surface floating,
   collapsed, splitter, resize handle, object expand/collapse, parameter reset,
-  dan parameter slider kini memiliki label/value/hint yang bermakna. Splitter
-  dan floating resize handle juga mengekspos aksi semantic increase/decrease.
-  Audit semantics end-to-end untuk seluruh child feature serta verifikasi
-  VoiceOver/TalkBack nyata belum selesai;
+  dan parameter slider kini memiliki label/value/hint yang bermakna. Editor
+  autocomplete suggestions kini menjadi control keyboard/semantics dengan
+  label, selection state, dan activation action. Splitter dan floating resize
+  handle juga mengekspos aksi semantic increase/decrease. Audit semantics
+  end-to-end untuk seluruh child feature serta verifikasi VoiceOver/TalkBack
+  nyata belum selesai;
 - [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
   shortcut, focus boundary floating/overlay, Escape, dan traversal panel-level
   Editor → Preview → Inspector sudah aktif, sedangkan traversal seluruh child
@@ -439,6 +441,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Primary context menu quality gate | Setelah integrasi context menu ke empat surface utama, `flutter analyze` lulus tanpa issue, seluruh 222 test lulus, dan `flutter build web --no-pub` berhasil. Validasi native runtime dan assistive technology nyata tetap tertunda. |
 | 2026-09-28 | Tahap F parsial — Core file/document shortcuts | New, Open, Save, dan Recompile kini memiliki binding registry global (`Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `F5`) dengan enabled-state yang sama seperti menu/action. Layout dan appearance tetap menu-driven untuk menghindari shortcut global yang mudah bentrok; native keyboard/runtime tetap menunggu validasi platform. |
 | 2026-09-28 | Tahap G parsial — Resize semantics actions | Splitter horizontal/vertikal dan floating resize handle kini menyediakan label, hint, keyboard arrows, serta `SemanticsAction.increase/decrease` yang memakai jalur resize controller yang sama. Verifikasi VoiceOver/TalkBack nyata tetap tertunda. |
+| 2026-09-28 | Tahap G parsial — Editor autocomplete accessibility | Setiap suggestion autocomplete kini memiliki semantic label/value/selection state, keyboard activation Enter/Space, dan callback selection yang sama dengan pointer tap. Verifikasi pembaca layar nyata tetap tertunda. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |

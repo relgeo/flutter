@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
+import '../../ui/keyboard_activatable.dart';
 import '../../ui/workbench_visual_profile.dart';
 
 class EditorPanel extends StatelessWidget {
@@ -327,90 +328,106 @@ class RelGeoAutocompleteView extends StatelessWidget
                       '${prompt.word}(${prompt.parameters.keys.join(', ')}) → ${prompt.type}';
                 }
 
-                return GestureDetector(
-                  onTap: () {
-                    onSelected(value.copyWith(index: idx).autocomplete);
-                  },
-                  child: Container(
-                    color: isSelected
-                        ? visualProfile.accentSoftColor
-                        : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          type == 'Fn'
-                              ? Icons.functions
-                              : (type == 'Keyword'
-                                    ? Icons.code
-                                    : Icons.grid_view),
-                          size: 13,
-                          color: isSelected
-                              ? visualProfile.accentColor
-                              : visualProfile.mutedColor,
+                void selectSuggestion() {
+                  onSelected(value.copyWith(index: idx).autocomplete);
+                }
+
+                return Semantics(
+                  container: true,
+                  explicitChildNodes: true,
+                  button: true,
+                  selected: isSelected,
+                  label: '$label suggestion',
+                  value: type,
+                  hint: 'Insert $label into the editor',
+                  onTap: selectSuggestion,
+                  child: WorkbenchKeyboardActivatable(
+                    onActivate: selectSuggestion,
+                    focusColor: visualProfile.accentColor,
+                    child: GestureDetector(
+                      onTap: selectSuggestion,
+                      child: Container(
+                        color: isSelected
+                            ? visualProfile.accentSoftColor
+                            : Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                label,
-                                style: TextStyle(
-                                  fontFamily: 'Courier',
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: isSelected
-                                      ? visualProfile.accentColor
-                                      : Colors.white,
-                                ),
-                              ),
-                              if (desc != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  desc,
-                                  style: TextStyle(
-                                    fontFamily: 'Courier',
-                                    fontSize: 9,
-                                    color: visualProfile.mutedColor,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? visualProfile.accentSoftColor
-                                : visualProfile.borderColor.withValues(
-                                    alpha: 0.2,
-                                  ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            type.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Courier',
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
+                        child: Row(
+                          children: [
+                            Icon(
+                              type == 'Fn'
+                                  ? Icons.functions
+                                  : (type == 'Keyword'
+                                        ? Icons.code
+                                        : Icons.grid_view),
+                              size: 13,
                               color: isSelected
                                   ? visualProfile.accentColor
                                   : visualProfile.mutedColor,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontFamily: 'Courier',
+                                      fontSize: 12,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isSelected
+                                          ? visualProfile.accentColor
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                  if (desc != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      desc,
+                                      style: TextStyle(
+                                        fontFamily: 'Courier',
+                                        fontSize: 9,
+                                        color: visualProfile.mutedColor,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? visualProfile.accentSoftColor
+                                    : visualProfile.borderColor.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                type.toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? visualProfile.accentColor
+                                      : visualProfile.mutedColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 );
