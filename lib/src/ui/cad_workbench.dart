@@ -802,10 +802,19 @@ objects:
           : WorkbenchMenuBar(registry: commandRegistry),
       navbar: _buildNavbar(hasError, commandRegistry),
       layoutController: _layoutController,
-      editor: WorkbenchEditorFeature(
-        contract: WorkbenchEditorContract(
-          controller: _editorController.editingController,
-          visualProfile: _workbenchProfile,
+      editor: WorkbenchCommandContextMenu(
+        registry: commandRegistry,
+        commandIds: const [
+          WorkbenchCommandId.undo,
+          WorkbenchCommandId.redo,
+          WorkbenchCommandId.copySource,
+          WorkbenchCommandId.recompileDocument,
+        ],
+        child: WorkbenchEditorFeature(
+          contract: WorkbenchEditorContract(
+            controller: _editorController.editingController,
+            visualProfile: _workbenchProfile,
+          ),
         ),
       ),
       parameters: _paramValues.isEmpty
