@@ -229,8 +229,9 @@ class WorkbenchCompositionShell extends StatelessWidget {
   ) {
     final state = controller.panel(id);
     final bounds = controller.layout.floatingBounds[id] ?? state.bounds;
-    final width = bounds.width ?? 320;
-    final height = bounds.height ?? 260;
+    final isCollapsed = state.visibility == WorkbenchPanelVisibility.collapsed;
+    final width = isCollapsed ? 44.0 : bounds.width ?? 320;
+    final height = isCollapsed ? 44.0 : bounds.height ?? 260;
     final left = (bounds.left ?? 24).clamp(
       0.0,
       (canvasWidth - width).clamp(0.0, double.infinity),
@@ -260,21 +261,29 @@ class WorkbenchCompositionShell extends StatelessWidget {
             children: [
               Semantics(
                 label: '${id.name} ${state.placement.name} panel',
-                child: _panelWidget(id),
+                child: isCollapsed
+                    ? ColoredBox(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        child: Center(child: Text(id.name.toUpperCase())),
+                      )
+                    : _panelWidget(id),
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: _FloatingPanelResizeHandle(
-                  onDrag: (delta) => controller.resizeFloatingPanel(
-                    id,
-                    dx: delta.dx,
-                    dy: delta.dy,
-                    canvasWidth: canvasWidth,
-                    canvasHeight: canvasHeight,
+              if (!isCollapsed)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: _FloatingPanelResizeHandle(
+                    onDrag: (delta) => controller.resizeFloatingPanel(
+                      id,
+                      dx: delta.dx,
+                      dy: delta.dy,
+                      canvasWidth: canvasWidth,
+                      canvasHeight: canvasHeight,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

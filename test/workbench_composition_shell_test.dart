@@ -205,5 +205,13 @@ void main() {
       controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
       44,
     );
+
+    controller.toggleCollapsed(WorkbenchPanelId.inspector);
+    await tester.pump();
+    expect(find.text('INSPECTOR'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Resize floating workbench panel'),
+      findsNothing,
+    );
   });
 }
