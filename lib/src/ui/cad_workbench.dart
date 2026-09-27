@@ -157,6 +157,15 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     _compileDSL(source);
   }
 
+  Future<void> _createNewDocument() async {
+    if (!await _confirmDiscardChangesIfNeeded()) return;
+    _documentPath = null;
+    _documentName = null;
+    _documentSession.markLoaded(source: _newDocumentDSL);
+    _editorController.editingController.text = _newDocumentDSL;
+    _compileDSL(_newDocumentDSL);
+  }
+
   Future<void> _saveDocumentToFileService({required bool saveAs}) async {
     final service = widget.fileService;
     if (service == null) return;
@@ -391,6 +400,12 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   }
 
   // Default starter DSL
+  static const String _newDocumentDSL = '''# New RelGeo document
+scene:
+  unit: mm
+objects: {}
+''';
+
   static const String _defaultDSL = '''# RelGeo CAD Workbench v0.5
 scene:
   unit: mm
@@ -875,8 +890,14 @@ objects:
         id: WorkbenchCommandId.newDocument,
         menu: 'File',
         label: 'New document',
-        enabled: widget.onNewDocument != null,
-        onInvoke: () => unawaited(_runLifecycleAction(widget.onNewDocument)),
+        enabled: widget.onNewDocument != null || widget.fileService != null,
+        onInvoke: () {
+          if (widget.onNewDocument != null) {
+            unawaited(_runLifecycleAction(widget.onNewDocument));
+          } else {
+            unawaited(_createNewDocument());
+          }
+        },
         shortcut: const SingleActivator(LogicalKeyboardKey.keyN, control: true),
         shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.keyN,

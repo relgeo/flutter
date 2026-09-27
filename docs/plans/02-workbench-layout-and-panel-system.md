@@ -308,7 +308,9 @@ ruang lingkup Tahap D.
   native untuk Open/Save/Save As kini memiliki `WorkbenchFileService`, adapter
   `file_picker`, dan sudah dipasang pada aplikasi default. Extension
   `WorkbenchDocumentFileService` juga dapat mempertahankan nama/path dokumen
-  secara opsional; New/Close/Quit tetap callback aplikasi, sedangkan
+  secara opsional; New kini memiliki fallback dokumen minimal lokal ketika file
+  service tersedia, sementara callback host tetap diprioritaskan dan Close/Quit
+  tetap callback aplikasi, sedangkan
   undo/redo editor kini aktif melalui history native `re_editor`, dan shortcut
   parity penuh masih tertunda. `WorkbenchDocumentSession` kini melacak dirty
   state; jalur file service menandai sesi bersih setelah Save. Host juga dapat
@@ -442,6 +444,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap F parsial — Core file/document shortcuts | New, Open, Save, dan Recompile kini memiliki binding registry global (`Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `F5`) dengan enabled-state yang sama seperti menu/action. Layout dan appearance tetap menu-driven untuk menghindari shortcut global yang mudah bentrok; native keyboard/runtime tetap menunggu validasi platform. |
 | 2026-09-28 | Tahap G parsial — Resize semantics actions | Splitter horizontal/vertikal dan floating resize handle kini menyediakan label, hint, keyboard arrows, serta `SemanticsAction.increase/decrease` yang memakai jalur resize controller yang sama. Verifikasi VoiceOver/TalkBack nyata tetap tertunda. |
 | 2026-09-28 | Tahap G parsial — Editor autocomplete accessibility | Setiap suggestion autocomplete kini memiliki semantic label/value/selection state, keyboard activation Enter/Space, dan callback selection yang sama dengan pointer tap. Verifikasi pembaca layar nyata tetap tertunda. |
+| 2026-09-28 | Tahap F parsial — Local New document fallback | Aplikasi dengan file service kini mengaktifkan `New document` melalui fallback dokumen minimal valid yang tetap melewati dirty-state guard. Callback host New tetap memiliki prioritas; Close/Quit masih bergantung pada host lifecycle. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |

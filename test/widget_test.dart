@@ -342,6 +342,28 @@ void main() {
     expect(service.lastCurrentName, 'example.relgeo');
   });
 
+  testWidgets('file service enables a guarded local new document fallback', (
+    WidgetTester tester,
+  ) async {
+    final service = _FakeFileService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(initialDsl: _sheetDsl, fileService: service),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    expect(find.text('New document'), findsOneWidget);
+
+    await tester.tap(find.text('New document'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('# New RelGeo document'), findsOneWidget);
+    expect(find.textContaining('scene:'), findsOneWidget);
+  });
+
   testWidgets(
     'typed host save acknowledgement clears dirty state and identity',
     (WidgetTester tester) async {
