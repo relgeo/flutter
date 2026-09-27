@@ -284,7 +284,9 @@ ruang lingkup Tahap D.
 - [~] hubungkan menu dengan document, layout, theme, canvas, dan native
   services; layout/theme/document actions sudah aktif, sedangkan native file
   I/O dan export target Model/Sheet masih menunggu service host;
-- [ ] pastikan toolbar dan keyboard shortcut memakai command yang sama;
+- [~] pastikan toolbar dan keyboard shortcut memakai command yang sama; global
+  shortcuts sekarang dipasang dari registry yang sama dengan menu dan command
+  callback, tetapi parity seluruh toolbar/context menu belum selesai;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [~] sediakan reset layout, reset appearance override, dan reset parameters;
@@ -377,3 +379,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Menu skeleton | Menu registry kini mencakup File, Edit, View, Appearance, Document, Workbench, dan Help. File actions menerima callback host opsional; command dasar copy/recompile/reset/about sudah aktif, sementara file I/O, undo/redo, dan shortcut parity lintas host masih tertunda. |
 | 2026-09-27 | Tahap D parsial — Floating focus order | `floatingOrder` dipersist bersama layout; placement command, tap, dan drag memperbarui order sehingga panel aktif berada di depan. Drag-to-dock, focus keyboard, dan focus policy native masih tertunda. |
 | 2026-09-27 | Tahap G parsial — Floating keyboard focus | Floating/overlay panel memiliki focus boundary, aktivasi pointer membawa focus, dan `Escape` menutup overlay aktif. Keyboard traversal antar-region dan focus restoration setelah docking masih tertunda. |
+| 2026-09-27 | Tahap F parsial — Global command shortcuts | Menambahkan `WorkbenchCommandSurface` yang memasang shortcut global dari command registry. Menu, shortcut global, dan callback command kini melewati enabled-state yang sama; parity toolbar/context menu dan shortcut untuk seluruh command masih tertunda. |

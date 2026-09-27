@@ -699,7 +699,14 @@ objects:
       ),
     );
 
-    return WorkbenchPlatformMenuBar(registry: commandRegistry, child: shell);
+    final commandSurface = WorkbenchCommandSurface(
+      registry: commandRegistry,
+      child: shell,
+    );
+    return WorkbenchPlatformMenuBar(
+      registry: commandRegistry,
+      child: commandSurface,
+    );
   }
 
   WorkbenchCommandRegistry _buildCommandRegistry() {
@@ -732,6 +739,10 @@ objects:
         enabled: _scene != null,
         onInvoke: _exportSVG,
         shortcut: const SingleActivator(LogicalKeyboardKey.keyE, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyE,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.copySource,
@@ -739,6 +750,10 @@ objects:
         label: 'Copy source',
         onInvoke: _copySourceToClipboard,
         shortcut: const SingleActivator(LogicalKeyboardKey.keyC, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyC,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.recompileDocument,
@@ -759,6 +774,10 @@ objects:
         label: 'Zoom in',
         onInvoke: _zoomIn,
         shortcut: const SingleActivator(LogicalKeyboardKey.add, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.add,
+          control: true,
+        ),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.zoomOut,
@@ -766,6 +785,10 @@ objects:
         label: 'Zoom out',
         onInvoke: _zoomOut,
         shortcut: const SingleActivator(
+          LogicalKeyboardKey.minus,
+          control: true,
+        ),
+        shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.minus,
           control: true,
         ),

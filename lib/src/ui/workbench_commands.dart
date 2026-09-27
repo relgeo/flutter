@@ -50,6 +50,7 @@ class WorkbenchCommand {
     this.enabled = true,
     this.checked,
     this.shortcut,
+    this.shortcutActivator,
   });
 
   final WorkbenchCommandId id;
@@ -59,9 +60,60 @@ class WorkbenchCommand {
   final bool enabled;
   final bool? checked;
   final MenuSerializableShortcut? shortcut;
+  final ShortcutActivator? shortcutActivator;
 
   void invoke() {
     if (enabled) onInvoke();
+  }
+}
+
+/// Intent used by the application-wide shortcut surface.
+///
+/// Keeping this intent separate from menu widgets makes keyboard activation
+/// use the same enabled-state and callback path as menus and toolbars.
+class WorkbenchCommandIntent extends Intent {
+  const WorkbenchCommandIntent(this.commandId);
+
+  final WorkbenchCommandId commandId;
+}
+
+/// Installs the registry's keyboard bindings around the workbench.
+///
+/// Flutter's [MenuItemButton] handles shortcuts while a menu is active, but
+/// desktop users also expect common commands to work while editing the canvas
+/// or a panel. This widget provides that global path without duplicating
+/// command callbacks in individual feature widgets.
+class WorkbenchCommandSurface extends StatelessWidget {
+  const WorkbenchCommandSurface({
+    super.key,
+    required this.registry,
+    required this.child,
+  });
+
+  final WorkbenchCommandRegistry registry;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final shortcuts = <ShortcutActivator, Intent>{};
+    final actions = <Type, Action<Intent>>{};
+    for (final command in registry.commands) {
+      final shortcut = command.shortcutActivator;
+      if (shortcut == null) continue;
+      shortcuts[shortcut] = WorkbenchCommandIntent(command.id);
+      actions[WorkbenchCommandIntent] = CallbackAction<WorkbenchCommandIntent>(
+        onInvoke: (intent) {
+          registry.find(intent.commandId)?.invoke();
+          return null;
+        },
+      );
+    }
+
+    if (shortcuts.isEmpty) return child;
+    return Shortcuts(
+      shortcuts: shortcuts,
+      child: Actions(actions: actions, child: child),
+    );
   }
 }
 
