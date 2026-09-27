@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_composition_shell.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
@@ -222,6 +223,16 @@ void main() {
     await tester.pump();
     expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
     await tester.tap(find.byTooltip('Close inspector overlay'));
+    await tester.pump();
+    expect(find.text('inspector'), findsNothing);
+
+    controller.setPanelVisibility(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelVisibility.visible,
+    );
+    await tester.pump();
+    await tester.tap(find.text('inspector'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(find.text('inspector'), findsNothing);
   });

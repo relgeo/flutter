@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_window_policy.dart';
@@ -252,64 +253,89 @@ class WorkbenchCompositionShell extends StatelessWidget {
       top: top,
       width: width,
       height: height,
-      child: GestureDetector(
-        onTap: () => controller.focusFloatingPanel(id),
-        onPanStart: (_) => controller.focusFloatingPanel(id),
-        onPanUpdate: (details) => controller.moveFloatingPanel(
-          id,
-          dx: details.delta.dx,
-          dy: details.delta.dy,
-          canvasWidth: canvasWidth,
-          canvasHeight: canvasHeight,
-        ),
-        child: Material(
-          elevation: state.placement == WorkbenchPanelPlacement.overlay ? 8 : 4,
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Semantics(
-                label: '${id.name} ${state.placement.name} panel',
-                child: isCollapsed
-                    ? ColoredBox(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        child: Center(child: Text(id.name.toUpperCase())),
-                      )
-                    : _panelWidget(id),
+      child: Focus(
+        onFocusChange: (focused) {
+          if (focused) controller.focusFloatingPanel(id);
+        },
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.escape &&
+              state.placement == WorkbenchPanelPlacement.overlay) {
+            controller.setPanelVisibility(id, WorkbenchPanelVisibility.hidden);
+            node.unfocus();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Builder(
+          builder: (focusContext) => GestureDetector(
+            onTap: () {
+              Focus.of(focusContext).requestFocus();
+              controller.focusFloatingPanel(id);
+            },
+            onPanStart: (_) {
+              Focus.of(focusContext).requestFocus();
+              controller.focusFloatingPanel(id);
+            },
+            onPanUpdate: (details) => controller.moveFloatingPanel(
+              id,
+              dx: details.delta.dx,
+              dy: details.delta.dy,
+              canvasWidth: canvasWidth,
+              canvasHeight: canvasHeight,
+            ),
+            child: Material(
+              elevation: state.placement == WorkbenchPanelPlacement.overlay
+                  ? 8
+                  : 4,
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Semantics(
+                    label: '${id.name} ${state.placement.name} panel',
+                    child: isCollapsed
+                        ? ColoredBox(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child: Center(child: Text(id.name.toUpperCase())),
+                          )
+                        : _panelWidget(id),
+                  ),
+                  if (!isCollapsed)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: _FloatingPanelResizeHandle(
+                        onDrag: (delta) => controller.resizeFloatingPanel(
+                          id,
+                          dx: delta.dx,
+                          dy: delta.dy,
+                          canvasWidth: canvasWidth,
+                          canvasHeight: canvasHeight,
+                        ),
+                      ),
+                    ),
+                  if (!isCollapsed &&
+                      state.placement == WorkbenchPanelPlacement.overlay)
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: IconButton(
+                        key: ValueKey('close-overlay-${id.name}'),
+                        tooltip: 'Close ${id.name} overlay',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => controller.setPanelVisibility(
+                          id,
+                          WorkbenchPanelVisibility.hidden,
+                        ),
+                        icon: const Icon(Icons.close, size: 16),
+                      ),
+                    ),
+                ],
               ),
-              if (!isCollapsed)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: _FloatingPanelResizeHandle(
-                    onDrag: (delta) => controller.resizeFloatingPanel(
-                      id,
-                      dx: delta.dx,
-                      dy: delta.dy,
-                      canvasWidth: canvasWidth,
-                      canvasHeight: canvasHeight,
-                    ),
-                  ),
-                ),
-              if (!isCollapsed &&
-                  state.placement == WorkbenchPanelPlacement.overlay)
-                Positioned(
-                  right: 2,
-                  top: 2,
-                  child: IconButton(
-                    key: ValueKey('close-overlay-${id.name}'),
-                    tooltip: 'Close ${id.name} overlay',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => controller.setPanelVisibility(
-                      id,
-                      WorkbenchPanelVisibility.hidden,
-                    ),
-                    icon: const Icon(Icons.close, size: 16),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
