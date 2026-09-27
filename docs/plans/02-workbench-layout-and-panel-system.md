@@ -315,8 +315,10 @@ ruang lingkup Tahap D.
 ### Tahap G — Accessibility dan regression
 
 - [~] semua panel dan splitter memiliki label semantics; surface floating,
-  collapsed, splitter, dan resize handle sudah berlabel, tetapi audit semantics
-  end-to-end untuk seluruh child feature belum selesai;
+  collapsed, splitter, resize handle, object expand/collapse, parameter reset,
+  dan parameter slider kini memiliki label/value/hint yang bermakna. Audit
+  semantics end-to-end untuk seluruh child feature serta verifikasi VoiceOver/
+  TalkBack nyata belum selesai;
 - [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
   shortcut, focus boundary floating/overlay, Escape, dan traversal panel-level
   Editor → Preview → Inspector sudah aktif, sedangkan traversal seluruh child
@@ -356,10 +358,11 @@ ruang lingkup Tahap D.
 - [x] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
 - [x] layout preference terpisah dari theme dan document persistence;
 - [~] keyboard dan accessibility state tetap dapat digunakan; jalur menu,
-  shortcut, semantics, Escape, dan traversal panel-level sudah diuji, tetapi
-  traversal menyeluruh antar-child control belum; keyboard resize splitter dan
-  aktivasi rail collapsed serta keyboard resize docked/floating sudah
-  diuji/tersedia;
+  shortcut, semantics, Escape, traversal panel-level, object expand/collapse,
+  dan parameter controls sudah memiliki boundary yang dapat diakses, tetapi
+  traversal menyeluruh antar-child control serta verifikasi VoiceOver/TalkBack
+  nyata belum; keyboard resize splitter dan aktivasi rail collapsed serta
+  keyboard resize docked/floating sudah diuji/tersedia;
 - [~] analyzer, test, golden, dan web build tetap lulus; build native macOS
   `x86_64` juga lulus melalui Xcode, tetapi runtime window macOS, target arm64
   pada Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
@@ -422,6 +425,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Dirty lifecycle web gate | `flutter build web --no-pub` berhasil setelah dirty-state boundary; hasil ini tidak menggantikan validasi lifecycle pada runtime native. |
 | 2026-09-28 | Tahap F — Typed host save acknowledgement | Menambahkan `WorkbenchDocumentSaveRequest`, `WorkbenchDocumentSaveResult`, dan `onSaveDocumentWithResult`. Host dapat melaporkan keberhasilan Save/Save As beserta path/name sehingga sesi ditandai bersih secara aman; callback `VoidCallback` legacy tetap dipertahankan untuk kompatibilitas. |
 | 2026-09-28 | Tahap G — Typed save quality gate | Setelah kontrak Save typed dan regression test Save/Save As, `flutter analyze` lulus tanpa issue, seluruh 220 test lulus, dan `flutter build web --no-pub` berhasil. Validasi native runtime lintas platform tetap tertunda. |
+| 2026-09-28 | Tahap G parsial — Child control semantics | Menambahkan semantics untuk object header Inspector (nama, tipe, expanded state), reset parameter, dan setiap parameter slider (label, nilai, hint). Analyzer serta test Inspector/feature lulus; audit seluruh child control dan assistive technology native masih tertunda. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |

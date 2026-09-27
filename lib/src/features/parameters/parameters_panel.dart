@@ -58,30 +58,35 @@ class ParametersPanel extends StatelessWidget {
                 ),
                 const Spacer(),
                 if (paramOverrides.isNotEmpty)
-                  Material(
-                    type: MaterialType.transparency,
-                    child: InkWell(
-                      onTap: onParamReset,
-                      borderRadius: BorderRadius.circular(4),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.refresh, size: 12),
-                            SizedBox(width: 4),
-                            Text(
-                              'RESET',
-                              style: TextStyle(
-                                fontFamily: 'Courier',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9,
+                  Semantics(
+                    button: true,
+                    label: 'Reset parameter overrides',
+                    hint: 'Restore default parameter values',
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        onTap: onParamReset,
+                        borderRadius: BorderRadius.circular(4),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh, size: 12),
+                              SizedBox(width: 4),
+                              Text(
+                                'RESET',
+                                style: TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -121,12 +126,18 @@ class ParametersPanel extends StatelessWidget {
                                 enabledThumbRadius: 5,
                               ),
                             ),
-                            child: Slider(
-                              value: current.clamp(1.0, maxVal),
-                              min: 1.0,
-                              max: maxVal,
-                              onChanged: (value) =>
-                                  onParamChanged(pName, value),
+                            child: Semantics(
+                              label: '$pName parameter',
+                              value:
+                                  '${current.toStringAsFixed(1)} $targetUnit',
+                              hint: 'Adjust $pName',
+                              child: Slider(
+                                value: current.clamp(1.0, maxVal),
+                                min: 1.0,
+                                max: maxVal,
+                                onChanged: (value) =>
+                                    onParamChanged(pName, value),
+                              ),
                             ),
                           ),
                         ),
