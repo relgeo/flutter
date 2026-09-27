@@ -364,10 +364,40 @@ void main() {
     expect(editorNode.hasFocus, isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
     expect(viewportNode.hasFocus, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
     expect(inspectorNode.hasFocus, isTrue);
+  });
+
+  testWidgets('panel splitters resize with keyboard arrows', (tester) async {
+    final controller = WorkbenchLayoutController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    final divider = find.bySemanticsLabel('Resize workbench panels').first;
+    final dividerNode = Focus.of(tester.element(divider));
+    dividerNode.requestFocus();
+    await tester.pump();
+    final before = controller.layout.splitRatios['left']!;
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(controller.layout.splitRatios['left'], greaterThan(before));
   });
 }

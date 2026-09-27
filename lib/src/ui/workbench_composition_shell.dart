@@ -186,6 +186,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
         child: Semantics(
           label: 'parameters panel collapsed',
           button: true,
+          onTap: () => controller.toggleCollapsed(WorkbenchPanelId.parameters),
           child: ColoredBox(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: const Center(child: Text('PARAMETERS')),
@@ -381,6 +382,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
           child: Semantics(
             label: '${id.name} panel collapsed',
             button: true,
+            onTap: () => controller.toggleCollapsed(id),
             child: ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: RotatedBox(
@@ -473,18 +475,31 @@ class _WorkbenchPanelDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeColumn,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
-        child: Semantics(
-          label: 'Resize workbench panels',
-          slider: true,
-          child: SizedBox(
-            width: 8,
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.outlineVariant,
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final delta = switch (event.logicalKey) {
+          LogicalKeyboardKey.arrowLeft => -16.0,
+          LogicalKeyboardKey.arrowRight => 16.0,
+          _ => null,
+        };
+        if (delta == null) return KeyEventResult.ignored;
+        onDrag(delta);
+        return KeyEventResult.handled;
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeColumn,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
+          child: Semantics(
+            label: 'Resize workbench panels',
+            slider: true,
+            child: SizedBox(
+              width: 8,
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
           ),
         ),
@@ -500,18 +515,31 @@ class _WorkbenchHorizontalDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeRow,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onVerticalDragUpdate: (details) => onDrag(details.delta.dy),
-        child: Semantics(
-          label: 'Resize parameters panel',
-          slider: true,
-          child: SizedBox(
-            height: 8,
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.outlineVariant,
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final delta = switch (event.logicalKey) {
+          LogicalKeyboardKey.arrowUp => -16.0,
+          LogicalKeyboardKey.arrowDown => 16.0,
+          _ => null,
+        };
+        if (delta == null) return KeyEventResult.ignored;
+        onDrag(delta);
+        return KeyEventResult.handled;
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeRow,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragUpdate: (details) => onDrag(details.delta.dy),
+          child: Semantics(
+            label: 'Resize parameters panel',
+            slider: true,
+            child: SizedBox(
+              height: 8,
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
           ),
         ),

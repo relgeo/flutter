@@ -314,7 +314,8 @@ ruang lingkup Tahap D.
 - [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
   shortcut, focus boundary floating/overlay, Escape, dan traversal panel-level
   Editor → Preview → Inspector sudah aktif, sedangkan traversal seluruh child
-  control serta keyboard resize/collapse langsung masih tertunda;
+  control masih tertunda; splitter dapat di-resize dengan arrow key dan rail
+  collapsed memiliki semantic activation untuk dipulihkan;
 - [x] focus tidak hilang saat panel dipindah; pointer activation, focus order
   floating, dan restoration ke panel docked setelah drop sudah tersedia;
 - [x] reduced-motion dihormati pada transisi workbench yang sudah memiliki
@@ -345,7 +346,8 @@ ruang lingkup Tahap D.
 - [x] layout preference terpisah dari theme dan document persistence;
 - [~] keyboard dan accessibility state tetap dapat digunakan; jalur menu,
   shortcut, semantics, Escape, dan traversal panel-level sudah diuji, tetapi
-  traversal menyeluruh antar-child control belum;
+  traversal menyeluruh antar-child control belum; keyboard resize splitter dan
+  aktivasi rail collapsed sudah diuji/tersedia;
 - [~] analyzer, test, golden, dan web build tetap lulus; build native macOS
   `x86_64` juga lulus melalui Xcode, tetapi runtime window macOS, target arm64
   pada Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
@@ -403,6 +405,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F — Unified workbench reset | `Reset workbench preferences` kini mereset layout ke Standard sekaligus appearance/overlay/role preferences; regression test memastikan panel yang di-collapse kembali tersedia setelah reset. |
 | 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan; identitas dokumen dan lifecycle New/Close/Quit masih menjadi tanggung jawab host. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
-| 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 207 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
+| 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 210 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |
+| 2026-09-27 | Tahap G parsial — Keyboard splitter and collapse activation | Splitter horizontal/vertikal kini menerima arrow key saat focus untuk mengubah rasio/tinggi panel. Collapsed rail dan Parameters surface menyediakan semantic `onTap` untuk memulihkan panel. Full suite setelah perubahan: 210 test lulus. |
