@@ -442,23 +442,38 @@ class _FloatingPanelResizeHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeDownRight,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanUpdate: (details) => onDrag(details.delta),
-        child: Semantics(
-          label: 'Resize floating workbench panel',
-          slider: true,
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: Icon(
-                Icons.drag_handle,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final delta = switch (event.logicalKey) {
+          LogicalKeyboardKey.arrowLeft => const Offset(-16, 0),
+          LogicalKeyboardKey.arrowRight => const Offset(16, 0),
+          LogicalKeyboardKey.arrowUp => const Offset(0, -16),
+          LogicalKeyboardKey.arrowDown => const Offset(0, 16),
+          _ => null,
+        };
+        if (delta == null) return KeyEventResult.ignored;
+        onDrag(delta);
+        return KeyEventResult.handled;
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeDownRight,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanUpdate: (details) => onDrag(details.delta),
+          child: Semantics(
+            label: 'Resize floating workbench panel',
+            slider: true,
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.drag_handle,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),

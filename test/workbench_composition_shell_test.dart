@@ -400,4 +400,55 @@ void main() {
 
     expect(controller.layout.splitRatios['left'], greaterThan(before));
   });
+
+  testWidgets('floating resize handle responds to keyboard arrows', (
+    tester,
+  ) async {
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(placement: WorkbenchPanelPlacement.floating),
+        },
+        floatingBounds: const {
+          WorkbenchPanelId.inspector: WorkbenchPanelBounds(
+            left: 120,
+            top: 24,
+            width: 280,
+            height: 220,
+          ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    final handle = find.bySemanticsLabel('Resize floating workbench panel');
+    final handleNode = Focus.of(tester.element(handle));
+    handleNode.requestFocus();
+    await tester.pump();
+    final before =
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width!;
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width,
+      greaterThan(before),
+    );
+  });
 }
