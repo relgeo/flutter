@@ -287,9 +287,10 @@ ruang lingkup Tahap D.
 - [ ] sediakan reset layout, reset appearance override, dan reset parameters;
 - [x] tambahkan test command availability dan activation untuk command registry
   serta toggle panel utama;
-- [~] lengkapi menu File/Edit/Appearance/Document/Help dan command surface
-  Parameters; menu View/Workbench dan command Parameters kini tersedia, tetapi
-  menu File/Edit/Document/Help lengkap masih tertunda.
+- [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
+  dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
+  About. File I/O host lintas platform, undo/redo editor, dan shortcut parity
+  penuh masih tertunda.
 
 ### Tahap G — Accessibility dan regression
 
@@ -352,3 +353,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap D parsial — Floating/overlay foundation | Menambahkan `left`/`top` pada bounds, layer `Stack`, renderer `Positioned`, pembedaan elevation untuk floating/overlay, semantics label, drag gesture, resize handle dengan clamp canvas dan batas ukuran, serta tombol close eksplisit untuk overlay. Docking ulang dan focus/activation order masih tertunda. |
 | 2026-09-27 | Tahap D parsial — Floating collapse | State `collapsed` kini konsisten pada panel docked maupun floating/overlay: panel berubah menjadi rail/header ringkas, ukuran dan posisi floating tetap dapat dipulihkan, dan resize handle disembunyikan saat collapsed. |
 | 2026-09-27 | Tahap D parsial — Placement commands | Menu `Workbench` kini menyediakan perintah dock ke region pilihan, float, dan overlay untuk setiap panel. Parameters otomatis disabled ketika dokumen aktif tidak memiliki parameter. Drag-to-dock dan focus/activation order multi-panel masih tertunda. |
+| 2026-09-27 | Tahap F parsial — Menu skeleton | Menu registry kini mencakup File, Edit, View, Appearance, Document, Workbench, dan Help. File actions menerima callback host opsional; command dasar copy/recompile/reset/about sudah aktif, sementara file I/O, undo/redo, dan shortcut parity lintas host masih tertunda. |

@@ -30,6 +30,9 @@ class CADWorkbenchPage extends StatefulWidget {
     this.initialDsl,
     this.themePreference,
     this.showInWindowMenu,
+    this.onNewDocument,
+    this.onOpenDocument,
+    this.onSaveDocument,
     this.onThemePreferenceChanged,
     this.onResetThemePreference,
     this.workbenchProfileId = 'cad',
@@ -40,6 +43,9 @@ class CADWorkbenchPage extends StatefulWidget {
   final String? initialDsl;
   final RelGeoThemePreference? themePreference;
   final bool? showInWindowMenu;
+  final VoidCallback? onNewDocument;
+  final VoidCallback? onOpenDocument;
+  final VoidCallback? onSaveDocument;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final VoidCallback? onResetThemePreference;
   final String workbenchProfileId;
@@ -220,6 +226,25 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     } else {
       await _persistWorkbenchPreferences();
     }
+  }
+
+  void _resetDocumentParameters() {
+    if (_paramValues.isEmpty) return;
+    _documentController.clearParamOverrides();
+    _compileDSL(_editorController.text);
+  }
+
+  void _copySourceToClipboard() {
+    Clipboard.setData(ClipboardData(text: _editorController.text));
+  }
+
+  void _showAboutDialog() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'RelGeo',
+      applicationVersion: 'DSL 0.5',
+      applicationLegalese: 'Relation-first vector authoring',
+    );
   }
 
   void _setFollowProfileOverlay(bool value) {
@@ -680,12 +705,53 @@ objects:
   WorkbenchCommandRegistry _buildCommandRegistry() {
     return WorkbenchCommandRegistry([
       WorkbenchCommand(
+        id: WorkbenchCommandId.newDocument,
+        menu: 'File',
+        label: 'New document',
+        enabled: widget.onNewDocument != null,
+        onInvoke: () => widget.onNewDocument?.call(),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.openDocument,
+        menu: 'File',
+        label: 'Open document…',
+        enabled: widget.onOpenDocument != null,
+        onInvoke: () => widget.onOpenDocument?.call(),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.saveDocument,
+        menu: 'File',
+        label: 'Save document',
+        enabled: widget.onSaveDocument != null,
+        onInvoke: () => widget.onSaveDocument?.call(),
+      ),
+      WorkbenchCommand(
         id: WorkbenchCommandId.exportSvg,
         menu: 'File',
         label: _exportButtonLabel,
         enabled: _scene != null,
         onInvoke: _exportSVG,
         shortcut: const SingleActivator(LogicalKeyboardKey.keyE, control: true),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.copySource,
+        menu: 'Edit',
+        label: 'Copy source',
+        onInvoke: _copySourceToClipboard,
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyC, control: true),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.recompileDocument,
+        menu: 'Document',
+        label: 'Recompile document',
+        onInvoke: () => _compileDSL(_editorController.text),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.resetDocumentParameters,
+        menu: 'Document',
+        label: 'Reset parameter overrides',
+        enabled: _paramValues.isNotEmpty,
+        onInvoke: _resetDocumentParameters,
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.zoomIn,
@@ -800,6 +866,12 @@ objects:
         menu: 'Workbench',
         label: 'Reset workbench preferences',
         onInvoke: _resetWorkbenchPreferences,
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.aboutRelGeo,
+        menu: 'Help',
+        label: 'About RelGeo',
+        onInvoke: _showAboutDialog,
       ),
     ]);
   }

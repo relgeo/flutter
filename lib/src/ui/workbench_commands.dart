@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 enum WorkbenchCommandId {
+  newDocument,
+  openDocument,
+  saveDocument,
   exportSvg,
+  copySource,
+  recompileDocument,
+  resetDocumentParameters,
+  aboutRelGeo,
   zoomIn,
   zoomOut,
   fitViewport,
@@ -63,7 +70,15 @@ class WorkbenchCommand {
 class WorkbenchCommandRegistry {
   const WorkbenchCommandRegistry(this.commands);
 
-  static const menuOrder = <String>['File', 'View', 'Appearance', 'Workbench'];
+  static const menuOrder = <String>[
+    'File',
+    'Edit',
+    'View',
+    'Appearance',
+    'Document',
+    'Workbench',
+    'Help',
+  ];
 
   final List<WorkbenchCommand> commands;
 

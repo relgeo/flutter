@@ -89,6 +89,10 @@ void main() {
     await tester.tap(find.text('Overlay Inspector'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
+
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    expect(find.text('About RelGeo'), findsOneWidget);
   });
 
   testWidgets('theme mode follows system until explicitly overridden', (
