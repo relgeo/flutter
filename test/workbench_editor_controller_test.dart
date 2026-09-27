@@ -22,4 +22,20 @@ void main() {
 
     controller.dispose();
   });
+
+  test('exposes the editor undo and redo history', () {
+    final controller = WorkbenchEditorController.fromText('scene: demo');
+
+    controller.editingController.text = 'scene: updated';
+    expect(controller.editingController.canUndo, isTrue);
+
+    controller.editingController.undo();
+    expect(controller.text, 'scene: demo');
+    expect(controller.editingController.canRedo, isTrue);
+
+    controller.editingController.redo();
+    expect(controller.text, 'scene: updated');
+
+    controller.dispose();
+  });
 }

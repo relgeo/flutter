@@ -8,6 +8,8 @@ enum WorkbenchCommandId {
   closeDocument,
   quitApplication,
   exportSvg,
+  undo,
+  redo,
   copySource,
   recompileDocument,
   resetDocumentParameters,

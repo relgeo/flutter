@@ -825,6 +825,35 @@ objects:
         ),
       ),
       WorkbenchCommand(
+        id: WorkbenchCommandId.undo,
+        menu: 'Edit',
+        label: 'Undo',
+        enabled: _editorController.editingController.canUndo,
+        onInvoke: _editorController.editingController.undo,
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyZ, control: true),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyZ,
+          control: true,
+        ),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.redo,
+        menu: 'Edit',
+        label: 'Redo',
+        enabled: _editorController.editingController.canRedo,
+        onInvoke: _editorController.editingController.redo,
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyZ,
+          control: true,
+          shift: true,
+        ),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyZ,
+          control: true,
+          shift: true,
+        ),
+      ),
+      WorkbenchCommand(
         id: WorkbenchCommandId.copySource,
         menu: 'Edit',
         label: 'Copy source',
