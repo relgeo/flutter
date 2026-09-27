@@ -291,7 +291,9 @@ digantikan oleh golden.
   Windows dan Linux; build/runtime verification tiap host masih terbuka;
 - [ ] isolasi kode macOS/Linux/Windows;
 - [ ] verifikasi shell pada macOS dan setidaknya Ubuntu;
-- [ ] siapkan checklist Windows 11 untuk verifikasi eksternal.
+- [x] siapkan checklist Windows 11 untuk verifikasi eksternal; prosedur lintas
+  desktop dan template evidence tersedia di
+  [`workspace/docs/plans/09-desktop-runtime-smoke-checklist.md`](https://github.com/relgeo/workspace/blob/main/docs/plans/09-desktop-runtime-smoke-checklist.md).
 
 **Exit gate:** aplikasi dapat dibangun dan dijalankan dengan shell yang konsisten pada target desktop yang tersedia.
 
