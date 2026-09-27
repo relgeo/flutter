@@ -1146,95 +1146,89 @@ void main() {
     },
   );
 
-  test(
-    'svg exporter renders point object with circle shape',
-    () {
-      final scene = ResolvedScene(
-        unit: LengthUnit.mm,
-        objects: {
-          'mark': ResolvedPoint(
-            id: 'mark',
-            meta: Meta.fromJson({
-              'fill': '#111827',
-              'pointShape': 'circle',
-              'pointSize': 3,
-            }),
-            x: 10,
-            y: 12,
-          ),
-        },
-        parameters: const {},
-        values: const {},
-        bbox: const BoundingBox(x: 10, y: 12, width: 1, height: 1),
-      );
-
-      final svg = SvgExporter.generateSVG(scene);
-      expect(svg.contains('id="mark"'), isTrue);
-      expect(svg.contains('cx="10.0" cy="12.0" r="3.0"'), isTrue);
-    },
-  );
-
-  test(
-    'sheet svg export compensates point marker size inside scaled views',
-    () {
-      final Map<String, ResolvedObject> viewObjects = {
+  test('svg exporter renders point object with circle shape', () {
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: {
         'mark': ResolvedPoint(
           id: 'mark',
           meta: Meta.fromJson({
             'fill': '#111827',
             'pointShape': 'circle',
-            'pointSize': 4,
+            'pointSize': 3,
           }),
-          x: 20,
-          y: 20,
+          x: 10,
+          y: 12,
         ),
-      };
+      },
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 10, y: 12, width: 1, height: 1),
+    );
 
-      final scene = ResolvedScene(
-        unit: LengthUnit.mm,
-        objects: viewObjects,
-        parameters: const {},
-        values: const {},
-        bbox: const BoundingBox(x: 20, y: 20, width: 1, height: 1),
-        views: {
-          'pointView': ResolvedView(
-            id: 'pointView',
-            target: 'mark',
-            scale: '2:1',
-            scaleFactor: 2,
-            objects: viewObjects,
-            bbox: const BoundingBox(x: 40, y: 40, width: 2, height: 2),
-          ),
-        },
-        sheets: {
-          'drawing1': ResolvedSheet(
-            id: 'drawing1',
-            size: 'A4',
-            width: 297,
-            height: 210,
-            views: [
-              ResolvedSheetView(
-                use: 'pointView',
-                x: 20,
-                y: 30,
-                width: 40,
-                height: 40,
-              ),
-            ],
-          ),
-        },
-      );
+    final svg = SvgExporter.generateSVG(scene);
+    expect(svg.contains('id="mark"'), isTrue);
+    expect(svg.contains('cx="10.0" cy="12.0" r="3.0"'), isTrue);
+  });
 
-      final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
-      expect(
-        svg.contains(
-          '<g transform="translate(20.0, 30.0) scale(2.0) translate(-20.0, -20.0)">',
+  test('sheet svg export compensates point marker size inside scaled views', () {
+    final Map<String, ResolvedObject> viewObjects = {
+      'mark': ResolvedPoint(
+        id: 'mark',
+        meta: Meta.fromJson({
+          'fill': '#111827',
+          'pointShape': 'circle',
+          'pointSize': 4,
+        }),
+        x: 20,
+        y: 20,
+      ),
+    };
+
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: viewObjects,
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 20, y: 20, width: 1, height: 1),
+      views: {
+        'pointView': ResolvedView(
+          id: 'pointView',
+          target: 'mark',
+          scale: '2:1',
+          scaleFactor: 2,
+          objects: viewObjects,
+          bbox: const BoundingBox(x: 40, y: 40, width: 2, height: 2),
         ),
-        isTrue,
-      );
-      expect(svg.contains('cx="20.0" cy="20.0" r="2.0"'), isTrue);
-    },
-  );
+      },
+      sheets: {
+        'drawing1': ResolvedSheet(
+          id: 'drawing1',
+          size: 'A4',
+          width: 297,
+          height: 210,
+          views: [
+            ResolvedSheetView(
+              use: 'pointView',
+              x: 20,
+              y: 30,
+              width: 40,
+              height: 40,
+            ),
+          ],
+        ),
+      },
+    );
+
+    final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
+    expect(
+      svg.contains(
+        '<g transform="translate(20.0, 30.0) scale(2.0) translate(-20.0, -20.0)">',
+      ),
+      isTrue,
+    );
+    expect(svg.contains('cx="20.0" cy="20.0" r="2.0"'), isTrue);
+  });
 
   test('sheet svg export uses resolved view bbox as framing source of truth', () {
     final viewObjects = <String, ResolvedObject>{

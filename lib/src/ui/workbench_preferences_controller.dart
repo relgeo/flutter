@@ -10,9 +10,9 @@ class WorkbenchPreferencesController {
     Future<WorkbenchPreferencesData?> Function()? load,
     Future<void> Function(WorkbenchPreferencesData data)? save,
     Future<void> Function()? clear,
-  })  : _load = load ?? WorkbenchPreferencesStore.load,
-        _save = save ?? WorkbenchPreferencesStore.save,
-        _clear = clear ?? WorkbenchPreferencesStore.clear;
+  }) : _load = load ?? WorkbenchPreferencesStore.load,
+       _save = save ?? WorkbenchPreferencesStore.save,
+       _clear = clear ?? WorkbenchPreferencesStore.clear;
 
   final Future<WorkbenchPreferencesData?> Function() _load;
   final Future<void> Function(WorkbenchPreferencesData data) _save;
@@ -22,7 +22,7 @@ class WorkbenchPreferencesController {
 
   Future<void> update(
     WorkbenchPreferencesData Function(WorkbenchPreferencesData current)
-        transform,
+    transform,
   ) async {
     final current = await _load() ?? WorkbenchPreferencesData.defaults;
     await _save(transform(current));

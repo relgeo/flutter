@@ -16,9 +16,9 @@ void main() {
         });
 
     try {
-      await const MethodChannelWorkbenchWindowHost(channel: channel).configure(
-        WorkbenchWindowPolicy.defaultConfiguration,
-      );
+      await const MethodChannelWorkbenchWindowHost(
+        channel: channel,
+      ).configure(WorkbenchWindowPolicy.defaultConfiguration);
     } finally {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, null);

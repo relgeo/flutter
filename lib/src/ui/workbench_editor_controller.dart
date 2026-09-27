@@ -7,13 +7,14 @@ import 'package:re_editor/re_editor.dart';
 /// widgets may still receive the native controller required by `re_editor`.
 class WorkbenchEditorController {
   WorkbenchEditorController.fromText(String initialText)
-      : editingController = CodeLineEditingController.fromText(initialText);
+    : editingController = CodeLineEditingController.fromText(initialText);
 
   final CodeLineEditingController editingController;
 
   String get text => editingController.text.toString();
 
-  void addListener(VoidCallback listener) => editingController.addListener(listener);
+  void addListener(VoidCallback listener) =>
+      editingController.addListener(listener);
 
   void dispose() => editingController.dispose();
 }

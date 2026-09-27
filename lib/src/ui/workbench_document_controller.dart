@@ -25,10 +25,10 @@ class WorkbenchDocumentController extends ChangeNotifier {
   Map<String, double> get paramValues => Map.unmodifiable(_paramValues);
   Map<String, dynamic> get paramOverrides => Map.unmodifiable(_paramOverrides);
   Map<String, Map<String, dynamic>> get profiles => Map.unmodifiable(
-        _profiles.map(
-          (key, value) => MapEntry(key, Map<String, dynamic>.unmodifiable(value)),
-        ),
-      );
+    _profiles.map(
+      (key, value) => MapEntry(key, Map<String, dynamic>.unmodifiable(value)),
+    ),
+  );
   String? get activeProfile => _activeProfile;
   String? get selectedSheetId => _selectedSheetId;
   LengthUnit get targetUnit => _targetUnit;

@@ -13,10 +13,10 @@ class WorkbenchOverlayController extends ChangeNotifier {
     Set<String> hiddenRoles = const {'construction'},
     bool followProfileOverlay = true,
     bool followProfileRoleFilter = true,
-  })  : _overlay = overlay,
-        _hiddenRoles = Set<String>.from(hiddenRoles),
-        _followProfileOverlay = followProfileOverlay,
-        _followProfileRoleFilter = followProfileRoleFilter;
+  }) : _overlay = overlay,
+       _hiddenRoles = Set<String>.from(hiddenRoles),
+       _followProfileOverlay = followProfileOverlay,
+       _followProfileRoleFilter = followProfileRoleFilter;
 
   OverlayOptions _overlay;
   Set<String> _hiddenRoles;

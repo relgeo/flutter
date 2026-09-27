@@ -22,10 +22,7 @@ class WorkbenchViewportController extends ChangeNotifier {
     _viewportSize = size;
   }
 
-  void reset(
-    BoundingBox bounds, {
-    required Size fallbackViewportSize,
-  }) {
+  void reset(BoundingBox bounds, {required Size fallbackViewportSize}) {
     transformationController.value = workbenchViewportCenterTransform(
       viewportSize: _resolvedViewportSize(fallbackViewportSize),
       bounds: bounds,
@@ -33,10 +30,7 @@ class WorkbenchViewportController extends ChangeNotifier {
     );
   }
 
-  void fit(
-    BoundingBox bounds, {
-    required Size fallbackViewportSize,
-  }) {
+  void fit(BoundingBox bounds, {required Size fallbackViewportSize}) {
     final viewport = _resolvedViewportSize(fallbackViewportSize);
     final scale = workbenchViewportFitScale(
       viewportSize: viewport,

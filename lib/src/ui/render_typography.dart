@@ -22,7 +22,8 @@ class RenderTypography {
 
   static double sceneScaleRef(ResolvedScene scene) {
     final diag = math.sqrt(
-      scene.bbox.width * scene.bbox.width + scene.bbox.height * scene.bbox.height,
+      scene.bbox.width * scene.bbox.width +
+          scene.bbox.height * scene.bbox.height,
     );
     return diag > 0 ? diag : 100.0;
   }
@@ -69,7 +70,10 @@ class RenderTypography {
 
   static double approxTextWidth(String text, double fontSize) {
     final lines = text.split('\n');
-    final longest = lines.fold<int>(0, (maxLen, line) => math.max(maxLen, line.length));
+    final longest = lines.fold<int>(
+      0,
+      (maxLen, line) => math.max(maxLen, line.length),
+    );
     return longest * fontSize * 0.6;
   }
 }

@@ -6,23 +6,13 @@ void main() {
     test('Penyortiran Topologis Geometri Dasar (sortObjects)', () {
       // a bergantung pada b, b bergantung pada c
       final objects = {
-        'a': {
-          'type': 'point',
-          'from': 'b',
-        },
-        'b': {
-          'type': 'line',
-          'from': 'c',
-          'to': 'd',
-        },
+        'a': {'type': 'point', 'from': 'b'},
+        'b': {'type': 'line', 'from': 'c', 'to': 'd'},
         'c': {
           'type': 'rect',
           'size': [120, 80],
         },
-        'd': {
-          'type': 'point',
-          'at': '10px, 20px',
-        }
+        'd': {'type': 'point', 'at': '10px, 20px'},
       };
 
       final order = sortObjects(objects);
@@ -36,20 +26,12 @@ void main() {
     test('Pendeteksian Siklus Dependensi (Circular Dependency)', () {
       // a bergantung pada b, b bergantung pada c, c bergantung pada a
       final objects = {
-        'a': {
-          'type': 'point',
-          'from': 'b',
-        },
-        'b': {
-          'type': 'line',
-          'from': 'c',
-        },
+        'a': {'type': 'point', 'from': 'b'},
+        'b': {'type': 'line', 'from': 'c'},
         'c': {
           'type': 'rect',
-          'place': {
-            'centerX': 'a.centerX',
-          }
-        }
+          'place': {'centerX': 'a.centerX'},
+        },
       };
 
       expect(
@@ -74,10 +56,8 @@ void main() {
         'rumah': {
           'type': 'rect',
           'size': ['lebar_rumah', 'tinggi_rumah'],
-          'place': {
-            'centerX': 'tanah.centerX',
-          }
-        }
+          'place': {'centerX': 'tanah.centerX'},
+        },
       };
 
       final derived = {
@@ -93,13 +73,25 @@ void main() {
       final orderStrs = order.map((n) => '${n.kind}:${n.id}').toList();
 
       // derived lebar_tanah harus mendahului derived lebar_rumah
-      expect(orderStrs.indexOf('derived:lebar_tanah'), lessThan(orderStrs.indexOf('derived:lebar_rumah')));
+      expect(
+        orderStrs.indexOf('derived:lebar_tanah'),
+        lessThan(orderStrs.indexOf('derived:lebar_rumah')),
+      );
       // derived lebar_tanah harus mendahului objek tanah karena tanah memakainya di size
-      expect(orderStrs.indexOf('derived:lebar_tanah'), lessThan(orderStrs.indexOf('object:tanah')));
+      expect(
+        orderStrs.indexOf('derived:lebar_tanah'),
+        lessThan(orderStrs.indexOf('object:tanah')),
+      );
       // objek tanah harus mendahului objek rumah karena rumah ditempatkan relatif terhadap tanah (centerX)
-      expect(orderStrs.indexOf('object:tanah'), lessThan(orderStrs.indexOf('object:rumah')));
+      expect(
+        orderStrs.indexOf('object:tanah'),
+        lessThan(orderStrs.indexOf('object:rumah')),
+      );
       // derived lebar_rumah harus mendahului objek rumah karena rumah memakainya di size
-      expect(orderStrs.indexOf('derived:lebar_rumah'), lessThan(orderStrs.indexOf('object:rumah')));
+      expect(
+        orderStrs.indexOf('derived:lebar_rumah'),
+        lessThan(orderStrs.indexOf('object:rumah')),
+      );
     });
   });
 }

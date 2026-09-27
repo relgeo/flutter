@@ -74,53 +74,56 @@ void main() {
     expect(newPainter.shouldRepaint(oldPainter), isTrue);
   });
 
-  test('canvas painter should repaint when hiddenRoles changes in sheet mode', () {
-    final scene = ResolvedScene(
-      unit: LengthUnit.mm,
-      objects: _baseScene().objects,
-      parameters: const {},
-      values: const {},
-      bbox: const BoundingBox(x: 0, y: 0, width: 100, height: 50),
-      views: {
-        'front': ResolvedView(
-          id: 'front',
-          target: 'frame',
-          scale: '1:1',
-          scaleFactor: 1,
-          objects: _baseScene().objects,
-          bbox: const BoundingBox(x: 0, y: 0, width: 100, height: 50),
-        ),
-      },
-      sheets: {
-        'drawing1': ResolvedSheet(
-          id: 'drawing1',
-          size: 'A4',
-          width: 297,
-          height: 210,
-          views: [
-            ResolvedSheetView(
-              use: 'front',
-              x: 20,
-              y: 20,
-              width: 100,
-              height: 50,
-            ),
-          ],
-        ),
-      },
-    );
+  test(
+    'canvas painter should repaint when hiddenRoles changes in sheet mode',
+    () {
+      final scene = ResolvedScene(
+        unit: LengthUnit.mm,
+        objects: _baseScene().objects,
+        parameters: const {},
+        values: const {},
+        bbox: const BoundingBox(x: 0, y: 0, width: 100, height: 50),
+        views: {
+          'front': ResolvedView(
+            id: 'front',
+            target: 'frame',
+            scale: '1:1',
+            scaleFactor: 1,
+            objects: _baseScene().objects,
+            bbox: const BoundingBox(x: 0, y: 0, width: 100, height: 50),
+          ),
+        },
+        sheets: {
+          'drawing1': ResolvedSheet(
+            id: 'drawing1',
+            size: 'A4',
+            width: 297,
+            height: 210,
+            views: [
+              ResolvedSheetView(
+                use: 'front',
+                x: 20,
+                y: 20,
+                width: 100,
+                height: 50,
+              ),
+            ],
+          ),
+        },
+      );
 
-    final oldPainter = CanvasPainter(
-      scene: scene,
-      sheetId: 'drawing1',
-      hiddenRoles: const {'construction'},
-    );
-    final newPainter = CanvasPainter(
-      scene: scene,
-      sheetId: 'drawing1',
-      hiddenRoles: const {'construction', 'guide'},
-    );
+      final oldPainter = CanvasPainter(
+        scene: scene,
+        sheetId: 'drawing1',
+        hiddenRoles: const {'construction'},
+      );
+      final newPainter = CanvasPainter(
+        scene: scene,
+        sheetId: 'drawing1',
+        hiddenRoles: const {'construction', 'guide'},
+      );
 
-    expect(newPainter.shouldRepaint(oldPainter), isTrue);
-  });
+      expect(newPainter.shouldRepaint(oldPainter), isTrue);
+    },
+  );
 }

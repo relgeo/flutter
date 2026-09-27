@@ -39,7 +39,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
                       constraints.maxWidth,
                     ) ==
                     WorkbenchLayoutMode.compact;
-                final panelWidth = isCompact &&
+                final panelWidth =
+                    isCompact &&
                         constraints.maxWidth <
                             WorkbenchWindowPolicy.minimumWindowSize.width
                     ? WorkbenchWindowPolicy.minimumWindowSize.width

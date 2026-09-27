@@ -74,7 +74,7 @@ Map<String, dynamic>? computeFillet(
   // cross > 0 → CCW (sweep=0 di SVG/Dart convention yDown), < 0 → CW (sweep=1)
   final cross = dx1 * dy2 - dy1 * dx2;
   final sweep = cross > 0 ? 0 : 1;
-  
+
   // largeArc selalu 0 untuk fillet normal
   final arcSeg = ArcSegment(
     x1: startX,
@@ -216,7 +216,12 @@ List<PathResolvedSegment> applyCornerModifiers(
           // Update end point of last segment
           final last = result.last;
           if (last is LineSegment) {
-            result[result.length - 1] = LineSegment(last.x1, last.y1, corner.x, corner.y);
+            result[result.length - 1] = LineSegment(
+              last.x1,
+              last.y1,
+              corner.x,
+              corner.y,
+            );
           }
         }
         result.add(LineSegment(corner.x, corner.y, nextPt.x, nextPt.y));
@@ -237,7 +242,12 @@ List<PathResolvedSegment> applyCornerModifiers(
         // Ganti titik akhir segmen sebelumnya ke startPt
         if (result.isNotEmpty && result.last is LineSegment) {
           final last = result.last as LineSegment;
-          result[result.length - 1] = LineSegment(last.x1, last.y1, startPt.x, startPt.y);
+          result[result.length - 1] = LineSegment(
+            last.x1,
+            last.y1,
+            startPt.x,
+            startPt.y,
+          );
         } else {
           result.add(LineSegment(prev.x, prev.y, startPt.x, startPt.y));
         }
@@ -260,7 +270,12 @@ List<PathResolvedSegment> applyCornerModifiers(
 
         if (result.isNotEmpty && result.last is LineSegment) {
           final last = result.last as LineSegment;
-          result[result.length - 1] = LineSegment(last.x1, last.y1, startPt.x, startPt.y);
+          result[result.length - 1] = LineSegment(
+            last.x1,
+            last.y1,
+            startPt.x,
+            startPt.y,
+          );
         } else {
           result.add(LineSegment(prev.x, prev.y, startPt.x, startPt.y));
         }

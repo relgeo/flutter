@@ -73,7 +73,7 @@ void main() {
     expect(normalizedCircle.outer.length, equals(64));
 
     final engine = ClipperBooleanEngine();
-    
+
     // Test subtract (Rect - Circle)
     final subResult = engine.subtract(normalizedRect, [normalizedCircle]);
     // Since circle is centered at 50,50 with radius 60, the corners (which are at distance ~70.7)
@@ -120,7 +120,7 @@ void main() {
       id: 'cutter_rect',
       meta: Meta(visible: false),
       x: 30, // 50 - 40/2
-      y: 0,  // 50 - 100/2
+      y: 0, // 50 - 100/2
       width: 40,
       height: 100,
     );
@@ -130,7 +130,7 @@ void main() {
     final cutterRect2 = ResolvedRect(
       id: 'cutter_rect2',
       meta: Meta(visible: false),
-      x: 0,  // 50 - 100/2
+      x: 0, // 50 - 100/2
       y: 30, // 50 - 40/2
       width: 100,
       height: 40,
@@ -142,7 +142,9 @@ void main() {
       'operation': 'subtract',
       'base': 'base_circle',
       'tools': ['cutter_rect', 'cutter_rect2'],
-      'place': {'topLeft': [0, 0]},
+      'place': {
+        'topLeft': [0, 0],
+      },
     }, ctx);
 
     expect(resolvedBoolean, isNotNull);
@@ -151,7 +153,7 @@ void main() {
     // Our resolver should have flattened all of them, yielding points and segments
     expect(resolvedBoolean.points, isNotEmpty);
     expect(resolvedBoolean.segments, isNotEmpty);
-    
+
     // Check that placement was resolved: place: {topLeft: [0, 0]}
     // Since it was placed at [0, 0], let's check the bounding box or transformed coordinates
     final bbox = calculateBoundingBox({'shape_subtract': resolvedBoolean});

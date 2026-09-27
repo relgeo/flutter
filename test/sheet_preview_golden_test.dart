@@ -859,189 +859,183 @@ void main() {
       await tester.pump();
 
       expectLater(
-        find.byKey(
-          const Key('scaled-dimension-family-sheet-preview-boundary'),
-        ),
-        matchesGoldenFile(
-          'goldens/scaled_dimension_family_sheet_preview.png',
-        ),
+        find.byKey(const Key('scaled-dimension-family-sheet-preview-boundary')),
+        matchesGoldenFile('goldens/scaled_dimension_family_sheet_preview.png'),
       );
     },
   );
 
-  testWidgets(
-    'sheet preview matches scaled text physical-preview golden',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(900, 700);
-      tester.view.devicePixelRatio = 1.0;
+  testWidgets('sheet preview matches scaled text physical-preview golden', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 700);
+    tester.view.devicePixelRatio = 1.0;
 
-      final viewObjects = <String, ResolvedObject>{
-        'guideBox': ResolvedRect(
-          id: 'guideBox',
-          meta: Meta(stroke: '#CBD5E1', fill: '#FFFFFF'),
-          x: 20,
-          y: 20,
-          width: 120,
-          height: 70,
+    final viewObjects = <String, ResolvedObject>{
+      'guideBox': ResolvedRect(
+        id: 'guideBox',
+        meta: Meta(stroke: '#CBD5E1', fill: '#FFFFFF'),
+        x: 20,
+        y: 20,
+        width: 120,
+        height: 70,
+      ),
+      'title': ResolvedText(
+        id: 'title',
+        meta: Meta(fill: '#111827', extra: {'fontSize': 12, 'lineHeight': 1.2}),
+        x: 34,
+        y: 28,
+        width: 80,
+        height: 24,
+        content: 'PLATE A\nCHECK',
+        anchor: 'topLeft',
+      ),
+    };
+
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: viewObjects,
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 20, y: 20, width: 120, height: 70),
+      meta: Meta.fromJson({'date': '2026-07-20'}),
+      views: {
+        'textView': ResolvedView(
+          id: 'textView',
+          target: 'guideBox',
+          scale: '2:1',
+          scaleFactor: 2,
+          objects: viewObjects,
+          bbox: const BoundingBox(x: 40, y: 40, width: 240, height: 140),
         ),
-        'title': ResolvedText(
-          id: 'title',
-          meta: Meta(fill: '#111827', extra: {'fontSize': 12, 'lineHeight': 1.2}),
-          x: 34,
-          y: 28,
-          width: 80,
-          height: 24,
-          content: 'PLATE A\nCHECK',
-          anchor: 'topLeft',
+      },
+      sheets: {
+        'drawing1': ResolvedSheet(
+          id: 'drawing1',
+          size: 'A4',
+          width: 297,
+          height: 210,
+          views: [
+            ResolvedSheetView(
+              use: 'textView',
+              x: 20,
+              y: 24,
+              width: 240,
+              height: 140,
+            ),
+          ],
+          meta: Meta.fromJson({'title': 'Scaled Text'}),
         ),
-      };
+      },
+    );
 
-      final scene = ResolvedScene(
-        unit: LengthUnit.mm,
-        objects: viewObjects,
-        parameters: const {},
-        values: const {},
-        bbox: const BoundingBox(x: 20, y: 20, width: 120, height: 70),
-        meta: Meta.fromJson({'date': '2026-07-20'}),
-        views: {
-          'textView': ResolvedView(
-            id: 'textView',
-            target: 'guideBox',
-            scale: '2:1',
-            scaleFactor: 2,
-            objects: viewObjects,
-            bbox: const BoundingBox(x: 40, y: 40, width: 240, height: 140),
-          ),
-        },
-        sheets: {
-          'drawing1': ResolvedSheet(
-            id: 'drawing1',
-            size: 'A4',
-            width: 297,
-            height: 210,
-            views: [
-              ResolvedSheetView(
-                use: 'textView',
-                x: 20,
-                y: 24,
-                width: 240,
-                height: 140,
-              ),
-            ],
-            meta: Meta.fromJson({'title': 'Scaled Text'}),
-          ),
-        },
-      );
+    await tester.pumpWidget(
+      _goldenHost(
+        boundaryKey: const Key('scaled-text-sheet-preview-boundary'),
+        width: 360,
+        height: 250,
+        painter: CanvasPainter(scene: scene, sheetId: 'drawing1'),
+      ),
+    );
 
-      await tester.pumpWidget(
-        _goldenHost(
-          boundaryKey: const Key('scaled-text-sheet-preview-boundary'),
-          width: 360,
-          height: 250,
-          painter: CanvasPainter(scene: scene, sheetId: 'drawing1'),
+    await tester.pump();
+
+    expectLater(
+      find.byKey(const Key('scaled-text-sheet-preview-boundary')),
+      matchesGoldenFile('goldens/scaled_text_sheet_preview.png'),
+    );
+  });
+
+  testWidgets('sheet preview matches scaled point physical-preview golden', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 700);
+    tester.view.devicePixelRatio = 1.0;
+
+    final viewObjects = <String, ResolvedObject>{
+      'guideBox': ResolvedRect(
+        id: 'guideBox',
+        meta: Meta(stroke: '#CBD5E1', fill: '#FFFFFF'),
+        x: 20,
+        y: 20,
+        width: 120,
+        height: 70,
+      ),
+      'markA': ResolvedPoint(
+        id: 'markA',
+        meta: Meta.fromJson({
+          'fill': '#111827',
+          'pointShape': 'circle',
+          'pointSize': 4,
+        }),
+        x: 40,
+        y: 40,
+      ),
+      'markB': ResolvedPoint(
+        id: 'markB',
+        meta: Meta.fromJson({
+          'stroke': '#0F766E',
+          'pointShape': 'plus',
+          'pointSize': 5,
+        }),
+        x: 110,
+        y: 65,
+      ),
+    };
+
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: viewObjects,
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 20, y: 20, width: 120, height: 70),
+      meta: Meta.fromJson({'date': '2026-07-20'}),
+      views: {
+        'pointView': ResolvedView(
+          id: 'pointView',
+          target: 'guideBox',
+          scale: '2:1',
+          scaleFactor: 2,
+          objects: viewObjects,
+          bbox: const BoundingBox(x: 40, y: 40, width: 240, height: 140),
         ),
-      );
-
-      await tester.pump();
-
-      expectLater(
-        find.byKey(const Key('scaled-text-sheet-preview-boundary')),
-        matchesGoldenFile('goldens/scaled_text_sheet_preview.png'),
-      );
-    },
-  );
-
-  testWidgets(
-    'sheet preview matches scaled point physical-preview golden',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(900, 700);
-      tester.view.devicePixelRatio = 1.0;
-
-      final viewObjects = <String, ResolvedObject>{
-        'guideBox': ResolvedRect(
-          id: 'guideBox',
-          meta: Meta(stroke: '#CBD5E1', fill: '#FFFFFF'),
-          x: 20,
-          y: 20,
-          width: 120,
-          height: 70,
+      },
+      sheets: {
+        'drawing1': ResolvedSheet(
+          id: 'drawing1',
+          size: 'A4',
+          width: 297,
+          height: 210,
+          views: [
+            ResolvedSheetView(
+              use: 'pointView',
+              x: 20,
+              y: 24,
+              width: 240,
+              height: 140,
+            ),
+          ],
+          meta: Meta.fromJson({'title': 'Scaled Point'}),
         ),
-        'markA': ResolvedPoint(
-          id: 'markA',
-          meta: Meta.fromJson({
-            'fill': '#111827',
-            'pointShape': 'circle',
-            'pointSize': 4,
-          }),
-          x: 40,
-          y: 40,
-        ),
-        'markB': ResolvedPoint(
-          id: 'markB',
-          meta: Meta.fromJson({
-            'stroke': '#0F766E',
-            'pointShape': 'plus',
-            'pointSize': 5,
-          }),
-          x: 110,
-          y: 65,
-        ),
-      };
+      },
+    );
 
-      final scene = ResolvedScene(
-        unit: LengthUnit.mm,
-        objects: viewObjects,
-        parameters: const {},
-        values: const {},
-        bbox: const BoundingBox(x: 20, y: 20, width: 120, height: 70),
-        meta: Meta.fromJson({'date': '2026-07-20'}),
-        views: {
-          'pointView': ResolvedView(
-            id: 'pointView',
-            target: 'guideBox',
-            scale: '2:1',
-            scaleFactor: 2,
-            objects: viewObjects,
-            bbox: const BoundingBox(x: 40, y: 40, width: 240, height: 140),
-          ),
-        },
-        sheets: {
-          'drawing1': ResolvedSheet(
-            id: 'drawing1',
-            size: 'A4',
-            width: 297,
-            height: 210,
-            views: [
-              ResolvedSheetView(
-                use: 'pointView',
-                x: 20,
-                y: 24,
-                width: 240,
-                height: 140,
-              ),
-            ],
-            meta: Meta.fromJson({'title': 'Scaled Point'}),
-          ),
-        },
-      );
+    await tester.pumpWidget(
+      _goldenHost(
+        boundaryKey: const Key('scaled-point-sheet-preview-boundary'),
+        width: 360,
+        height: 250,
+        painter: CanvasPainter(scene: scene, sheetId: 'drawing1'),
+      ),
+    );
 
-      await tester.pumpWidget(
-        _goldenHost(
-          boundaryKey: const Key('scaled-point-sheet-preview-boundary'),
-          width: 360,
-          height: 250,
-          painter: CanvasPainter(scene: scene, sheetId: 'drawing1'),
-        ),
-      );
+    await tester.pump();
 
-      await tester.pump();
-
-      expectLater(
-        find.byKey(const Key('scaled-point-sheet-preview-boundary')),
-        matchesGoldenFile('goldens/scaled_point_sheet_preview.png'),
-      );
-    },
-  );
+    expectLater(
+      find.byKey(const Key('scaled-point-sheet-preview-boundary')),
+      matchesGoldenFile('goldens/scaled_point_sheet_preview.png'),
+    );
+  });
 
   testWidgets('sheet preview matches target-only annotation fallback golden', (
     WidgetTester tester,

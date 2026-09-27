@@ -58,7 +58,9 @@ void main() {
   );
 
   test('renders sheet title block fixture from shared reference folder', () {
-    final scene = resolveGeometry(loadSharedFixture('03-sheet-title-block.yaml'));
+    final scene = resolveGeometry(
+      loadSharedFixture('03-sheet-title-block.yaml'),
+    );
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     expect(svg.contains('SHEET: Assembly Sheet'), isTrue);
@@ -86,7 +88,9 @@ void main() {
   );
 
   test('renders clone sheet target fixture from shared reference folder', () {
-    final scene = resolveGeometry(loadSharedFixture('05-clone-sheet-target.yaml'));
+    final scene = resolveGeometry(
+      loadSharedFixture('05-clone-sheet-target.yaml'),
+    );
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     final rectMatch = RegExp(
@@ -140,7 +144,9 @@ void main() {
   );
 
   test('renders sheet xml escaping fixture from shared reference folder', () {
-    final scene = resolveGeometry(loadSharedFixture('08-sheet-xml-escaping.yaml'));
+    final scene = resolveGeometry(
+      loadSharedFixture('08-sheet-xml-escaping.yaml'),
+    );
     final svg = SvgExporter.generateSVG(scene, sheetId: 'drawing1');
 
     expect(svg.contains('A&amp;B &lt;main&gt;'), isTrue);
@@ -150,27 +156,32 @@ void main() {
     expect(svg.contains('front&amp;detail (Scale 1&lt;2)'), isTrue);
   });
 
-  test('renders multi-sheet title block fixture from shared reference folder', () {
-    final scene = resolveGeometry(loadSharedFixture('09-multi-sheet-title-block.yaml'));
-    final sheetA = SvgExporter.generateSVG(scene, sheetId: 'sheetA');
-    final sheetB = SvgExporter.generateSVG(scene, sheetId: 'sheetB');
+  test(
+    'renders multi-sheet title block fixture from shared reference folder',
+    () {
+      final scene = resolveGeometry(
+        loadSharedFixture('09-multi-sheet-title-block.yaml'),
+      );
+      final sheetA = SvgExporter.generateSVG(scene, sheetId: 'sheetA');
+      final sheetB = SvgExporter.generateSVG(scene, sheetId: 'sheetB');
 
-    expect(sheetA.contains('SHEET: Bracket Assembly Sheet'), isTrue);
-    expect(sheetA.contains('DATE: 2026-07-13'), isTrue);
-    expect(sheetA.contains('DOC VER: BRKT-2026.07'), isTrue);
-    expect(sheetA.contains('SIZE: A4 Landscape'), isTrue);
-    expect(sheetA.contains('Viewport: front'), isTrue);
+      expect(sheetA.contains('SHEET: Bracket Assembly Sheet'), isTrue);
+      expect(sheetA.contains('DATE: 2026-07-13'), isTrue);
+      expect(sheetA.contains('DOC VER: BRKT-2026.07'), isTrue);
+      expect(sheetA.contains('SIZE: A4 Landscape'), isTrue);
+      expect(sheetA.contains('Viewport: front'), isTrue);
 
-    expect(sheetB.contains('SHEET: Bracket Detail Sheet'), isTrue);
-    expect(sheetB.contains('DATE: 2026-07-14'), isTrue);
-    expect(sheetB.contains('DOC VER: BRKT-DET-02'), isTrue);
-    expect(sheetB.contains('SIZE: A4 Detail'), isTrue);
-    expect(sheetB.contains('Viewport: detail'), isTrue);
-    expect(
-      sheetB.contains(
-        '<g transform="translate(40.0, 45.0) scale(2.0) translate(-0.0, -0.0)">',
-      ),
-      isTrue,
-    );
-  });
+      expect(sheetB.contains('SHEET: Bracket Detail Sheet'), isTrue);
+      expect(sheetB.contains('DATE: 2026-07-14'), isTrue);
+      expect(sheetB.contains('DOC VER: BRKT-DET-02'), isTrue);
+      expect(sheetB.contains('SIZE: A4 Detail'), isTrue);
+      expect(sheetB.contains('Viewport: detail'), isTrue);
+      expect(
+        sheetB.contains(
+          '<g transform="translate(40.0, 45.0) scale(2.0) translate(-0.0, -0.0)">',
+        ),
+        isTrue,
+      );
+    },
+  );
 }

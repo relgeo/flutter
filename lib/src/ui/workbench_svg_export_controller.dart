@@ -2,15 +2,14 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 
-typedef WorkbenchPickSvgFile = Future<String?> Function({
-  required String dialogTitle,
-  required String fileName,
-});
+typedef WorkbenchPickSvgFile =
+    Future<String?> Function({
+      required String dialogTitle,
+      required String fileName,
+    });
 
-typedef WorkbenchWriteTextFile = Future<void> Function(
-  String path,
-  String contents,
-);
+typedef WorkbenchWriteTextFile =
+    Future<void> Function(String path, String contents);
 
 Future<String?> _pickSvgFile({
   required String dialogTitle,
@@ -34,8 +33,8 @@ class WorkbenchSvgExportController {
   WorkbenchSvgExportController({
     WorkbenchPickSvgFile? pickFile,
     WorkbenchWriteTextFile? writeFile,
-  })  : _pickFile = pickFile ?? _pickSvgFile,
-        _writeFile = writeFile ?? _writeTextFile;
+  }) : _pickFile = pickFile ?? _pickSvgFile,
+       _writeFile = writeFile ?? _writeTextFile;
 
   final WorkbenchPickSvgFile _pickFile;
   final WorkbenchWriteTextFile _writeFile;

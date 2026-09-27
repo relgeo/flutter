@@ -1,10 +1,12 @@
 import '../geometry/types.dart';
 
-typedef HierarchyPrimitiveRenderer = void Function(ResolvedObject obj, Meta meta);
-typedef HierarchyTransformScope = void Function(
-  List<ResolvedTransformOp> transforms,
-  void Function() renderChild,
-);
+typedef HierarchyPrimitiveRenderer =
+    void Function(ResolvedObject obj, Meta meta);
+typedef HierarchyTransformScope =
+    void Function(
+      List<ResolvedTransformOp> transforms,
+      void Function() renderChild,
+    );
 typedef HierarchyRolePredicate = bool Function(String role);
 
 class RenderHierarchy {
@@ -46,8 +48,8 @@ class RenderHierarchy {
       final effectiveMeta = metaOverride == null
           ? obj.meta
           : (isCloneDescendant
-              ? mergeCloneDescendantMeta(obj.meta, metaOverride)
-              : mergeInheritedMeta(metaOverride, obj.meta));
+                ? mergeCloneDescendantMeta(obj.meta, metaOverride)
+                : mergeInheritedMeta(metaOverride, obj.meta));
 
       if (!effectiveMeta.visible || !shouldRenderRole(effectiveMeta.role)) {
         return;
@@ -70,10 +72,7 @@ class RenderHierarchy {
             for (final childId in obj.children) {
               final child = lookup[childId];
               if (child == null) continue;
-              renderNode(
-                child,
-                metaOverride: effectiveMeta,
-              );
+              renderNode(child, metaOverride: effectiveMeta);
             }
           });
         default:
@@ -108,10 +107,7 @@ class RenderHierarchy {
       quantity: child.quantity ?? parent.quantity,
       finish: child.finish ?? parent.finish,
       tolerance: child.tolerance ?? parent.tolerance,
-      extra: {
-        ...parent.extra,
-        ...child.extra,
-      },
+      extra: {...parent.extra, ...child.extra},
     );
   }
 
@@ -135,10 +131,7 @@ class RenderHierarchy {
       quantity: cloneMeta.quantity ?? target.quantity,
       finish: cloneMeta.finish ?? target.finish,
       tolerance: cloneMeta.tolerance ?? target.tolerance,
-      extra: {
-        ...target.extra,
-        ...cloneMeta.extra,
-      },
+      extra: {...target.extra, ...cloneMeta.extra},
     );
   }
 
