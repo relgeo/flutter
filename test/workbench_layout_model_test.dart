@@ -26,6 +26,8 @@ void main() {
               bounds: WorkbenchPanelBounds(
                 width: 480,
                 height: 360,
+                left: 32,
+                top: 24,
                 minWidth: 240,
               ),
             ),
@@ -34,6 +36,8 @@ void main() {
             WorkbenchPanelId.inspector: WorkbenchPanelBounds(
               width: 480,
               height: 360,
+              left: 32,
+              top: 24,
             ),
           },
         );

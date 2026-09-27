@@ -37,6 +37,8 @@ extension WorkbenchPanelPlacementStorage on WorkbenchPanelPlacement {
 @immutable
 class WorkbenchPanelBounds {
   const WorkbenchPanelBounds({
+    this.left,
+    this.top,
     this.width,
     this.height,
     this.minWidth,
@@ -45,6 +47,8 @@ class WorkbenchPanelBounds {
     this.maxHeight,
   });
 
+  final double? left;
+  final double? top;
   final double? width;
   final double? height;
   final double? minWidth;
@@ -55,6 +59,8 @@ class WorkbenchPanelBounds {
   static const empty = WorkbenchPanelBounds();
 
   WorkbenchPanelBounds copyWith({
+    double? left,
+    double? top,
     double? width,
     double? height,
     double? minWidth,
@@ -63,6 +69,8 @@ class WorkbenchPanelBounds {
     double? maxHeight,
   }) {
     return WorkbenchPanelBounds(
+      left: left ?? this.left,
+      top: top ?? this.top,
       width: width ?? this.width,
       height: height ?? this.height,
       minWidth: minWidth ?? this.minWidth,
@@ -80,6 +88,8 @@ class WorkbenchPanelBounds {
       }
     }
 
+    add('left', left);
+    add('top', top);
     add('width', width);
     add('height', height);
     add('minWidth', minWidth);
@@ -100,6 +110,8 @@ class WorkbenchPanelBounds {
     }
 
     return WorkbenchPanelBounds(
+      left: read('left'),
+      top: read('top'),
       width: read('width'),
       height: read('height'),
       minWidth: read('minWidth'),
@@ -112,6 +124,8 @@ class WorkbenchPanelBounds {
   @override
   bool operator ==(Object other) =>
       other is WorkbenchPanelBounds &&
+      other.left == left &&
+      other.top == top &&
       other.width == width &&
       other.height == height &&
       other.minWidth == minWidth &&
@@ -120,8 +134,16 @@ class WorkbenchPanelBounds {
       other.maxHeight == maxHeight;
 
   @override
-  int get hashCode =>
-      Object.hash(width, height, minWidth, maxWidth, minHeight, maxHeight);
+  int get hashCode => Object.hash(
+    left,
+    top,
+    width,
+    height,
+    minWidth,
+    maxWidth,
+    minHeight,
+    maxHeight,
+  );
 }
 
 @immutable

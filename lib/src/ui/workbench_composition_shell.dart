@@ -94,22 +94,24 @@ class WorkbenchCompositionShell extends StatelessWidget {
           WorkbenchPanelId.editor,
           WorkbenchPanelId.preview,
           WorkbenchPanelId.inspector,
+          if (parameters != null) WorkbenchPanelId.parameters,
         ];
-        final visiblePanelIds = panelIds
+        final dockedPanelIds = panelIds
             .where(
               (id) =>
                   controller.panel(id).visibility !=
-                  WorkbenchPanelVisibility.hidden,
+                      WorkbenchPanelVisibility.hidden &&
+                  _isSideDocked(controller.panel(id).placement),
             )
             .toList();
         final children = <Widget>[];
-        for (var index = 0; index < visiblePanelIds.length; index++) {
-          final id = visiblePanelIds[index];
+        for (var index = 0; index < dockedPanelIds.length; index++) {
+          final id = dockedPanelIds[index];
           children.add(
             _buildPanelSlot(context, id, controller, _panelWidget(id)),
           );
-          if (index < visiblePanelIds.length - 1) {
-            final next = visiblePanelIds[index + 1];
+          if (index < dockedPanelIds.length - 1) {
+            final next = dockedPanelIds[index + 1];
             children.add(
               _WorkbenchPanelDivider(
                 key: ValueKey('workbench-divider-${id.name}'),
@@ -122,9 +124,21 @@ class WorkbenchCompositionShell extends StatelessWidget {
 
         final panels = SizedBox(
           width: panelWidth,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
+              ..._buildFloatingPanels(
+                context,
+                controller,
+                panelIds,
+                panelWidth,
+                constraints.maxHeight,
+              ),
+            ],
           ),
         );
         final main = _isCompact(constraints.maxWidth)
@@ -158,6 +172,10 @@ class WorkbenchCompositionShell extends StatelessWidget {
     WorkbenchLayoutController controller,
   ) {
     final state = controller.panel(WorkbenchPanelId.parameters);
+    if (parameters == null ||
+        state.placement != WorkbenchPanelPlacement.bottom) {
+      return const SizedBox.shrink();
+    }
     if (state.visibility == WorkbenchPanelVisibility.hidden) {
       return const SizedBox.shrink();
     }
@@ -176,6 +194,78 @@ class WorkbenchCompositionShell extends StatelessWidget {
     }
     return SizedBox(height: state.bounds.height ?? 220, child: parameters);
   }
+
+  List<Widget> _buildFloatingPanels(
+    BuildContext context,
+    WorkbenchLayoutController controller,
+    List<WorkbenchPanelId> panelIds,
+    double canvasWidth,
+    double canvasHeight,
+  ) {
+    return [
+      for (final id in panelIds)
+        if (controller.panel(id).visibility !=
+                WorkbenchPanelVisibility.hidden &&
+            (controller.panel(id).placement ==
+                    WorkbenchPanelPlacement.floating ||
+                controller.panel(id).placement ==
+                    WorkbenchPanelPlacement.overlay))
+          _buildFloatingPanel(
+            context,
+            controller,
+            id,
+            canvasWidth,
+            canvasHeight,
+          ),
+    ];
+  }
+
+  Widget _buildFloatingPanel(
+    BuildContext context,
+    WorkbenchLayoutController controller,
+    WorkbenchPanelId id,
+    double canvasWidth,
+    double canvasHeight,
+  ) {
+    final state = controller.panel(id);
+    final bounds = controller.layout.floatingBounds[id] ?? state.bounds;
+    final width = bounds.width ?? 320;
+    final height = bounds.height ?? 260;
+    final left = (bounds.left ?? 24).clamp(
+      0.0,
+      (canvasWidth - width).clamp(0.0, double.infinity),
+    );
+    final top = (bounds.top ?? 24).clamp(
+      0.0,
+      (canvasHeight - height).clamp(0.0, double.infinity),
+    );
+    return Positioned(
+      left: left,
+      top: top,
+      width: width,
+      height: height,
+      child: GestureDetector(
+        onPanUpdate: (details) => controller.moveFloatingPanel(
+          id,
+          dx: details.delta.dx,
+          dy: details.delta.dy,
+        ),
+        child: Material(
+          elevation: state.placement == WorkbenchPanelPlacement.overlay ? 8 : 4,
+          clipBehavior: Clip.antiAlias,
+          child: Semantics(
+            label: '${id.name} ${state.placement.name} panel',
+            child: _panelWidget(id),
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _isSideDocked(WorkbenchPanelPlacement placement) =>
+      placement == WorkbenchPanelPlacement.left ||
+      placement == WorkbenchPanelPlacement.center ||
+      placement == WorkbenchPanelPlacement.right;
 
   Widget _buildPanelSlot(
     BuildContext context,

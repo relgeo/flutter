@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A, B, dan C selesai; Tahap E dan F sebagian selesai; Tahap D dan G belum selesai
+**Status:** Tahap A, B, dan C selesai; Tahap D, E, dan F sebagian selesai; Tahap G belum selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -254,10 +254,13 @@ ruang lingkup Tahap D.
 
 ### Tahap D — Floating, overlay, dan docking
 
-- [ ] dukung panel floating dengan bounds terkontrol;
-- [ ] dukung overlay panel dengan z-order dan dismiss behavior yang jelas;
+- [x] dukung panel floating dengan bounds terkontrol dan posisi yang dapat
+  dipindahkan;
+- [~] dukung overlay panel dengan z-order yang jelas; dismiss behavior dan
+  focus policy masih tertunda;
 - [ ] dukung dock kembali ke region asal atau region pilihan;
-- [ ] cegah panel keluar sepenuhnya dari batas window.
+- [~] cegah panel keluar sepenuhnya dari batas window pada tahap rendering;
+  clamp posisi tersimpan dan resize handle masih tertunda.
 
 ### Tahap E — Profiles dan autosave
 
@@ -302,7 +305,8 @@ ruang lingkup Tahap D.
 - [ ] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
-- [ ] panel dapat di-dock, di-undock, di-collapse, dan di-overlay;
+- [~] panel dapat di-collapse dan di-overlay; dock/undock serta transisi
+  floating yang lengkap masih tertunda;
 - [ ] preset dapat diterapkan tanpa mengubah dokumen;
 - [ ] perubahan layout dipulihkan setelah restart;
 - [ ] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
@@ -339,9 +343,10 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | --- | --- |
 | 2026-09-27 | Tombol khusus `Download SVG Model` tidak menjadi bagian dari Preview. SVG diposisikan sebagai salah satu format pada command `File → Export`, dengan target Model atau Sheet/View. |
 | 2026-09-27 | Tahap A — Layout contracts | Menambahkan `WorkbenchLayoutModel` immutable dan versioned dengan panel Editor, Preview, Inspector, dan Parameters; visibility, placement, bounds, split ratios, floating bounds, JSON round-trip, serta fallback aman ke Standard. Availability panel sengaja tidak dipersist karena diturunkan dari dokumen aktif. Contract tests lulus; integrasi renderer/layout runtime ditunda ke Tahap B. |
-| 2026-09-27 | Tahap B parsial — Docked shell | `WorkbenchLayoutController` kini menggerakkan shell utama untuk Editor, Preview, dan Inspector: visibility, collapse, splitter horizontal, min-width constraint, dan split ratio. Jalur compact tetap memiliki scroll boundary. Parameters belum menjadi region mandiri; floating/overlay/docking ulang dan autosave belum dikerjakan. |
+| 2026-09-27 | Tahap B selesai — Docked shell | `WorkbenchLayoutController` menggerakkan shell utama untuk Editor, Preview, Inspector, dan Parameters: visibility, collapse, splitter horizontal/vertikal, min-width constraint, split ratio, dan bottom surface. Jalur compact tetap memiliki scroll boundary. Floating/overlay/docking ulang tetap menjadi ruang lingkup Tahap D. |
 | 2026-09-27 | Tahap F parsial — Panel commands | Menu View kini memiliki toggle Editor, Preview, dan Inspector dengan checkmark yang mengikuti state layout. Command registry tetap menjadi sumber aksi; menu File/Edit/Appearance/Document/Help lengkap dan Parameters menunggu tahap berikutnya. |
-| 2026-09-27 | Tahap C parsial — Parameters surface | Slider parameter dipindahkan dari `EditorPanel` ke `WorkbenchParametersFeature`/`ParametersPanel`. `CADWorkbenchPage` hanya memasangnya bila dokumen aktif memiliki parameter; reset tetap callback domain, bukan operasi layout. Bottom region masih fixed-height dan belum autosave. |
+| 2026-09-27 | Tahap C selesai — Parameters surface | Slider parameter dipindahkan dari `EditorPanel` ke `WorkbenchParametersFeature`/`ParametersPanel`. `CADWorkbenchPage` hanya memasangnya bila dokumen aktif memiliki parameter; reset tetap callback domain, bukan operasi layout. Ukuran bottom region ikut layout state dan dipulihkan saat panel tersedia kembali. |
 | 2026-09-27 | Tahap E parsial — Profiles dan autosave | Menambahkan preset layout immutable (`Standard`, `Writing`, `Preview`, `Inspect`, `Minimal`) serta persistence JSON versioned dengan debounce 400 ms, flush, dan fallback corruption ke Standard. `CADWorkbenchPage` memulihkan layout dan menjadwalkan autosave; native restart proof masih tertunda. |
 | 2026-09-27 | Tahap B/C selesai — Resizing dan Parameters | Menambahkan vertical splitter untuk Parameters dengan min/max height, serta mempertahankan ukuran panel saat availability Parameters berubah. Seluruh panel utama kini memiliki jalur resize yang dapat diuji pada controller/shell. |
 | 2026-09-27 | Tahap E/F parsial — Profile commands | Menu `Workbench` menyediakan preset layout dan menu `View` menyediakan reset layout serta toggle Parameters yang disabled ketika dokumen tidak memiliki parameter. Edit manual mengubah active profile menjadi `Custom`. |
+| 2026-09-27 | Tahap D parsial — Floating/overlay foundation | Menambahkan `left`/`top` pada bounds, layer `Stack`, renderer `Positioned` yang menjaga panel tetap terlihat, pembedaan elevation untuk floating/overlay, semantics label, dan drag gesture yang tersimpan melalui controller. Docking ulang, resize handle, clamp pada state tersimpan, serta dismiss/focus policy overlay masih tertunda. |

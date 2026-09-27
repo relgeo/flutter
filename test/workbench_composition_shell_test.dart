@@ -158,4 +158,49 @@ void main() {
     await tester.pump();
     expect(find.text('parameters'), findsNothing);
   });
+
+  testWidgets('floating placement renders above the docked panel layer', (
+    tester,
+  ) async {
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(placement: WorkbenchPanelPlacement.floating),
+        },
+        floatingBounds: const {
+          WorkbenchPanelId.inspector: WorkbenchPanelBounds(
+            left: 24,
+            top: 24,
+            width: 280,
+            height: 220,
+          ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    expect(find.byType(Positioned), findsOneWidget);
+    expect(find.text('inspector'), findsOneWidget);
+    controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 20, dy: 10);
+    await tester.pump();
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
+      44,
+    );
+  });
 }

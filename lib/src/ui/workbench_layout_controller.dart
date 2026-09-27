@@ -93,6 +93,21 @@ class WorkbenchLayoutController extends ChangeNotifier {
     _replaceAsCustom(_layout.copyWith(floatingBounds: floating));
   }
 
+  void moveFloatingPanel(
+    WorkbenchPanelId id, {
+    required double dx,
+    required double dy,
+  }) {
+    final current = _layout.floatingBounds[id] ?? panel(id).bounds;
+    setFloatingBounds(
+      id,
+      current.copyWith(
+        left: (current.left ?? 24) + dx,
+        top: (current.top ?? 24) + dy,
+      ),
+    );
+  }
+
   void setSplitRatio(String region, double ratio) {
     if (!ratio.isFinite || ratio <= 0 || ratio > 1) return;
     _replaceAsCustom(

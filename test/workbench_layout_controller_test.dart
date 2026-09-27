@@ -104,4 +104,30 @@ void main() {
     expect(controller.panel(WorkbenchPanelId.parameters).bounds.height, 300);
     expect(controller.layout.activeProfileId, 'custom');
   });
+
+  test(
+    'floating panel movement updates persisted position',
+    () {
+      final controller = WorkbenchLayoutController();
+      controller.setPlacement(
+        WorkbenchPanelId.inspector,
+        WorkbenchPanelPlacement.floating,
+      );
+      controller.setFloatingBounds(
+        WorkbenchPanelId.inspector,
+        const WorkbenchPanelBounds(left: 32, top: 24, width: 320, height: 240),
+      );
+
+      controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 16, dy: 12);
+
+      expect(
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
+        48,
+      );
+      expect(
+        controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.top,
+        36,
+      );
+    },
+  );
 }
