@@ -364,6 +364,49 @@ void main() {
     expect(find.textContaining('scene:'), findsOneWidget);
   });
 
+  testWidgets('local new document fallback respects dirty-state confirmation', (
+    WidgetTester tester,
+  ) async {
+    var allowDiscard = false;
+    var confirmCount = 0;
+    final service = _FakeFileService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          fileService: service,
+          onConfirmDiscardChanges: () async {
+            confirmCount++;
+            return allowDiscard;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# unsaved local document';
+    await tester.pump();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New document'));
+    await tester.pumpAndSettle();
+
+    expect(confirmCount, 1);
+    expect(find.textContaining('# unsaved local document'), findsOneWidget);
+
+    allowDiscard = true;
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New document'));
+    await tester.pumpAndSettle();
+
+    expect(confirmCount, 2);
+    expect(find.textContaining('# New RelGeo document'), findsOneWidget);
+    expect(find.textContaining('# unsaved local document'), findsNothing);
+  });
+
   testWidgets(
     'typed host save acknowledgement clears dirty state and identity',
     (WidgetTester tester) async {
