@@ -288,9 +288,11 @@ ruang lingkup Tahap D.
   services; layout/theme/document actions dan export target Model/Sheet sudah
   aktif, sedangkan native file I/O penuh dan host lifecycle masih bergantung
   pada service/host aplikasi;
-- [~] pastikan toolbar dan keyboard shortcut memakai command yang sama; global
-  shortcuts sekarang dipasang dari registry yang sama dengan menu dan command
-  callback, tetapi parity seluruh toolbar/context menu belum selesai;
+- [~] pastikan toolbar, context menu, dan keyboard shortcut memakai command
+  yang sama; global shortcuts dan toolbar utama/viewport sudah memakai registry,
+  dan viewport kini memiliki context menu untuk Copy, Recompile, zoom, fit,
+  reset, serta export. Parity context menu untuk seluruh child surface dan
+  shortcut semua command masih tertunda;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [x] sediakan reset layout, reset appearance override, dan reset parameters;
@@ -367,8 +369,9 @@ ruang lingkup Tahap D.
   `x86_64` juga lulus melalui Xcode, tetapi runtime window macOS, target arm64
   pada Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
-  yang sama; menu bar/native menu dan sebagian toolbar sudah memakai registry,
-  tetapi parity penuh toolbar/context/shortcut belum;
+  yang sama; menu bar/native menu, toolbar utama/viewport, dan context menu
+  viewport kini memakai registry yang sama. Parity penuh untuk seluruh child
+  surface dan shortcut semua command belum;
 - [x] command disabled tidak dapat dijalankan melalui menu maupun `invoke()`;
 - [x] state checkmark menu mengikuti state layout aktual untuk panel dan profile;
 - [x] tidak ada aksi `SVG MODEL` khusus pada toolbar Preview;
@@ -426,6 +429,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap F — Typed host save acknowledgement | Menambahkan `WorkbenchDocumentSaveRequest`, `WorkbenchDocumentSaveResult`, dan `onSaveDocumentWithResult`. Host dapat melaporkan keberhasilan Save/Save As beserta path/name sehingga sesi ditandai bersih secara aman; callback `VoidCallback` legacy tetap dipertahankan untuk kompatibilitas. |
 | 2026-09-28 | Tahap G — Typed save quality gate | Setelah kontrak Save typed dan regression test Save/Save As, `flutter analyze` lulus tanpa issue, seluruh 220 test lulus, dan `flutter build web --no-pub` berhasil. Validasi native runtime lintas platform tetap tertunda. |
 | 2026-09-28 | Tahap G parsial — Child control semantics | Menambahkan semantics untuk object header Inspector (nama, tipe, expanded state), reset parameter, dan setiap parameter slider (label, nilai, hint). Analyzer serta test Inspector/feature lulus; audit seluruh child control dan assistive technology native masih tertunda. |
+| 2026-09-28 | Tahap F parsial — Viewport context menu | Menambahkan `WorkbenchCommandContextMenu` berbasis `MenuAnchor` pada viewport. Copy, Recompile, zoom, fit, reset, dan export menggunakan `WorkbenchCommandRegistry` yang sama dengan menu/shortcut/toolbar; context menu seluruh child surface dan shortcut semua command belum menjadi cakupan batch ini. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |

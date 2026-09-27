@@ -17,6 +17,7 @@ import 'workbench_document_session.dart';
 import '../features/workbench_feature_surfaces.dart';
 import 'workbench_navbar.dart';
 import 'workbench_commands.dart';
+import 'workbench_context_menu.dart';
 import 'workbench_menu_bar.dart';
 import 'workbench_platform_menu_bar.dart';
 import 'workbench_viewport_controller.dart';
@@ -1299,27 +1300,30 @@ objects:
   // ── Viewport Panel (tengah) ─────────────────
 
   Widget _buildViewportPanel(WorkbenchCommandRegistry commandRegistry) {
-    return WorkbenchPreviewFeature(
-      toolbar: _buildViewportToolbar(commandRegistry),
-      overlayToolbar: _buildOverlayToolbar(),
-      panel: WorkbenchViewportPanel(
-        visualProfile: _workbenchProfile,
-        viewportController: _viewportController.transformationController,
-        scene: _scene,
-        displayBounds: _displayBounds,
-        overlay: _overlayController.overlay,
-        zoomLevel: _viewportController.zoomLevel,
-        selectedSheetId: _selectedSheetId,
-        hiddenRoles: _overlayController.hiddenRoles,
-        onViewportSizeChanged: (size) {
-          _viewportController.setViewportSize(size);
-        },
-        activeSheetPhysicalTargetLabel: _activeSheet != null
-            ? _activeSheetPhysicalTargetLabel
-            : null,
-        activeSheetViewSummaryLabel: _activeSheet != null
-            ? _activeSheetViewSummaryLabel
-            : null,
+    return WorkbenchCommandContextMenu(
+      registry: commandRegistry,
+      child: WorkbenchPreviewFeature(
+        toolbar: _buildViewportToolbar(commandRegistry),
+        overlayToolbar: _buildOverlayToolbar(),
+        panel: WorkbenchViewportPanel(
+          visualProfile: _workbenchProfile,
+          viewportController: _viewportController.transformationController,
+          scene: _scene,
+          displayBounds: _displayBounds,
+          overlay: _overlayController.overlay,
+          zoomLevel: _viewportController.zoomLevel,
+          selectedSheetId: _selectedSheetId,
+          hiddenRoles: _overlayController.hiddenRoles,
+          onViewportSizeChanged: (size) {
+            _viewportController.setViewportSize(size);
+          },
+          activeSheetPhysicalTargetLabel: _activeSheet != null
+              ? _activeSheetPhysicalTargetLabel
+              : null,
+          activeSheetViewSummaryLabel: _activeSheet != null
+              ? _activeSheetViewSummaryLabel
+              : null,
+        ),
       ),
     );
   }
