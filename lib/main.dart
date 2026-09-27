@@ -8,6 +8,7 @@ import 'src/ui/workbench_visual_profile.dart';
 import 'src/ui/workbench_window_host.dart';
 import 'src/ui/workbench_method_channel_window_host.dart';
 import 'src/ui/workbench_window_policy.dart';
+import 'src/ui/workbench_file_service.dart';
 
 void main() {
   runApp(
@@ -114,6 +115,7 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
       home: CADWorkbenchPage(
         initialDsl: widget.initialDsl,
         showInWindowMenu: widget.showInWindowMenu,
+        fileService: const FilePickerWorkbenchFileService(),
         themePreference: _themePreference,
         onThemePreferenceChanged: (value) {
           setState(() {

@@ -301,8 +301,8 @@ ruang lingkup Tahap D.
 - [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
   dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
   About. Callback Save As/Close/Quit kini juga tersedia; implementasi file I/O
-  native untuk Open/Save/Save As kini memiliki `WorkbenchFileService` dan
-  adapter `file_picker`; New/Close/Quit tetap callback aplikasi, sedangkan
+  native untuk Open/Save/Save As kini memiliki `WorkbenchFileService`, adapter
+  `file_picker`, dan sudah dipasang pada aplikasi default; New/Close/Quit tetap callback aplikasi, sedangkan
   undo/redo editor kini aktif melalui history native `re_editor`, sedangkan
   shortcut parity penuh masih tertunda.
 
@@ -395,3 +395,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Editor history commands | Menu `Edit` dan shortcut global kini menyediakan Undo/Redo dengan enabled-state yang diturunkan dari history native `re_editor`; toolbar/context-menu parity dan kebijakan history lintas dokumen masih tertunda. |
 | 2026-09-27 | Tahap F parsial — Hierarchical SVG export | Menu File kini memiliki jalur `Export → SVG → Model / Sheet View`; command target Sheet disabled tanpa sheet aktif. Tombol toolbar tetap menjadi shortcut untuk export surface aktif, bukan menu export terpisah. |
 | 2026-09-27 | Tahap F — Unified workbench reset | `Reset workbench preferences` kini mereset layout ke Standard sekaligus appearance/overlay/role preferences; regression test memastikan panel yang di-collapse kembali tersedia setelah reset. |
+| 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan; identitas dokumen dan lifecycle New/Close/Quit masih menjadi tanggung jawab host. |
