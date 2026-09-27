@@ -890,6 +890,41 @@ objects:
         ),
       ),
       WorkbenchCommand(
+        id: WorkbenchCommandId.collapseEditorPanel,
+        menu: 'View',
+        label: 'Collapse Code editor',
+        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.editor),
+        onInvoke: () =>
+            _layoutController.toggleCollapsed(WorkbenchPanelId.editor),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.collapsePreviewPanel,
+        menu: 'View',
+        label: 'Collapse Preview',
+        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.preview),
+        onInvoke: () =>
+            _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.collapseInspectorPanel,
+        menu: 'View',
+        label: 'Collapse Inspector',
+        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.inspector),
+        onInvoke: () =>
+            _layoutController.toggleCollapsed(WorkbenchPanelId.inspector),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.collapseParametersPanel,
+        menu: 'View',
+        label: 'Collapse Parameters',
+        enabled: _paramValues.isNotEmpty,
+        checked:
+            _paramValues.isNotEmpty &&
+            _layoutController.isPanelCollapsed(WorkbenchPanelId.parameters),
+        onInvoke: () =>
+            _layoutController.toggleCollapsed(WorkbenchPanelId.parameters),
+      ),
+      WorkbenchCommand(
         id: WorkbenchCommandId.resetLayout,
         menu: 'View',
         label: 'Reset layout',
