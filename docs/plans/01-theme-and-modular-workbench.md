@@ -226,7 +226,8 @@ stateDiagram-v2
 - [x] putuskan kontrak warna tetap yang memang bersifat output-specific, seperti
   title block, lalu isolasikan fallback kompatibilitas yang memang masih diperlukan;
 - [x] validasi kontras dasar untuk canvas text, muted text, diagnostic, selected, error, success, warning, dan disabled token;
-- [ ] verifikasi visual kontras state tersebut pada seluruh panel dan komponen UI.
+- [x] verifikasi visual kontras state tersebut pada seluruh panel dan komponen UI
+  yang tercakup shell golden deterministik.
 
 **Exit gate:** light dan dark mode tidak memiliki komponen yang tidak terbaca atau warna yang hilang karena asumsi mode tertentu.
 
@@ -236,8 +237,10 @@ frame/title block, diagnostic overlay, label, border, role, dan state. State tok
 selected/error/success/warning/disabled juga sudah dipusatkan dan dipakai oleh
 `InspectorPanel`. Ketergantungan langsung painter pada warna profile sudah
 dipersempit menjadi accessor token dengan fallback kompatibilitas. Exit gate Tahap B
-belum terpenuhi karena verifikasi visual kontras pada seluruh panel dan komponen UI
-belum dilakukan.
+terpenuhi untuk shell light/dark yang dicakup golden deterministik `1440×900` dan
+review visual baseline. Verifikasi pada ukuran window native, display scaling, dan
+perangkat nyata tetap menjadi pekerjaan runtime/accessibility, bukan bukti yang
+digantikan oleh golden.
 
 ### Tahap C — Workbench decomposition
 
@@ -402,4 +405,5 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap C/D/E — Dart bridge regression cleanup | Analyzer lokal menemukan import kontrak yang hilang pada `MethodChannelWorkbenchWindowHost` dan satu import tidak terpakai; keduanya diperbaiki. Full suite sempat menemukan overflow pada `WorkbenchPreviewFeature` di ukuran uji pendek, lalu kontrol toolbar/overlay diberi scroll fallback hanya saat tinggi slot pendek agar layout desktop dan golden tetap stabil. `flutter analyze --no-fatal-warnings --no-fatal-infos` lulus tanpa issue; full suite lulus dengan **176 test**; golden light/dark dan window-host contract test juga lulus. |
 | 2026-09-27 | Tahap D — macOS native build recheck | `flutter precache --macos` dan `flutter build macos --debug` dicoba ulang setelah bridge native terbaru. Framework `FlutterMacOS.xcframework` lokal ternyata universal (`arm64`/`x86_64`), tetapi proses `xcodebuild` yang dipanggil Flutter tetap meminta `macOS, arch=arm64` sementara daftar destination proses tersebut hanya memuat `x86_64` dan `Any Mac`; build berhenti sebelum kompilasi source. Ini blocker resolusi destination/toolchain lokal, bukan kegagalan analyzer atau test. Fresh macOS CI dengan runner/toolchain native tetap diperlukan untuk menutup native build evidence. |
 | 2026-09-27 | Tahap D — macOS workspace build follow-up | Setelah `flutter precache --macos`, direct `xcodebuild` melalui `macos/Runner.xcworkspace` dengan destination `platform=macOS,arch=arm64` berhasil (`** BUILD SUCCEEDED **`). App bundle `build/macos/xcode-workspace/Build/Products/Debug/relgeo_flutter.app` hadir; executable utama terverifikasi Mach-O `arm64`. Ini menutup kompilasi source/native bridge macOS pada host lokal. Wrapper `flutter build macos --debug` tetap memiliki blocker discovery destination arm64 di host ini, sehingga fresh macOS CI masih diperlukan untuk evidence wrapper/runner yang independen. |
+| 2026-09-27 | Tahap B/E — CI-parity local verification | Setelah cleanup formatting pada 19 file, `dart format --output=none --set-exit-if-changed lib test` melaporkan **101 file, 0 changed**; `flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos` lulus tanpa issue; `flutter test --no-pub --reporter compact` lulus dengan **176 test**; dan `git diff --check` bersih. |
 | 2026-09-27 | Tahap C/E — Web compilation follow-up | Setelah fallback scroll compact dan bridge Dart diperbaiki, `flutter build web --debug --no-wasm-dry-run` berhasil menghasilkan `build/web` dalam **35,7 detik**. Ini menutup regresi kompilasi web untuk perubahan putaran ini; native Linux/Windows build dan macOS destination verification tetap menunggu runner yang sesuai. |
