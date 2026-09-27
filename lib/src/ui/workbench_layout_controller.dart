@@ -13,8 +13,28 @@ class WorkbenchLayoutController extends ChangeNotifier {
     : _layout = initialLayout ?? WorkbenchLayoutModel.standard();
 
   WorkbenchLayoutModel _layout;
+  WorkbenchPanelId? _focusRequest;
 
   WorkbenchLayoutModel get layout => _layout;
+
+  /// Identifies a panel that should receive focus after a placement transition.
+  ///
+  /// The shell consumes this request when the newly docked panel actually
+  /// receives focus. Keeping the request here lets a floating layer hand focus
+  /// to its docked counterpart without coupling the controller to widgets.
+  WorkbenchPanelId? get focusRequest => _focusRequest;
+
+  void requestPanelFocus(WorkbenchPanelId id) {
+    if (_focusRequest == id) return;
+    _focusRequest = id;
+    notifyListeners();
+  }
+
+  void clearPanelFocusRequest(WorkbenchPanelId id) {
+    if (_focusRequest != id) return;
+    _focusRequest = null;
+    notifyListeners();
+  }
 
   WorkbenchPanelLayout panel(WorkbenchPanelId id) {
     return _layout.panels[id] ?? WorkbenchLayoutModel.standard().panels[id]!;
@@ -165,7 +185,9 @@ class WorkbenchLayoutController extends ChangeNotifier {
         : centerX >= canvasWidth * 0.78
         ? WorkbenchPanelPlacement.right
         : WorkbenchPanelPlacement.center;
+    final changed = state.placement != nextPlacement;
     setPlacement(id, nextPlacement);
+    if (changed) requestPanelFocus(id);
   }
 
   void resizeFloatingPanel(

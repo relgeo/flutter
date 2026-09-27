@@ -291,4 +291,51 @@ void main() {
       WorkbenchPanelPlacement.left,
     );
   });
+
+  testWidgets('docking a floating panel restores focus to its docked surface', (
+    tester,
+  ) async {
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(placement: WorkbenchPanelPlacement.floating),
+        },
+        floatingBounds: const {
+          WorkbenchPanelId.inspector: WorkbenchPanelBounds(
+            left: 420,
+            top: 24,
+            width: 280,
+            height: 220,
+          ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    controller.dockFloatingPanelIfDropped(
+      WorkbenchPanelId.inspector,
+      canvasWidth: 800,
+      canvasHeight: 560,
+    );
+    await tester.pump();
+
+    final inspectorContext = tester.element(find.text('inspector'));
+    expect(Focus.of(inspectorContext).hasFocus, isTrue);
+    expect(controller.focusRequest, isNull);
+  });
 }

@@ -373,14 +373,20 @@ class WorkbenchCompositionShell extends StatelessWidget {
     if (state.visibility == WorkbenchPanelVisibility.collapsed) {
       return SizedBox(
         width: 44,
-        child: Semantics(
-          label: '${id.name} panel collapsed',
-          button: true,
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: RotatedBox(
-              quarterTurns: 3,
-              child: Center(child: Text(id.name.toUpperCase())),
+        child: Focus(
+          autofocus: controller.focusRequest == id,
+          onFocusChange: (focused) {
+            if (focused) controller.clearPanelFocusRequest(id);
+          },
+          child: Semantics(
+            label: '${id.name} panel collapsed',
+            button: true,
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: RotatedBox(
+                quarterTurns: 3,
+                child: Center(child: Text(id.name.toUpperCase())),
+              ),
             ),
           ),
         ),
@@ -391,9 +397,15 @@ class WorkbenchCompositionShell extends StatelessWidget {
         controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
     return Expanded(
       flex: (ratio * 1000).round().clamp(1, 1000),
-      child: KeyedSubtree(
-        key: ValueKey('workbench-panel-${id.name}'),
-        child: child,
+      child: Focus(
+        autofocus: controller.focusRequest == id,
+        onFocusChange: (focused) {
+          if (focused) controller.clearPanelFocusRequest(id);
+        },
+        child: KeyedSubtree(
+          key: ValueKey('workbench-panel-${id.name}'),
+          child: child,
+        ),
       ),
     );
   }

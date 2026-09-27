@@ -314,8 +314,8 @@ ruang lingkup Tahap D.
 - [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
   shortcut, focus boundary floating/overlay, dan Escape sudah aktif, sedangkan
   traversal antar-region serta keyboard resize/collapse langsung masih tertunda;
-- [~] focus tidak hilang saat panel dipindah; pointer activation dan focus
-  order floating sudah tersedia, tetapi restoration setelah docking belum;
+- [x] focus tidak hilang saat panel dipindah; pointer activation, focus order
+  floating, dan restoration ke panel docked setelah drop sudah tersedia;
 - [x] reduced-motion dihormati pada transisi workbench yang sudah memiliki
   motion policy;
 - [~] golden dan widget test mencakup setiap preset utama; shell golden light/
@@ -330,7 +330,8 @@ ruang lingkup Tahap D.
 
 - [~] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
   show/hide, resize, collapse, float, overlay, dan command placement sudah ada;
-  drag-to-dock serta native focus integration belum;
+  drag-to-dock dan focus restoration setelah docking sudah ada; integrasi focus
+  native window masih tertunda;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
 - [x] panel dapat di-collapse, di-dock melalui command maupun drag-to-dock,
@@ -402,3 +403,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — Default file picker wiring | `RelGeoCADApp` kini memasang `FilePickerWorkbenchFileService` secara default sehingga Open/Save/Save As tersedia pada aplikasi tanpa host callback tambahan; identitas dokumen dan lifecycle New/Close/Quit masih menjadi tanggung jawab host. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 207 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
+| 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
