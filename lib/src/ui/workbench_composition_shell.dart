@@ -277,10 +277,26 @@ class WorkbenchCompositionShell extends StatelessWidget {
               Focus.of(focusContext).requestFocus();
               controller.focusFloatingPanel(id);
             },
-            onPanUpdate: (details) => controller.moveFloatingPanel(
+            onPanUpdate: (details) {
+              controller.moveFloatingPanel(
+                id,
+                dx: details.delta.dx,
+                dy: details.delta.dy,
+                canvasWidth: canvasWidth,
+                canvasHeight: canvasHeight,
+              );
+              // Dock as soon as the panel crosses a drop zone. A state update
+              // during a drag can dispose this floating layer, so keeping the
+              // detection in the update path is more reliable than relying
+              // only on a final gesture callback.
+              controller.dockFloatingPanelIfDropped(
+                id,
+                canvasWidth: canvasWidth,
+                canvasHeight: canvasHeight,
+              );
+            },
+            onPanEnd: (_) => controller.dockFloatingPanelIfDropped(
               id,
-              dx: details.delta.dx,
-              dy: details.delta.dy,
               canvasWidth: canvasWidth,
               canvasHeight: canvasHeight,
             ),

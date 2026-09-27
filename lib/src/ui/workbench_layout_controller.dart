@@ -139,6 +139,35 @@ class WorkbenchLayoutController extends ChangeNotifier {
     );
   }
 
+  /// Docks a floating panel when its current center enters a workbench drop
+  /// zone. Pointer, touch, and pen gestures can share this placement policy.
+  void dockFloatingPanelIfDropped(
+    WorkbenchPanelId id, {
+    required double canvasWidth,
+    required double canvasHeight,
+  }) {
+    final state = panel(id);
+    if (state.placement != WorkbenchPanelPlacement.floating &&
+        state.placement != WorkbenchPanelPlacement.overlay) {
+      return;
+    }
+    final bounds = _layout.floatingBounds[id] ?? state.bounds;
+    final width = bounds.width ?? 320;
+    final height = bounds.height ?? 260;
+    final centerX = (bounds.left ?? 24) + width / 2;
+    final centerY = (bounds.top ?? 24) + height / 2;
+    final bottomZone =
+        id == WorkbenchPanelId.parameters && centerY >= canvasHeight * 0.72;
+    final nextPlacement = bottomZone
+        ? WorkbenchPanelPlacement.bottom
+        : centerX <= canvasWidth * 0.22
+        ? WorkbenchPanelPlacement.left
+        : centerX >= canvasWidth * 0.78
+        ? WorkbenchPanelPlacement.right
+        : WorkbenchPanelPlacement.center;
+    setPlacement(id, nextPlacement);
+  }
+
   void resizeFloatingPanel(
     WorkbenchPanelId id, {
     required double dx,

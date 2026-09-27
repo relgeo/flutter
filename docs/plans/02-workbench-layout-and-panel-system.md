@@ -259,6 +259,8 @@ ruang lingkup Tahap D.
 - [x] dukung overlay panel dengan z-order tersimpan dan explicit close action;
   panel yang disentuh/di-drag dibawa ke depan;
 - [x] dukung dock kembali ke region pilihan melalui command `Workbench`;
+- [x] dukung drag-to-dock melalui zona drop kiri, tengah, kanan, dan bawah
+  khusus Parameters; kebijakan zona dipusatkan di layout controller;
 - [x] cegah panel keluar sepenuhnya dari batas canvas saat drag/resize dan
   pertahankan batas ukuran minimum/maksimum;
 
@@ -323,8 +325,9 @@ ruang lingkup Tahap D.
   drag-to-dock serta native focus integration belum;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
-- [~] panel dapat di-collapse, di-dock melalui command, di-float, dan di-overlay;
-  drag-to-dock serta transisi floating interaktif masih tertunda;
+- [x] panel dapat di-collapse, di-dock melalui command maupun drag-to-dock,
+  di-float, dan di-overlay; transisi visual floating lanjutan masih dapat
+  dipoles tanpa mengubah kontrak placement;
 - [x] preset dapat diterapkan tanpa mengubah dokumen;
 - [x] perubahan layout dipulihkan melalui persistence reload; verifikasi restart
   native penuh masih menjadi bagian uji platform;
@@ -380,3 +383,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap D parsial — Floating focus order | `floatingOrder` dipersist bersama layout; placement command, tap, dan drag memperbarui order sehingga panel aktif berada di depan. Drag-to-dock, focus keyboard, dan focus policy native masih tertunda. |
 | 2026-09-27 | Tahap G parsial — Floating keyboard focus | Floating/overlay panel memiliki focus boundary, aktivasi pointer membawa focus, dan `Escape` menutup overlay aktif. Keyboard traversal antar-region dan focus restoration setelah docking masih tertunda. |
 | 2026-09-27 | Tahap F parsial — Global command shortcuts | Menambahkan `WorkbenchCommandSurface` yang memasang shortcut global dari command registry. Menu, shortcut global, dan callback command kini melewati enabled-state yang sama; parity toolbar/context menu dan shortcut untuk seluruh command masih tertunda. |
+| 2026-09-27 | Tahap D — Drag-to-dock | Floating/overlay panel kini mengevaluasi zona drop dari posisi center panel dan berpindah ke placement kiri, tengah, kanan, atau bottom untuk Parameters. Keputusan ini berada di controller agar gesture pointer/touch/pen konsisten. |
