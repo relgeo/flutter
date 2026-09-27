@@ -276,7 +276,8 @@ belum dilakukan.
 - [~] boundary filesystem native untuk ekspor SVG sudah dipisahkan dan
   injectable; kontrak `WorkbenchWindowHost` dan
   `WorkbenchWindowConfiguration` sekarang ditetapkan serta diinjeksikan ke
-  `RelGeoCADApp`, tetapi implementasi native per host belum ada;
+  `RelGeoCADApp`; bridge source-level macOS/Linux/Windows sudah ditambahkan,
+  tetapi build dan runtime verification per host belum ditutup;
 - [x] dokumentasikan minimum/default size melalui `WorkbenchWindowPolicy`;
 - [~] compact layout sekarang memakai horizontal scroll dengan lebar minimum
   terkontrol pada composition shell; uji resize runtime pada native window masih
