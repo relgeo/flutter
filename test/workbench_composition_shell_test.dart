@@ -338,4 +338,36 @@ void main() {
     expect(Focus.of(inspectorContext).hasFocus, isTrue);
     expect(controller.focusRequest, isNull);
   });
+
+  testWidgets('docked panels participate in keyboard traversal', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    final editorNode = Focus.of(tester.element(find.text('editor')));
+    final viewportNode = Focus.of(tester.element(find.text('viewport')));
+    final inspectorNode = Focus.of(tester.element(find.text('inspector')));
+    editorNode.requestFocus();
+    await tester.pump();
+
+    expect(editorNode.hasFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(viewportNode.hasFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(inspectorNode.hasFocus, isTrue);
+  });
 }
