@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A selesai; tahap B–G belum diimplementasikan
+**Status:** Tahap A selesai; Tahap B dan F sebagian selesai; Tahap C–E dan G belum selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -227,10 +227,21 @@ preference, misalnya `workbench.layout.v1`.
 
 ### Tahap B — Docked layout dan splitter
 
-- [ ] ganti fixed flex 32/43/25 dengan region layout yang dapat diubah;
-- [ ] tambahkan splitter horizontal/vertical dengan min/max constraint;
-- [ ] dukung show/hide dan collapse untuk panel utama;
-- [ ] pertahankan compact layout tanpa overflow.
+- [x] ganti fixed flex 32/43/25 dengan region layout yang dapat diubah ketika
+  `WorkbenchLayoutController` dipasang;
+- [x] tambahkan splitter horizontal untuk tiga region utama dengan min-width
+  constraint dan pembaruan split ratio;
+- [x] dukung show/hide dan collapse untuk Editor, Preview, dan Inspector;
+- [x] pertahankan compact layout tanpa overflow melalui minimum workbench width
+  dan horizontal scroll;
+- [ ] integrasikan Parameters sebagai region mandiri sebelum tahap ini dapat
+  dinyatakan selesai.
+
+Catatan implementasi: shell masih mempertahankan jalur fixed-layout lama ketika
+controller tidak diberikan agar komponen dapat dipakai secara bertahap. Jalur
+workbench utama sekarang memasang controller sehingga visibility, collapse, dan
+splitter benar-benar aktif. Floating, overlay, dan docking ulang tetap menjadi
+ruang lingkup Tahap D.
 
 ### Tahap C — Parameters panel
 
@@ -256,16 +267,19 @@ preference, misalnya `workbench.layout.v1`.
 
 ### Tahap F — Menu bar dan command registry
 
-- [ ] definisikan command ID, label, shortcut, enabled state, dan checked state;
+- [x] definisikan command ID, label, shortcut, enabled state, dan checked state;
 - [ ] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`, dan `Help`;
 - [ ] tempatkan SVG di `File → Export → SVG → Model / Sheet View`, bukan sebagai
   tombol khusus pada Preview;
 - [ ] hubungkan menu dengan document, layout, theme, canvas, dan native services;
 - [ ] pastikan toolbar dan keyboard shortcut memakai command yang sama;
-- [ ] dukung checkmark untuk panel dan appearance yang aktif;
+- [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [ ] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [ ] sediakan reset layout, reset appearance override, dan reset parameters;
-- [ ] tambahkan test command availability dan activation.
+- [x] tambahkan test command availability dan activation untuk command registry
+  serta toggle panel utama;
+- [ ] lengkapi menu File/Edit/Appearance/Document/Help dan command surface
+  Parameters setelah capability panel mandiri tersedia.
 
 ### Tahap G — Accessibility dan regression
 
@@ -318,3 +332,5 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | --- | --- |
 | 2026-09-27 | Tombol khusus `Download SVG Model` tidak menjadi bagian dari Preview. SVG diposisikan sebagai salah satu format pada command `File → Export`, dengan target Model atau Sheet/View. |
 | 2026-09-27 | Tahap A — Layout contracts | Menambahkan `WorkbenchLayoutModel` immutable dan versioned dengan panel Editor, Preview, Inspector, dan Parameters; visibility, placement, bounds, split ratios, floating bounds, JSON round-trip, serta fallback aman ke Standard. Availability panel sengaja tidak dipersist karena diturunkan dari dokumen aktif. Contract tests lulus; integrasi renderer/layout runtime ditunda ke Tahap B. |
+| 2026-09-27 | Tahap B parsial — Docked shell | `WorkbenchLayoutController` kini menggerakkan shell utama untuk Editor, Preview, dan Inspector: visibility, collapse, splitter horizontal, min-width constraint, dan split ratio. Jalur compact tetap memiliki scroll boundary. Parameters belum menjadi region mandiri; floating/overlay/docking ulang dan autosave belum dikerjakan. |
+| 2026-09-27 | Tahap F parsial — Panel commands | Menu View kini memiliki toggle Editor, Preview, dan Inspector dengan checkmark yang mengikuti state layout. Command registry tetap menjadi sumber aksi; menu File/Edit/Appearance/Document/Help lengkap dan Parameters menunggu tahap berikutnya. |

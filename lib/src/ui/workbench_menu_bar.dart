@@ -19,6 +19,9 @@ class WorkbenchMenuBar extends StatelessWidget {
                   (command) => MenuItemButton(
                     shortcut: command.shortcut,
                     onPressed: command.enabled ? command.invoke : null,
+                    leadingIcon: command.checked == true
+                        ? const Icon(Icons.check)
+                        : null,
                     child: Text(command.label),
                   ),
                 )

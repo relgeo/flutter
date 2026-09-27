@@ -6,6 +6,9 @@ enum WorkbenchCommandId {
   zoomOut,
   fitViewport,
   resetViewport,
+  toggleEditorPanel,
+  togglePreviewPanel,
+  toggleInspectorPanel,
   lightTheme,
   darkTheme,
   followSystemTheme,
@@ -19,6 +22,7 @@ class WorkbenchCommand {
     required this.label,
     required this.onInvoke,
     this.enabled = true,
+    this.checked,
     this.shortcut,
   });
 
@@ -27,6 +31,7 @@ class WorkbenchCommand {
   final String label;
   final VoidCallback onInvoke;
   final bool enabled;
+  final bool? checked;
   final MenuSerializableShortcut? shortcut;
 
   void invoke() {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'workbench_layout_controller.dart';
+import 'workbench_layout_model.dart';
 import 'workbench_window_policy.dart';
 
 /// Owns the workbench's high-level shell layout without owning feature state.
@@ -13,6 +15,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
     required this.editor,
     required this.viewport,
     required this.inspector,
+    this.layoutController,
     this.editorFlex = 32,
     this.viewportFlex = 43,
     this.inspectorFlex = 25,
@@ -23,54 +26,188 @@ class WorkbenchCompositionShell extends StatelessWidget {
   final Widget editor;
   final Widget viewport;
   final Widget inspector;
+  final WorkbenchLayoutController? layoutController;
   final int editorFlex;
   final int viewportFlex;
   final int inspectorFlex;
 
   @override
   Widget build(BuildContext context) {
+    final body = layoutController == null
+        ? _buildLegacyPanelLayout()
+        : AnimatedBuilder(
+            animation: layoutController!,
+            builder: (context, _) =>
+                _buildInteractivePanelLayout(layoutController!),
+          );
+
     return Scaffold(
       body: Column(
         children: [
           ?menuBar,
           navbar,
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompact =
-                    WorkbenchWindowPolicy.layoutModeForWidth(
-                      constraints.maxWidth,
-                    ) ==
-                    WorkbenchLayoutMode.compact;
-                final panelWidth =
-                    isCompact &&
-                        constraints.maxWidth <
-                            WorkbenchWindowPolicy.minimumWindowSize.width
-                    ? WorkbenchWindowPolicy.minimumWindowSize.width
-                    : constraints.maxWidth;
+          Expanded(child: body),
+        ],
+      ),
+    );
+  }
 
-                final panels = SizedBox(
-                  width: panelWidth,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: editorFlex, child: editor),
-                      Expanded(flex: viewportFlex, child: viewport),
-                      Expanded(flex: inspectorFlex, child: inspector),
-                    ],
-                  ),
-                );
+  Widget _buildLegacyPanelLayout() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final panelWidth = _panelWidthFor(constraints.maxWidth);
+        final panels = SizedBox(
+          width: panelWidth,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(flex: editorFlex, child: editor),
+              Expanded(flex: viewportFlex, child: viewport),
+              Expanded(flex: inspectorFlex, child: inspector),
+            ],
+          ),
+        );
+        return _isCompact(constraints.maxWidth)
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: panels,
+              )
+            : panels;
+      },
+    );
+  }
 
-                return isCompact
-                    ? SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: panels,
-                      )
-                    : panels;
-              },
+  Widget _buildInteractivePanelLayout(WorkbenchLayoutController controller) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final panelWidth = _panelWidthFor(constraints.maxWidth);
+        final panelIds = [
+          WorkbenchPanelId.editor,
+          WorkbenchPanelId.preview,
+          WorkbenchPanelId.inspector,
+        ];
+        final visiblePanelIds = panelIds
+            .where(
+              (id) =>
+                  controller.panel(id).visibility !=
+                  WorkbenchPanelVisibility.hidden,
+            )
+            .toList();
+        final children = <Widget>[];
+        for (var index = 0; index < visiblePanelIds.length; index++) {
+          final id = visiblePanelIds[index];
+          children.add(
+            _buildPanelSlot(context, id, controller, _panelWidget(id)),
+          );
+          if (index < visiblePanelIds.length - 1) {
+            final next = visiblePanelIds[index + 1];
+            children.add(
+              _WorkbenchPanelDivider(
+                key: ValueKey('workbench-divider-${id.name}'),
+                onDrag: (delta) =>
+                    controller.resizeBoundary(id, next, delta, panelWidth),
+              ),
+            );
+          }
+        }
+
+        final panels = SizedBox(
+          width: panelWidth,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        );
+        return _isCompact(constraints.maxWidth)
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: panels,
+              )
+            : panels;
+      },
+    );
+  }
+
+  Widget _buildPanelSlot(
+    BuildContext context,
+    WorkbenchPanelId id,
+    WorkbenchLayoutController controller,
+    Widget child,
+  ) {
+    final state = controller.panel(id);
+    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
+      return SizedBox(
+        width: 44,
+        child: Semantics(
+          label: '${id.name} panel collapsed',
+          button: true,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: RotatedBox(
+              quarterTurns: 3,
+              child: Center(child: Text(id.name.toUpperCase())),
             ),
           ),
-        ],
+        ),
+      );
+    }
+
+    final ratio =
+        controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
+    return Expanded(
+      flex: (ratio * 1000).round().clamp(1, 1000),
+      child: KeyedSubtree(
+        key: ValueKey('workbench-panel-${id.name}'),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _panelWidget(WorkbenchPanelId id) {
+    switch (id) {
+      case WorkbenchPanelId.editor:
+        return editor;
+      case WorkbenchPanelId.preview:
+        return viewport;
+      case WorkbenchPanelId.inspector:
+        return inspector;
+      case WorkbenchPanelId.parameters:
+        return const SizedBox.shrink();
+    }
+  }
+
+  bool _isCompact(double width) =>
+      WorkbenchWindowPolicy.layoutModeForWidth(width) ==
+      WorkbenchLayoutMode.compact;
+
+  double _panelWidthFor(double width) =>
+      _isCompact(width) && width < WorkbenchWindowPolicy.minimumWindowSize.width
+      ? WorkbenchWindowPolicy.minimumWindowSize.width
+      : width;
+}
+
+class _WorkbenchPanelDivider extends StatelessWidget {
+  const _WorkbenchPanelDivider({super.key, required this.onDrag});
+
+  final ValueChanged<double> onDrag;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
+        child: Semantics(
+          label: 'Resize workbench panels',
+          slider: true,
+          child: SizedBox(
+            width: 8,
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+        ),
       ),
     );
   }

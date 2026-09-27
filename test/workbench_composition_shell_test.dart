@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_composition_shell.dart';
+import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
+import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
 
 void main() {
   testWidgets('renders the injected navbar and three feature surfaces', (
@@ -62,5 +64,62 @@ void main() {
       find.byType(SingleChildScrollView),
     );
     expect(scrollView.scrollDirection, Axis.horizontal);
+  });
+
+  testWidgets('interactive shell honors panel visibility and splitter drags', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    expect(find.text('editor'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('workbench-divider-editor')),
+      findsOneWidget,
+    );
+
+    await tester.drag(
+      find.byKey(const ValueKey('workbench-divider-editor')),
+      const Offset(80, 0),
+    );
+    expect(controller.layout.splitRatios['left'], greaterThan(0.32));
+
+    controller.togglePanel(WorkbenchPanelId.editor);
+    await tester.pump();
+    expect(find.text('editor'), findsNothing);
+    expect(find.text('viewport'), findsOneWidget);
+    expect(find.text('inspector'), findsOneWidget);
+  });
+
+  testWidgets('interactive shell keeps a collapsed panel as a labeled rail', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    controller.toggleCollapsed(WorkbenchPanelId.inspector);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    expect(find.text('inspector'), findsNothing);
+    expect(find.text('INSPECTOR'), findsOneWidget);
   });
 }

@@ -17,6 +17,8 @@ import 'workbench_commands.dart';
 import 'workbench_menu_bar.dart';
 import 'workbench_platform_menu_bar.dart';
 import 'workbench_viewport_controller.dart';
+import 'workbench_layout_controller.dart';
+import 'workbench_layout_model.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -91,6 +93,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchPreferencesController();
   final WorkbenchSvgExportController _svgExportController =
       WorkbenchSvgExportController();
+  final WorkbenchLayoutController _layoutController =
+      WorkbenchLayoutController();
 
   WorkbenchVisualProfile get _workbenchProfile =>
       WorkbenchVisualProfile.byId(widget.workbenchProfileId);
@@ -339,6 +343,7 @@ objects:
     _documentController.addListener(() {
       if (mounted) setState(() {});
     });
+    _layoutController.addListener(_onLayoutChanged);
     _applyBehaviorPreset(_workbenchProfile);
     _loadWorkbenchPreferences(initialDsl);
   }
@@ -381,11 +386,17 @@ objects:
 
   @override
   void dispose() {
+    _layoutController.removeListener(_onLayoutChanged);
+    _layoutController.dispose();
     _editorController.dispose();
     _viewportController.dispose();
     _overlayController.dispose();
     _documentController.dispose();
     super.dispose();
+  }
+
+  void _onLayoutChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onCodeChanged() {
@@ -605,6 +616,7 @@ objects:
                 : null)
           : WorkbenchMenuBar(registry: commandRegistry),
       navbar: _buildNavbar(hasError, commandRegistry),
+      layoutController: _layoutController,
       editor: WorkbenchEditorFeature(
         contract: WorkbenchEditorContract(
           controller: _editorController.editingController,
@@ -676,6 +688,28 @@ objects:
         menu: 'View',
         label: 'Reset viewport',
         onInvoke: _resetViewport,
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.toggleEditorPanel,
+        menu: 'View',
+        label: 'Code editor',
+        checked: _layoutController.isPanelVisible(WorkbenchPanelId.editor),
+        onInvoke: () => _layoutController.togglePanel(WorkbenchPanelId.editor),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.togglePreviewPanel,
+        menu: 'View',
+        label: 'Preview',
+        checked: _layoutController.isPanelVisible(WorkbenchPanelId.preview),
+        onInvoke: () => _layoutController.togglePanel(WorkbenchPanelId.preview),
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.toggleInspectorPanel,
+        menu: 'View',
+        label: 'Inspector',
+        checked: _layoutController.isPanelVisible(WorkbenchPanelId.inspector),
+        onInvoke: () =>
+            _layoutController.togglePanel(WorkbenchPanelId.inspector),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.lightTheme,

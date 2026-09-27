@@ -207,13 +207,15 @@ extension WorkbenchPanelPlacementExtension on WorkbenchPanelPlacement {
 
 @immutable
 class WorkbenchLayoutModel {
-  const WorkbenchLayoutModel({
+  WorkbenchLayoutModel({
     required this.schemaVersion,
     required this.activeProfileId,
-    required this.panels,
-    required this.splitRatios,
-    required this.floatingBounds,
-  });
+    required Map<WorkbenchPanelId, WorkbenchPanelLayout> panels,
+    required Map<String, double> splitRatios,
+    required Map<WorkbenchPanelId, WorkbenchPanelBounds> floatingBounds,
+  }) : panels = Map.unmodifiable(panels),
+       splitRatios = Map.unmodifiable(splitRatios),
+       floatingBounds = Map.unmodifiable(floatingBounds);
 
   static const currentSchemaVersion = 1;
   static const standardProfileId = 'standard';
