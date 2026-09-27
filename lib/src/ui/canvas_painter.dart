@@ -70,7 +70,7 @@ class CanvasPainter extends CustomPainter {
     WorkbenchVisualProfile? visualProfile,
     this.themeTokens,
   }) : hiddenRoles = hiddenRoles ?? const {'construction'},
-       visualProfile = visualProfile ?? WorkbenchVisualProfile.cadDark;
+       visualProfile = visualProfile ?? WorkbenchVisualProfile.cad;
 
   Color _themeRoleColor(String role, Color fallback) {
     final profileColor = visualProfile.roleColor(role);

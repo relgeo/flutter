@@ -22,7 +22,7 @@ ThemeData buildRelGeoDarkTheme() {
       seedColor: _relGeoDarkAccent,
       brightness: Brightness.dark,
     ),
-    WorkbenchVisualProfile.cadDark,
+    WorkbenchVisualProfile.cad,
   );
 }
 

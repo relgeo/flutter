@@ -11,7 +11,7 @@ void main() {
 
     final loaded = await controller.load();
     expect(loaded?.themePreference, RelGeoThemePreference.system);
-    expect(loaded?.workbenchProfileId, 'cad-dark');
+    expect(loaded?.workbenchProfileId, 'cad');
   });
 
   test(

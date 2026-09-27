@@ -33,7 +33,7 @@ Semua panel harus dapat dikelola melalui satu model layout yang konsisten:
 ### 2.1 Layout bukan theme
 
 Sub-plan ini mengatur geometri dan interaksi ruang kerja. App theme (`Light` /
-`Dark`) dan canvas appearance (`CAD Dark`, `Blueprint`, `Paper`) tetap menjadi
+`Dark`) dan canvas appearance (`CAD`, `Blueprint`, `Paper`) tetap menjadi
 tanggung jawab [Sub-Rencana 01](./01-theme-and-modular-workbench.md).
 
 ### 2.2 Layout bukan state dokumen
@@ -248,4 +248,3 @@ preference, misalnya `workbench.layout.v1`.
 Sub-plan ini selesai jika pengguna dapat menyusun empat panel sesuai workflow,
 menyimpan susunan itu melalui autosave, memulihkannya setelah restart, dan
 berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas.
-

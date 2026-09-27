@@ -20,7 +20,7 @@ class CADWorkbenchPage extends StatefulWidget {
     this.initialDsl,
     this.themePreference = RelGeoThemePreference.system,
     this.onThemePreferenceChanged,
-    this.workbenchProfileId = 'cad-dark',
+    this.workbenchProfileId = 'cad',
     this.onWorkbenchProfileChanged,
     this.onResetWorkbenchPreferences,
   });

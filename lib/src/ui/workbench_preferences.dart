@@ -76,7 +76,7 @@ class WorkbenchPreferencesData {
 
   static const defaults = WorkbenchPreferencesData(
     themePreference: RelGeoThemePreference.system,
-    workbenchProfileId: 'cad-dark',
+    workbenchProfileId: 'cad',
     followProfileOverlay: true,
     followProfileRoleFilter: true,
     showAnchors: false,

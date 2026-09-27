@@ -78,9 +78,9 @@ class WorkbenchVisualProfile {
 
   Color roleColor(String role) => canvasAppearance.roleColor(role);
 
-  static const cadDark = WorkbenchVisualProfile(
-    id: 'cad-dark',
-    label: 'CAD Dark',
+  static const cad = WorkbenchVisualProfile(
+    id: 'cad',
+    label: 'CAD',
     canvasAppearance: WorkbenchCanvasAppearance(
       viewportBackgroundColor: Color(0xFF0A0F1D),
       toolbarBackgroundColor: Color(0xFF0F172A),
@@ -183,13 +183,13 @@ class WorkbenchVisualProfile {
     ),
   );
 
-  static const all = [cadDark, blueprint, paper];
+  static const all = [cad, blueprint, paper];
 
   static WorkbenchVisualProfile byId(String id) {
     for (final profile in all) {
       if (profile.id == id) return profile;
     }
-    return cadDark;
+    return cad;
   }
 
   ThemeData materialTheme() {

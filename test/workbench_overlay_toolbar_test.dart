@@ -13,7 +13,7 @@ void main() {
         home: SizedBox(
           width: 416,
           child: WorkbenchOverlayToolbar(
-            visualProfile: WorkbenchVisualProfile.cadDark,
+            visualProfile: WorkbenchVisualProfile.cad,
             overlay: const OverlayOptions(),
             hiddenRoles: const {'construction'},
             followProfileOverlay: true,

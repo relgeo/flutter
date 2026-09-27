@@ -32,7 +32,7 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
       WorkbenchPreferencesController();
   RelGeoThemePreference _themePreference =
       WorkbenchPreferencesData.defaults.themePreference;
-  String _workbenchProfileId = WorkbenchVisualProfile.cadDark.id;
+  String _workbenchProfileId = WorkbenchVisualProfile.cad.id;
 
   @override
   void initState() {

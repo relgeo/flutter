@@ -23,7 +23,7 @@ class EditorPanel extends StatelessWidget {
     required this.targetUnit,
     required this.onParamChanged,
     required this.onParamReset,
-    this.visualProfile = WorkbenchVisualProfile.cadDark,
+    this.visualProfile = WorkbenchVisualProfile.cad,
   });
 
   @override
@@ -418,7 +418,7 @@ class RelGeoAutocompleteView extends StatelessWidget
     super.key,
     required this.notifier,
     required this.onSelected,
-    this.visualProfile = WorkbenchVisualProfile.cadDark,
+    this.visualProfile = WorkbenchVisualProfile.cad,
   });
 
   @override

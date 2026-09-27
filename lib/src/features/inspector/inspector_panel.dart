@@ -25,7 +25,7 @@ class InspectorPanel extends StatefulWidget {
     required this.yamlError,
     required this.compilerError,
     required this.targetUnit,
-    this.visualProfile = WorkbenchVisualProfile.cadDark,
+    this.visualProfile = WorkbenchVisualProfile.cad,
     this.themeTokens,
   });
 

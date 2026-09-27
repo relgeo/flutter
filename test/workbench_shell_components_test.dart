@@ -43,7 +43,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: WorkbenchOverlayToolbar(
-            visualProfile: WorkbenchVisualProfile.byId('cad-dark'),
+            visualProfile: WorkbenchVisualProfile.byId('cad'),
             overlay: overlay,
             hiddenRoles: hiddenRoles,
             followProfileOverlay: followOverlay,

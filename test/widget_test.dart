@@ -157,7 +157,7 @@ void main() {
       find.byKey(const Key('workbench-profile-semantics')),
     );
     expect(profileNode.label, contains('Canvas appearance'));
-    expect(profileNode.value, contains('CAD Dark'));
+    expect(profileNode.value, contains('CAD'));
     expect(profileNode.hint, contains('Choose a canvas appearance preset'));
     semanticsHandle.dispose();
     tester.view.reset();
@@ -458,7 +458,7 @@ void main() {
     await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
     await tester.pumpAndSettle();
 
-    expect(_scenePainter(tester).visualProfile.id, 'cad-dark');
+    expect(_scenePainter(tester).visualProfile.id, 'cad');
     expect(_scenePainter(tester).overlay.showLabels, isFalse);
     expect(_scenePainter(tester).overlay.showBoundingBoxes, isFalse);
     expect(_scenePainter(tester).hiddenRoles.contains('construction'), isTrue);
@@ -728,9 +728,9 @@ void main() {
       await tester.tap(find.byKey(const Key('reset-workbench-preferences')));
       await tester.pumpAndSettle();
 
-      expect(_scenePainter(tester).visualProfile.id, 'cad-dark');
-      expect(_editorPanel(tester).visualProfile.id, 'cad-dark');
-      expect(_inspectorPanel(tester).visualProfile.id, 'cad-dark');
+      expect(_scenePainter(tester).visualProfile.id, 'cad');
+      expect(_editorPanel(tester).visualProfile.id, 'cad');
+      expect(_inspectorPanel(tester).visualProfile.id, 'cad');
       expect(_scenePainter(tester).overlay.showLabels, isFalse);
       expect(_scenePainter(tester).overlay.showBoundingBoxes, isFalse);
       expect(
@@ -758,7 +758,7 @@ void main() {
       await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
       await tester.pumpAndSettle();
 
-      expect(_scenePainter(tester).visualProfile.id, 'cad-dark');
+      expect(_scenePainter(tester).visualProfile.id, 'cad');
       expect(_scenePainter(tester).overlay.showLabels, isFalse);
       expect(
         _scenePainter(tester).hiddenRoles.contains('construction'),
