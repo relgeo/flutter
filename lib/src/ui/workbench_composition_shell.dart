@@ -15,6 +15,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
     required this.editor,
     required this.viewport,
     required this.inspector,
+    this.parameters,
     this.layoutController,
     this.editorFlex = 32,
     this.viewportFlex = 43,
@@ -26,6 +27,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
   final Widget editor;
   final Widget viewport;
   final Widget inspector;
+  final Widget? parameters;
   final WorkbenchLayoutController? layoutController;
   final int editorFlex;
   final int viewportFlex;
@@ -53,7 +55,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
   }
 
   Widget _buildLegacyPanelLayout() {
-    return LayoutBuilder(
+    final panelLayout = LayoutBuilder(
       builder: (context, constraints) {
         final panelWidth = _panelWidthFor(constraints.maxWidth);
         final panels = SizedBox(
@@ -74,6 +76,13 @@ class WorkbenchCompositionShell extends StatelessWidget {
               )
             : panels;
       },
+    );
+    if (parameters == null) return panelLayout;
+    return Column(
+      children: [
+        Expanded(child: panelLayout),
+        SizedBox(height: 220, child: parameters),
+      ],
     );
   }
 
@@ -118,14 +127,45 @@ class WorkbenchCompositionShell extends StatelessWidget {
             children: children,
           ),
         );
-        return _isCompact(constraints.maxWidth)
+        final main = _isCompact(constraints.maxWidth)
             ? SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: panels,
               )
             : panels;
+        if (parameters == null) return main;
+        return Column(
+          children: [
+            Expanded(child: main),
+            _buildParametersSlot(context, controller),
+          ],
+        );
       },
     );
+  }
+
+  Widget _buildParametersSlot(
+    BuildContext context,
+    WorkbenchLayoutController controller,
+  ) {
+    final state = controller.panel(WorkbenchPanelId.parameters);
+    if (state.visibility == WorkbenchPanelVisibility.hidden) {
+      return const SizedBox.shrink();
+    }
+    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
+      return SizedBox(
+        height: 44,
+        child: Semantics(
+          label: 'parameters panel collapsed',
+          button: true,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(child: Text('PARAMETERS')),
+          ),
+        ),
+      );
+    }
+    return SizedBox(height: 220, child: parameters);
   }
 
   Widget _buildPanelSlot(
@@ -172,7 +212,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
       case WorkbenchPanelId.inspector:
         return inspector;
       case WorkbenchPanelId.parameters:
-        return const SizedBox.shrink();
+        return parameters ?? const SizedBox.shrink();
     }
   }
 

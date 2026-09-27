@@ -16,11 +16,6 @@ class WorkbenchEditorFeature extends StatelessWidget {
   Widget build(BuildContext context) {
     return EditorPanel(
       controller: contract.controller,
-      paramValues: contract.paramValues,
-      paramOverrides: contract.paramOverrides,
-      targetUnit: contract.targetUnit,
-      onParamChanged: contract.onParamChanged,
-      onParamReset: contract.onParamReset,
       visualProfile: contract.visualProfile,
     );
   }

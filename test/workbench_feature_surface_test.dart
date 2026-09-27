@@ -5,6 +5,8 @@ import 'package:relgeo_flutter/src/features/editor/workbench_editor_feature.dart
 import 'package:relgeo_flutter/src/features/editor/workbench_editor_contract.dart';
 import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_feature.dart';
 import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_contract.dart';
+import 'package:relgeo_flutter/src/features/parameters/workbench_parameters_contract.dart';
+import 'package:relgeo_flutter/src/features/parameters/workbench_parameters_feature.dart';
 import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
 
 void main() {
@@ -20,11 +22,6 @@ void main() {
           child: WorkbenchEditorFeature(
             contract: WorkbenchEditorContract(
               controller: controller,
-              paramValues: const {},
-              paramOverrides: const {},
-              targetUnit: 'mm',
-              onParamChanged: (_, _) {},
-              onParamReset: () {},
               visualProfile: WorkbenchVisualProfile.cad,
             ),
           ),
@@ -60,5 +57,30 @@ void main() {
     await tester.tap(find.text('ERRORS'));
     await tester.pumpAndSettle();
     expect(find.text('compile error'), findsOneWidget);
+  });
+
+  testWidgets('parameters feature is independently renderable', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 220,
+            child: WorkbenchParametersFeature(
+              contract: WorkbenchParametersContract(
+                paramValues: const {'width': 40},
+                paramOverrides: const {'width': 20.0},
+                targetUnit: 'mm',
+                onParamChanged: (_, _) {},
+                onParamReset: () {},
+                visualProfile: WorkbenchVisualProfile.cad,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('PARAMETERS (1)'), findsOneWidget);
+    expect(find.text('width'), findsOneWidget);
   });
 }

@@ -4,4 +4,5 @@
 // boundary while each feature remains independently testable.
 export 'editor/index.dart';
 export 'inspector/index.dart';
+export 'parameters/index.dart';
 export 'preview/index.dart';

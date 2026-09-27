@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A selesai; Tahap B dan F sebagian selesai; Tahap C–E dan G belum selesai
+**Status:** Tahap A selesai; Tahap B, C, dan F sebagian selesai; Tahap D, E, dan G belum selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -234,8 +234,8 @@ preference, misalnya `workbench.layout.v1`.
 - [x] dukung show/hide dan collapse untuk Editor, Preview, dan Inspector;
 - [x] pertahankan compact layout tanpa overflow melalui minimum workbench width
   dan horizontal scroll;
-- [ ] integrasikan Parameters sebagai region mandiri sebelum tahap ini dapat
-  dinyatakan selesai.
+- [x] integrasikan Parameters sebagai surface mandiri di region bawah ketika
+  dokumen menyediakannya; vertical splitter untuk region ini masih tertunda.
 
 Catatan implementasi: shell masih mempertahankan jalur fixed-layout lama ketika
 controller tidak diberikan agar komponen dapat dipakai secara bertahap. Jalur
@@ -245,10 +245,12 @@ ruang lingkup Tahap D.
 
 ### Tahap C — Parameters panel
 
-- [ ] ekstrak Parameters dari `EditorPanel` menjadi feature surface mandiri;
-- [ ] hubungkan availability ke parameter dokumen aktif;
-- [ ] pulihkan posisi/ukuran saat parameter muncul kembali;
-- [ ] pertahankan reset parameter sebagai aksi domain, bukan aksi layout.
+- [x] ekstrak Parameters dari `EditorPanel` menjadi feature surface mandiri;
+- [x] hubungkan availability ke parameter dokumen aktif; shell tidak memasang
+  feature ketika dokumen tidak memiliki parameter;
+- [~] pulihkan posisi/ukuran saat parameter muncul kembali melalui layout
+  state yang dipertahankan; ukuran bottom region dan persistence masih tertunda;
+- [x] pertahankan reset parameter sebagai aksi domain, bukan aksi layout.
 
 ### Tahap D — Floating, overlay, dan docking
 
@@ -293,7 +295,7 @@ ruang lingkup Tahap D.
 ## 8. Acceptance criteria
 
 - [ ] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
-- [ ] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
+- [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [ ] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
 - [ ] panel dapat di-dock, di-undock, di-collapse, dan di-overlay;
 - [ ] preset dapat diterapkan tanpa mengubah dokumen;
@@ -334,3 +336,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap A — Layout contracts | Menambahkan `WorkbenchLayoutModel` immutable dan versioned dengan panel Editor, Preview, Inspector, dan Parameters; visibility, placement, bounds, split ratios, floating bounds, JSON round-trip, serta fallback aman ke Standard. Availability panel sengaja tidak dipersist karena diturunkan dari dokumen aktif. Contract tests lulus; integrasi renderer/layout runtime ditunda ke Tahap B. |
 | 2026-09-27 | Tahap B parsial — Docked shell | `WorkbenchLayoutController` kini menggerakkan shell utama untuk Editor, Preview, dan Inspector: visibility, collapse, splitter horizontal, min-width constraint, dan split ratio. Jalur compact tetap memiliki scroll boundary. Parameters belum menjadi region mandiri; floating/overlay/docking ulang dan autosave belum dikerjakan. |
 | 2026-09-27 | Tahap F parsial — Panel commands | Menu View kini memiliki toggle Editor, Preview, dan Inspector dengan checkmark yang mengikuti state layout. Command registry tetap menjadi sumber aksi; menu File/Edit/Appearance/Document/Help lengkap dan Parameters menunggu tahap berikutnya. |
+| 2026-09-27 | Tahap C parsial — Parameters surface | Slider parameter dipindahkan dari `EditorPanel` ke `WorkbenchParametersFeature`/`ParametersPanel`. `CADWorkbenchPage` hanya memasangnya bila dokumen aktif memiliki parameter; reset tetap callback domain, bukan operasi layout. Bottom region masih fixed-height dan belum autosave. |

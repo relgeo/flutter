@@ -620,20 +620,27 @@ objects:
       editor: WorkbenchEditorFeature(
         contract: WorkbenchEditorContract(
           controller: _editorController.editingController,
-          paramValues: _paramValues,
-          paramOverrides: _paramOverrides,
-          targetUnit: _targetUnit.name,
-          onParamChanged: (pName, v) {
-            _documentController.setParamOverride(pName, v);
-            _compileDSL(_editorController.text);
-          },
-          onParamReset: () {
-            _documentController.clearParamOverrides();
-            _compileDSL(_editorController.text);
-          },
           visualProfile: _workbenchProfile,
         ),
       ),
+      parameters: _paramValues.isEmpty
+          ? null
+          : WorkbenchParametersFeature(
+              contract: WorkbenchParametersContract(
+                paramValues: _paramValues,
+                paramOverrides: _paramOverrides,
+                targetUnit: _targetUnit.name,
+                onParamChanged: (pName, value) {
+                  _documentController.setParamOverride(pName, value);
+                  _compileDSL(_editorController.text);
+                },
+                onParamReset: () {
+                  _documentController.clearParamOverrides();
+                  _compileDSL(_editorController.text);
+                },
+                visualProfile: _workbenchProfile,
+              ),
+            ),
       viewport: _buildViewportPanel(commandRegistry),
       inspector: WorkbenchInspectorFeature(
         contract: WorkbenchInspectorContract(

@@ -122,4 +122,30 @@ void main() {
     expect(find.text('inspector'), findsNothing);
     expect(find.text('INSPECTOR'), findsOneWidget);
   });
+
+  testWidgets('parameters are an optional standalone bottom surface', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+          parameters: const Text('parameters'),
+        ),
+      ),
+    );
+
+    expect(find.text('parameters'), findsOneWidget);
+    controller.setPanelVisibility(
+      WorkbenchPanelId.parameters,
+      WorkbenchPanelVisibility.hidden,
+    );
+    await tester.pump();
+    expect(find.text('parameters'), findsNothing);
+  });
 }
