@@ -183,13 +183,18 @@ class WorkbenchCompositionShell extends StatelessWidget {
     if (state.visibility == WorkbenchPanelVisibility.collapsed) {
       return SizedBox(
         height: 44,
-        child: Semantics(
-          label: 'parameters panel collapsed',
-          button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => controller.toggleCollapsed(WorkbenchPanelId.parameters),
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: const Center(child: Text('PARAMETERS')),
+          child: Semantics(
+            label: 'parameters panel collapsed',
+            button: true,
+            onTap: () =>
+                controller.toggleCollapsed(WorkbenchPanelId.parameters),
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Center(child: Text('PARAMETERS')),
+            ),
           ),
         ),
       );
@@ -273,6 +278,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
             onTap: () {
               Focus.of(focusContext).requestFocus();
               controller.focusFloatingPanel(id);
+              if (isCollapsed) controller.toggleCollapsed(id);
             },
             onPanStart: (_) {
               Focus.of(focusContext).requestFocus();
@@ -311,6 +317,10 @@ class WorkbenchCompositionShell extends StatelessWidget {
                 children: [
                   Semantics(
                     label: '${id.name} ${state.placement.name} panel',
+                    button: isCollapsed,
+                    onTap: isCollapsed
+                        ? () => controller.toggleCollapsed(id)
+                        : null,
                     child: isCollapsed
                         ? ColoredBox(
                             color: Theme.of(
@@ -383,11 +393,15 @@ class WorkbenchCompositionShell extends StatelessWidget {
             label: '${id.name} panel collapsed',
             button: true,
             onTap: () => controller.toggleCollapsed(id),
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: RotatedBox(
-                quarterTurns: 3,
-                child: Center(child: Text(id.name.toUpperCase())),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => controller.toggleCollapsed(id),
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Center(child: Text(id.name.toUpperCase())),
+                ),
               ),
             ),
           ),

@@ -451,4 +451,43 @@ void main() {
       greaterThan(before),
     );
   });
+
+  testWidgets('collapsed floating panels expose a restore action', (
+    tester,
+  ) async {
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(
+                placement: WorkbenchPanelPlacement.floating,
+                visibility: WorkbenchPanelVisibility.collapsed,
+              ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('INSPECTOR'));
+    await tester.pump();
+
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).visibility,
+      WorkbenchPanelVisibility.visible,
+    );
+  });
 }
