@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Rencana disetujui; layout dan command surface belum diimplementasikan
+**Status:** Tahap A selesai; tahap B–G belum diimplementasikan
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -220,10 +220,10 @@ preference, misalnya `workbench.layout.v1`.
 
 ### Tahap A — Layout contracts
 
-- [ ] definisikan `PanelId`, availability, visibility, placement, dan bounds;
-- [ ] definisikan `WorkbenchLayoutModel` immutable dan serializable;
-- [ ] pisahkan layout state dari `CADWorkbenchPage`;
-- [ ] tambahkan schema version dan fallback layout valid.
+- [x] definisikan `PanelId`, availability, visibility, placement, dan bounds;
+- [x] definisikan `WorkbenchLayoutModel` immutable dan serializable;
+- [x] letakkan model layout sebagai boundary terpisah dari `CADWorkbenchPage`;
+- [x] tambahkan schema version dan fallback layout valid.
 
 ### Tahap B — Docked layout dan splitter
 
@@ -317,3 +317,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | Tanggal | Keputusan |
 | --- | --- |
 | 2026-09-27 | Tombol khusus `Download SVG Model` tidak menjadi bagian dari Preview. SVG diposisikan sebagai salah satu format pada command `File → Export`, dengan target Model atau Sheet/View. |
+| 2026-09-27 | Tahap A — Layout contracts | Menambahkan `WorkbenchLayoutModel` immutable dan versioned dengan panel Editor, Preview, Inspector, dan Parameters; visibility, placement, bounds, split ratios, floating bounds, JSON round-trip, serta fallback aman ke Standard. Availability panel sengaja tidak dipersist karena diturunkan dari dokumen aktif. Contract tests lulus; integrasi renderer/layout runtime ditunda ke Tahap B. |
