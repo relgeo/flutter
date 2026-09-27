@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Rencana disetujui; implementasi belum dimulai  
+**Status:** Rencana disetujui; layout dan command surface belum diimplementasikan
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -28,6 +28,10 @@ Semua panel harus dapat dikelola melalui satu model layout yang konsisten:
 - preset layout;
 - autosave layout lokal.
 
+Workbench juga membutuhkan menu bar sebagai command center untuk operasi file,
+layout, panel, appearance, document, shortcut, dan bantuan. Toolbar hanya
+menampilkan subset aksi yang paling sering digunakan.
+
 ## 2. Batasan desain
 
 ### 2.1 Layout bukan theme
@@ -51,6 +55,28 @@ memiliki parameter yang dapat diedit. Saat parameter tidak tersedia:
 - menu atau command terkait dapat disabled atau tidak ditawarkan;
 - layout pengguna tidak dibuang;
 - posisi dan ukuran terakhir dipulihkan ketika parameter muncul kembali.
+
+### 2.4 Menu bar dan command surface
+
+Menu bar, toolbar, keyboard shortcut, context menu, dan command palette harus
+memanggil command yang sama. Tidak boleh ada logika operasi file atau layout yang
+hanya hidup di tombol toolbar.
+
+Struktur menu awal:
+
+```text
+File        New, Open, Save, Save As, Recent, Export SVG, Close, Quit
+Edit        Undo, Redo, Cut, Copy, Paste, Select All, Find
+View        Workbench Profile, Panels, Reset Layout, Full Screen
+Appearance  App Theme, Canvas Appearance
+Document    Compile, Recompile, Validate, Reset Parameters, Reload
+Help        Keyboard Shortcuts, Documentation, About RelGeo
+```
+
+Setiap command memiliki enabled/disabled state, label, shortcut, dan optional
+checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
+`Parameters` disabled atau tidak ditawarkan ketika dokumen tidak memiliki
+parameter, dan panel visible ditandai checkmark pada menu `View`.
 
 ## 3. Target capability
 
@@ -79,6 +105,18 @@ flowchart TD
   renderer --> floating["Floating and overlay panels"]
   layout --> persistence["Debounced local persistence"]
   persistence --> preferences["Layout preferences"]
+```
+
+```mermaid
+flowchart TD
+  menu["Menu bar"] --> registry["WorkbenchCommandRegistry"]
+  toolbar["Toolbar"] --> registry
+  shortcuts["Keyboard shortcuts"] --> registry
+  context["Context menu / command palette"] --> registry
+  registry --> documentCommands["Document controller"]
+  registry --> layoutCommands["Layout controller"]
+  registry --> appearanceCommands["Theme and canvas appearance"]
+  registry --> platformCommands["Native file and window services"]
 ```
 
 Kontrak minimal yang perlu disediakan:
@@ -210,7 +248,18 @@ preference, misalnya `workbench.layout.v1`.
 - [ ] migrasikan/fallback data layout yang invalid;
 - [ ] test restart dan pemulihan layout.
 
-### Tahap F — Accessibility dan regression
+### Tahap F — Menu bar dan command registry
+
+- [ ] definisikan command ID, label, shortcut, enabled state, dan checked state;
+- [ ] implementasikan menu `File`, `Edit`, `View`, `Appearance`, `Document`, dan `Help`;
+- [ ] hubungkan menu dengan document, layout, theme, canvas, dan native services;
+- [ ] pastikan toolbar dan keyboard shortcut memakai command yang sama;
+- [ ] dukung checkmark untuk panel dan appearance yang aktif;
+- [ ] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
+- [ ] sediakan reset layout, reset appearance override, dan reset parameters;
+- [ ] tambahkan test command availability dan activation.
+
+### Tahap G — Accessibility dan regression
 
 - [ ] semua panel dan splitter memiliki label semantics;
 - [ ] keyboard dapat berpindah, collapse, dan mengaktifkan panel;
@@ -231,6 +280,9 @@ preference, misalnya `workbench.layout.v1`.
 - [ ] layout preference terpisah dari theme dan document persistence;
 - [ ] keyboard dan accessibility state tetap dapat digunakan;
 - [ ] analyzer, test, golden, web build, dan native build tetap lulus.
+- [ ] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command yang sama;
+- [ ] command disabled tidak dapat dijalankan melalui shortcut maupun menu;
+- [ ] state checkmark menu selalu mengikuti state layout/theme aktual.
 
 ## 9. Risiko dan keputusan yang ditunda
 
@@ -242,6 +294,8 @@ preference, misalnya `workbench.layout.v1`.
 | Parameter berubah saat runtime | Availability mengikuti dokumen, layout pengguna tetap dipertahankan |
 | Window terlalu kecil | Terapkan minimum window dan fallback compact drawer/scroll |
 | Autosave terlalu sering | Debounce, schema version, dan atomic preference update |
+| Menu dan toolbar tidak sinkron | Satu `WorkbenchCommandRegistry` sebagai sumber kebenaran |
+| Command aktif pada state yang salah | Centralized availability predicate dan command tests |
 
 ## 10. Definition of done
 
