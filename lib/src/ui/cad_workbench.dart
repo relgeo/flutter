@@ -13,6 +13,7 @@ import 'workbench_overlay_controller.dart';
 import 'workbench_composition_shell.dart';
 import 'workbench_document_controller.dart';
 import 'workbench_editor_controller.dart';
+import 'workbench_document_session.dart';
 import '../features/workbench_feature_surfaces.dart';
 import 'workbench_navbar.dart';
 import 'workbench_commands.dart';
@@ -36,6 +37,8 @@ class CADWorkbenchPage extends StatefulWidget {
     this.onSaveAsDocument,
     this.onCloseDocument,
     this.onQuitApplication,
+    this.onConfirmDiscardChanges,
+    this.onDocumentDirtyChanged,
     this.fileService,
     this.onThemePreferenceChanged,
     this.onResetThemePreference,
@@ -53,6 +56,8 @@ class CADWorkbenchPage extends StatefulWidget {
   final VoidCallback? onSaveAsDocument;
   final VoidCallback? onCloseDocument;
   final VoidCallback? onQuitApplication;
+  final Future<bool> Function()? onConfirmDiscardChanges;
+  final ValueChanged<bool>? onDocumentDirtyChanged;
   final WorkbenchFileService? fileService;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final VoidCallback? onResetThemePreference;
@@ -66,6 +71,7 @@ class CADWorkbenchPage extends StatefulWidget {
 
 class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   late final WorkbenchEditorController _editorController;
+  late final WorkbenchDocumentSession _documentSession;
 
   // Compile state
   final WorkbenchDocumentController _documentController =
@@ -120,6 +126,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   String? _documentName;
 
   Future<void> _openDocumentFromFileService() async {
+    if (!await _confirmDiscardChangesIfNeeded()) return;
     final service = widget.fileService;
     if (service == null) return;
 
@@ -128,6 +135,11 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       if (!mounted || document == null) return;
       _documentPath = document.path;
       _documentName = document.name;
+      _documentSession.markLoaded(
+        source: document.source,
+        path: document.path,
+        name: document.name,
+      );
       _editorController.editingController.text = document.source;
       _compileDSL(document.source);
       return;
@@ -137,6 +149,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     if (!mounted || source == null) return;
     _documentPath = null;
     _documentName = null;
+    _documentSession.markLoaded(source: source);
     _editorController.editingController.text = source;
     _compileDSL(source);
   }
@@ -154,11 +167,26 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       if (saved != null) {
         _documentPath = saved.path;
         _documentName = saved.name;
+        _documentSession.markSaved(
+          source: saved.source,
+          path: saved.path,
+          name: saved.name,
+        );
       }
       return;
     }
 
-    await service.saveDocument(_editorController.text, saveAs: saveAs);
+    final saved = await service.saveDocument(
+      _editorController.text,
+      saveAs: saveAs,
+    );
+    if (saved) {
+      _documentSession.markSaved(
+        source: _editorController.text,
+        path: _documentPath,
+        name: _documentName,
+      );
+    }
   }
 
   WorkbenchVisualProfile get _workbenchProfile =>
@@ -418,6 +446,8 @@ objects:
   void initState() {
     super.initState();
     final initialDsl = widget.initialDsl ?? _defaultDSL;
+    _documentSession = WorkbenchDocumentSession(initialSource: initialDsl);
+    _documentSession.addListener(_onDocumentSessionChanged);
     _editorController = WorkbenchEditorController.fromText(initialDsl);
     _editorController.addListener(_onCodeChanged);
     _viewportController.addListener(() {
@@ -479,6 +509,8 @@ objects:
 
   @override
   void dispose() {
+    _documentSession.removeListener(_onDocumentSessionChanged);
+    _documentSession.dispose();
     _layoutController.removeListener(_onLayoutChanged);
     unawaited(_layoutPersistenceController.flush());
     _layoutPersistenceController.dispose();
@@ -495,11 +527,28 @@ objects:
     if (mounted) setState(() {});
   }
 
+  void _onDocumentSessionChanged() {
+    widget.onDocumentDirtyChanged?.call(_documentSession.isDirty);
+  }
+
+  Future<bool> _confirmDiscardChangesIfNeeded() async {
+    if (!_documentSession.isDirty) return true;
+    final confirm = widget.onConfirmDiscardChanges;
+    if (confirm == null) return false;
+    return await confirm();
+  }
+
+  Future<void> _runLifecycleAction(VoidCallback? action) async {
+    if (action == null || !await _confirmDiscardChangesIfNeeded()) return;
+    action();
+  }
+
   void _applyLayoutProfile(WorkbenchLayoutProfile profile) {
     _layoutController.applyProfile(profile);
   }
 
   void _onCodeChanged() {
+    _documentSession.updateSource(_editorController.text);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _compileDSL(_editorController.text);
@@ -783,7 +832,7 @@ objects:
         menu: 'File',
         label: 'New document',
         enabled: widget.onNewDocument != null,
-        onInvoke: () => widget.onNewDocument?.call(),
+        onInvoke: () => unawaited(_runLifecycleAction(widget.onNewDocument)),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.openDocument,
@@ -792,7 +841,7 @@ objects:
         enabled: widget.onOpenDocument != null || widget.fileService != null,
         onInvoke: () {
           if (widget.onOpenDocument != null) {
-            widget.onOpenDocument!.call();
+            unawaited(_runLifecycleAction(widget.onOpenDocument));
           } else {
             unawaited(_openDocumentFromFileService());
           }
@@ -839,7 +888,7 @@ objects:
         menu: 'File',
         label: 'Close document',
         enabled: widget.onCloseDocument != null,
-        onInvoke: () => widget.onCloseDocument?.call(),
+        onInvoke: () => unawaited(_runLifecycleAction(widget.onCloseDocument)),
         shortcut: const SingleActivator(LogicalKeyboardKey.keyW, control: true),
         shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.keyW,
@@ -851,7 +900,8 @@ objects:
         menu: 'File',
         label: 'Quit RelGeo',
         enabled: widget.onQuitApplication != null,
-        onInvoke: () => widget.onQuitApplication?.call(),
+        onInvoke: () =>
+            unawaited(_runLifecycleAction(widget.onQuitApplication)),
         shortcut: const SingleActivator(LogicalKeyboardKey.keyQ, control: true),
         shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.keyQ,

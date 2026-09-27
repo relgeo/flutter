@@ -218,6 +218,51 @@ void main() {
     expect(quitCount, 1);
   });
 
+  testWidgets('dirty lifecycle asks before destructive document actions', (
+    WidgetTester tester,
+  ) async {
+    var allowDiscard = false;
+    var confirmCount = 0;
+    var closeCount = 0;
+
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          onCloseDocument: () => closeCount++,
+          onConfirmDiscardChanges: () async {
+            confirmCount++;
+            return allowDiscard;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# unsaved';
+    await tester.pump();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Close document'));
+    await tester.pumpAndSettle();
+    expect(confirmCount, 1);
+    expect(closeCount, 0);
+
+    allowDiscard = true;
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Close document'));
+    await tester.pumpAndSettle();
+    expect(confirmCount, 2);
+    expect(closeCount, 1);
+  });
+
   testWidgets('edit menu reflects and invokes native editor history', (
     WidgetTester tester,
   ) async {
