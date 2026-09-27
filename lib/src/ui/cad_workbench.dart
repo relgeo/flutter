@@ -819,31 +819,42 @@ objects:
       ),
       parameters: _paramValues.isEmpty
           ? null
-          : WorkbenchParametersFeature(
-              contract: WorkbenchParametersContract(
-                paramValues: _paramValues,
-                paramOverrides: _paramOverrides,
-                targetUnit: _targetUnit.name,
-                onParamChanged: (pName, value) {
-                  _documentController.setParamOverride(pName, value);
-                  _compileDSL(_editorController.text);
-                },
-                onParamReset: () {
-                  _documentController.clearParamOverrides();
-                  _compileDSL(_editorController.text);
-                },
-                visualProfile: _workbenchProfile,
+          : WorkbenchCommandContextMenu(
+              registry: commandRegistry,
+              commandIds: const [WorkbenchCommandId.resetDocumentParameters],
+              child: WorkbenchParametersFeature(
+                contract: WorkbenchParametersContract(
+                  paramValues: _paramValues,
+                  paramOverrides: _paramOverrides,
+                  targetUnit: _targetUnit.name,
+                  onParamChanged: (pName, value) {
+                    _documentController.setParamOverride(pName, value);
+                    _compileDSL(_editorController.text);
+                  },
+                  onParamReset: () {
+                    _documentController.clearParamOverrides();
+                    _compileDSL(_editorController.text);
+                  },
+                  visualProfile: _workbenchProfile,
+                ),
               ),
             ),
       viewport: _buildViewportPanel(commandRegistry),
-      inspector: WorkbenchInspectorFeature(
-        contract: WorkbenchInspectorContract(
-          scene: _scene,
-          yamlError: _yamlError,
-          compilerError: _compilerError,
-          targetUnit: _targetUnit.name,
-          visualProfile: _workbenchProfile,
-          themeTokens: Theme.of(context).extension<RelGeoThemeExtension>(),
+      inspector: WorkbenchCommandContextMenu(
+        registry: commandRegistry,
+        commandIds: const [
+          WorkbenchCommandId.copySource,
+          WorkbenchCommandId.recompileDocument,
+        ],
+        child: WorkbenchInspectorFeature(
+          contract: WorkbenchInspectorContract(
+            scene: _scene,
+            yamlError: _yamlError,
+            compilerError: _compilerError,
+            targetUnit: _targetUnit.name,
+            visualProfile: _workbenchProfile,
+            themeTokens: Theme.of(context).extension<RelGeoThemeExtension>(),
+          ),
         ),
       ),
     );
