@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/main.dart';
 import 'package:relgeo_flutter/src/ui/cad_workbench.dart';
+import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
 import 'package:relgeo_flutter/src/features/editor/editor_panel.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
@@ -59,6 +60,26 @@ sheets:
         place:
           topLeft: [25, 25]
 ''';
+
+class _FakeFileService implements WorkbenchFileService {
+  int openCount = 0;
+  int saveCount = 0;
+  bool? lastSaveAs;
+
+  @override
+  Future<String?> openDocument() async {
+    openCount++;
+    return _sheetDsl;
+  }
+
+  @override
+  Future<bool> saveDocument(String source, {required bool saveAs}) async {
+    saveCount++;
+    lastSaveAs = saveAs;
+    expect(source, contains('scene:'));
+    return true;
+  }
+}
 
 void main() {
   final sharedFixturesAvailable = hasSharedFixtures();
@@ -140,6 +161,42 @@ void main() {
     await tester.tap(find.text('Quit RelGeo'));
     await tester.pump();
     expect(quitCount, 1);
+  });
+
+  testWidgets('file service powers open and save commands', (
+    WidgetTester tester,
+  ) async {
+    final service = _FakeFileService();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(initialDsl: _sheetDsl, fileService: service),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save document'));
+    await tester.pumpAndSettle();
+    expect(service.saveCount, 1);
+    expect(service.lastSaveAs, isFalse);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save document as…'));
+    await tester.pumpAndSettle();
+    expect(service.saveCount, 2);
+    expect(service.lastSaveAs, isTrue);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open document…'));
+    await tester.pumpAndSettle();
+    expect(service.openCount, 1);
   });
 
   testWidgets('theme mode follows system until explicitly overridden', (

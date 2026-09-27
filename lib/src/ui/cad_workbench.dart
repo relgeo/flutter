@@ -36,6 +36,7 @@ class CADWorkbenchPage extends StatefulWidget {
     this.onSaveAsDocument,
     this.onCloseDocument,
     this.onQuitApplication,
+    this.fileService,
     this.onThemePreferenceChanged,
     this.onResetThemePreference,
     this.workbenchProfileId = 'cad',
@@ -52,6 +53,7 @@ class CADWorkbenchPage extends StatefulWidget {
   final VoidCallback? onSaveAsDocument;
   final VoidCallback? onCloseDocument;
   final VoidCallback? onQuitApplication;
+  final WorkbenchFileService? fileService;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final VoidCallback? onResetThemePreference;
   final String workbenchProfileId;
@@ -113,6 +115,19 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchLayoutController();
   final WorkbenchLayoutPersistenceController _layoutPersistenceController =
       WorkbenchLayoutPersistenceController();
+
+  Future<void> _openDocumentFromFileService() async {
+    final source = await widget.fileService?.openDocument();
+    if (!mounted || source == null) return;
+    _editorController.editingController.text = source;
+    _compileDSL(source);
+  }
+
+  Future<void> _saveDocumentToFileService({required bool saveAs}) async {
+    final service = widget.fileService;
+    if (service == null) return;
+    await service.saveDocument(_editorController.text, saveAs: saveAs);
+  }
 
   WorkbenchVisualProfile get _workbenchProfile =>
       WorkbenchVisualProfile.byId(widget.workbenchProfileId);
@@ -728,22 +743,40 @@ objects:
         id: WorkbenchCommandId.openDocument,
         menu: 'File',
         label: 'Open document…',
-        enabled: widget.onOpenDocument != null,
-        onInvoke: () => widget.onOpenDocument?.call(),
+        enabled: widget.onOpenDocument != null || widget.fileService != null,
+        onInvoke: () {
+          if (widget.onOpenDocument != null) {
+            widget.onOpenDocument!.call();
+          } else {
+            unawaited(_openDocumentFromFileService());
+          }
+        },
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.saveDocument,
         menu: 'File',
         label: 'Save document',
-        enabled: widget.onSaveDocument != null,
-        onInvoke: () => widget.onSaveDocument?.call(),
+        enabled: widget.onSaveDocument != null || widget.fileService != null,
+        onInvoke: () {
+          if (widget.onSaveDocument != null) {
+            widget.onSaveDocument!.call();
+          } else {
+            unawaited(_saveDocumentToFileService(saveAs: false));
+          }
+        },
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.saveAsDocument,
         menu: 'File',
         label: 'Save document as…',
-        enabled: widget.onSaveAsDocument != null,
-        onInvoke: () => widget.onSaveAsDocument?.call(),
+        enabled: widget.onSaveAsDocument != null || widget.fileService != null,
+        onInvoke: () {
+          if (widget.onSaveAsDocument != null) {
+            widget.onSaveAsDocument!.call();
+          } else {
+            unawaited(_saveDocumentToFileService(saveAs: true));
+          }
+        },
         shortcut: const SingleActivator(
           LogicalKeyboardKey.keyS,
           control: true,

@@ -17,3 +17,4 @@ export 'src/core/graph.dart';
 export 'src/core/resolver.dart';
 export 'src/ui/canvas_painter.dart';
 export 'src/ui/svg_exporter.dart';
+export 'src/ui/workbench_file_service.dart';

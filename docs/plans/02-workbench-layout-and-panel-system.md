@@ -299,8 +299,9 @@ ruang lingkup Tahap D.
 - [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
   dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
   About. Callback Save As/Close/Quit kini juga tersedia; implementasi file I/O
-  native lintas platform, undo/redo editor, dan shortcut parity penuh masih
-  tertunda.
+  native untuk Open/Save/Save As kini memiliki `WorkbenchFileService` dan
+  adapter `file_picker`; New/Close/Quit tetap callback aplikasi, sedangkan
+  undo/redo editor dan shortcut parity penuh masih tertunda.
 
 ### Tahap G — Accessibility dan regression
 
@@ -387,3 +388,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap D — Drag-to-dock | Floating/overlay panel kini mengevaluasi zona drop dari posisi center panel dan berpindah ke placement kiri, tengah, kanan, atau bottom untuk Parameters. Keputusan ini berada di controller agar gesture pointer/touch/pen konsisten. |
 | 2026-09-27 | Tahap F parsial — File lifecycle callbacks | Command registry dan `CADWorkbenchPage` kini menyediakan `New`, `Open`, `Save`, `Save As`, `Close`, dan `Quit` melalui callback host opsional. Command otomatis disabled ketika host belum memasang handler; dialog/file picker native masih menjadi tanggung jawab host service. |
 | 2026-09-27 | Tahap F parsial — Panel collapse commands | Menu `View` kini menyediakan command collapse/expand terpisah untuk Editor, Preview, Inspector, dan Parameters. Checkmark mengikuti visibility state aktual dan Parameters tetap disabled tanpa parameter dokumen. |
+| 2026-09-27 | Tahap F parsial — File service boundary | Menambahkan `WorkbenchFileService` serta `FilePickerWorkbenchFileService` untuk Open, Save, dan Save As berbasis UTF-8 YAML/RelGeo. `CADWorkbenchPage` mengadopsi service secara opsional tanpa memutus callback lifecycle lama; New/Close/Quit tetap dimiliki host aplikasi. |
