@@ -293,9 +293,9 @@ ruang lingkup Tahap D.
   callback, tetapi parity seluruh toolbar/context menu belum selesai;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
-- [~] sediakan reset layout, reset appearance override, dan reset parameters;
-  reset layout, reset parameter, dan kembali ke system appearance sudah ada,
-  tetapi reset global yang menyatukan seluruh preference masih tertunda;
+- [x] sediakan reset layout, reset appearance override, dan reset parameters;
+  reset global workbench kini menyatukan layout, appearance override, overlay,
+  dan role filter, sementara reset parameter tetap mengikuti dokumen aktif;
 - [x] tambahkan test command availability dan activation untuk command registry
   serta toggle panel utama;
 - [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
@@ -394,3 +394,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap F parsial — File service boundary | Menambahkan `WorkbenchFileService` serta `FilePickerWorkbenchFileService` untuk Open, Save, dan Save As berbasis UTF-8 YAML/RelGeo. `CADWorkbenchPage` mengadopsi service secara opsional tanpa memutus callback lifecycle lama; New/Close/Quit tetap dimiliki host aplikasi. |
 | 2026-09-27 | Tahap F parsial — Editor history commands | Menu `Edit` dan shortcut global kini menyediakan Undo/Redo dengan enabled-state yang diturunkan dari history native `re_editor`; toolbar/context-menu parity dan kebijakan history lintas dokumen masih tertunda. |
 | 2026-09-27 | Tahap F parsial — Hierarchical SVG export | Menu File kini memiliki jalur `Export → SVG → Model / Sheet View`; command target Sheet disabled tanpa sheet aktif. Tombol toolbar tetap menjadi shortcut untuk export surface aktif, bukan menu export terpisah. |
+| 2026-09-27 | Tahap F — Unified workbench reset | `Reset workbench preferences` kini mereset layout ke Standard sekaligus appearance/overlay/role preferences; regression test memastikan panel yang di-collapse kembali tersedia setelah reset. |

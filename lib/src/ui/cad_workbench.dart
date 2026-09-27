@@ -230,6 +230,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     await widget.onResetWorkbenchPreferences?.call();
     if (!mounted) return;
 
+    _layoutController.reset();
+
     _overlayController.restore(
       overlay: const OverlayOptions(
         showAnchors: false,

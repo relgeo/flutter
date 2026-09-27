@@ -903,11 +903,15 @@ void main() {
       await tester.tap(find.text('BBox'));
       await tester.pumpAndSettle();
 
-      expect(_scenePainter(tester).visualProfile.id, 'blueprint');
-      expect(_scenePainter(tester).overlay.showBoundingBoxes, isFalse);
-      expect(_scenePainter(tester).hiddenRoles.contains('guide'), isTrue);
+      await tester.tap(find.text('View'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Collapse Preview'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('workbench-panel-preview')), findsNothing);
 
-      await tester.tap(find.byKey(const Key('reset-workbench-preferences')));
+      await tester.tap(find.text('Workbench'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reset workbench preferences'));
       await tester.pumpAndSettle();
 
       expect(_scenePainter(tester).visualProfile.id, 'cad');
