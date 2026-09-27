@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'workbench_layout_model.dart';
+import 'workbench_layout_profiles.dart';
 
 /// Owns user-editable workbench layout state without knowing document content.
 ///
@@ -131,6 +132,14 @@ class WorkbenchLayoutController extends ChangeNotifier {
   void setActiveProfile(String profileId) {
     if (profileId.isEmpty || profileId == _layout.activeProfileId) return;
     _replace(_layout.copyWith(activeProfileId: profileId));
+  }
+
+  void applyProfile(WorkbenchLayoutProfile profile) {
+    _replace(profile.layout);
+  }
+
+  void restore(WorkbenchLayoutModel layout) {
+    _replace(layout);
   }
 
   void reset() {

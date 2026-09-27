@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
@@ -19,6 +21,7 @@ import 'workbench_platform_menu_bar.dart';
 import 'workbench_viewport_controller.dart';
 import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
+import 'workbench_layout_persistence.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -95,6 +98,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchSvgExportController();
   final WorkbenchLayoutController _layoutController =
       WorkbenchLayoutController();
+  final WorkbenchLayoutPersistenceController _layoutPersistenceController =
+      WorkbenchLayoutPersistenceController();
 
   WorkbenchVisualProfile get _workbenchProfile =>
       WorkbenchVisualProfile.byId(widget.workbenchProfileId);
@@ -346,6 +351,7 @@ objects:
     _layoutController.addListener(_onLayoutChanged);
     _applyBehaviorPreset(_workbenchProfile);
     _loadWorkbenchPreferences(initialDsl);
+    _loadLayoutPreferences();
   }
 
   Future<void> _loadWorkbenchPreferences(String initialDsl) async {
@@ -368,6 +374,12 @@ objects:
     _compileDSL(initialDsl);
   }
 
+  Future<void> _loadLayoutPreferences() async {
+    final saved = await _layoutPersistenceController.load();
+    if (!mounted || saved == null) return;
+    _layoutController.restore(saved);
+  }
+
   @override
   void didUpdateWidget(covariant CADWorkbenchPage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -387,6 +399,8 @@ objects:
   @override
   void dispose() {
     _layoutController.removeListener(_onLayoutChanged);
+    unawaited(_layoutPersistenceController.flush());
+    _layoutPersistenceController.dispose();
     _layoutController.dispose();
     _editorController.dispose();
     _viewportController.dispose();
@@ -396,6 +410,7 @@ objects:
   }
 
   void _onLayoutChanged() {
+    _layoutPersistenceController.scheduleSave(_layoutController.layout);
     if (mounted) setState(() {});
   }
 

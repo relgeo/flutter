@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A selesai; Tahap B, C, dan F sebagian selesai; Tahap D, E, dan G belum selesai
+**Status:** Tahap A selesai; Tahap B, C, E, dan F sebagian selesai; Tahap D dan G belum selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -261,11 +261,14 @@ ruang lingkup Tahap D.
 
 ### Tahap E — Profiles dan autosave
 
-- [ ] tambahkan preset Standard, Writing, Preview, Inspect, Minimal, Custom;
+- [x] definisikan preset Standard, Writing, Preview, Inspect, dan Minimal
+  sebagai model layout immutable;
 - [ ] tambahkan profile switcher dan reset action;
-- [ ] implementasikan debounced autosave versioned;
-- [ ] migrasikan/fallback data layout yang invalid;
-- [ ] test restart dan pemulihan layout.
+- [x] implementasikan controller debounced autosave versioned dan hubungkan ke
+  perubahan layout pada `CADWorkbenchPage`;
+- [x] migrasikan/fallback data layout yang invalid ke Standard;
+- [~] test load/flush dan pemulihan layout sudah tersedia; restart penuh di
+  platform native masih tertunda.
 
 ### Tahap F — Menu bar dan command registry
 
@@ -337,3 +340,4 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap B parsial — Docked shell | `WorkbenchLayoutController` kini menggerakkan shell utama untuk Editor, Preview, dan Inspector: visibility, collapse, splitter horizontal, min-width constraint, dan split ratio. Jalur compact tetap memiliki scroll boundary. Parameters belum menjadi region mandiri; floating/overlay/docking ulang dan autosave belum dikerjakan. |
 | 2026-09-27 | Tahap F parsial — Panel commands | Menu View kini memiliki toggle Editor, Preview, dan Inspector dengan checkmark yang mengikuti state layout. Command registry tetap menjadi sumber aksi; menu File/Edit/Appearance/Document/Help lengkap dan Parameters menunggu tahap berikutnya. |
 | 2026-09-27 | Tahap C parsial — Parameters surface | Slider parameter dipindahkan dari `EditorPanel` ke `WorkbenchParametersFeature`/`ParametersPanel`. `CADWorkbenchPage` hanya memasangnya bila dokumen aktif memiliki parameter; reset tetap callback domain, bukan operasi layout. Bottom region masih fixed-height dan belum autosave. |
+| 2026-09-27 | Tahap E parsial — Profiles dan autosave | Menambahkan preset layout immutable (`Standard`, `Writing`, `Preview`, `Inspect`, `Minimal`) serta persistence JSON versioned dengan debounce 400 ms, flush, dan fallback corruption ke Standard. `CADWorkbenchPage` memulihkan layout dan menjadwalkan autosave; profile switcher dan native restart proof masih tertunda. |

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
+import 'package:relgeo_flutter/src/ui/workbench_layout_profiles.dart';
 
 void main() {
   test(
@@ -67,4 +68,23 @@ void main() {
 
     expect(controller.layout, original);
   });
+
+  test(
+    'built-in profile application replaces layout without document state',
+    () {
+      final controller = WorkbenchLayoutController();
+
+      controller.applyProfile(WorkbenchLayoutProfiles.minimal);
+
+      expect(controller.layout.activeProfileId, 'minimal');
+      expect(
+        controller.panel(WorkbenchPanelId.inspector).visibility,
+        WorkbenchPanelVisibility.hidden,
+      );
+      expect(
+        controller.panel(WorkbenchPanelId.parameters).visibility,
+        WorkbenchPanelVisibility.visible,
+      );
+    },
+  );
 }
