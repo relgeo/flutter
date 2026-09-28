@@ -343,8 +343,8 @@ ruang lingkup Tahap D.
   golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
 - [~] validasi native window kini mencakup build macOS arm64 melalui Flutter
   pada terminal VSCode native-arm64 dan build Xcode universal melalui direct
-  `xcodebuild`. Runtime window macOS serta validasi Ubuntu dan Windows 11 masih
-  tertunda;
+  `xcodebuild`; launch smoke native macOS juga lulus. Interaksi runtime penuh,
+  restart/persistence native, dan validasi Ubuntu/Windows 11 masih tertunda;
 
 ## 8. Acceptance criteria
 
@@ -376,8 +376,9 @@ ruang lingkup Tahap D.
 - [~] analyzer, test, golden, dan web build tetap lulus; debug build macOS
   arm64 melalui Flutter pada terminal VSCode native-arm64, release build
   macOS universal melalui Flutter, dan build universal melalui Xcode langsung
-  juga lulus. Runtime window macOS serta validasi Ubuntu/Windows 11 masih
-  tertunda;
+  juga lulus; launch smoke native macOS lulus setelah migrasi preference.
+  Interaksi runtime penuh, restart/persistence native, dan validasi
+  Ubuntu/Windows 11 masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
   shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
