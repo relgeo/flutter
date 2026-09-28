@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 import 'docking/dock_drop_preview.dart';
+import 'docking/dock_layout_adapter.dart';
+import 'docking/dock_layout_renderer.dart';
 import 'docking/dock_node.dart';
+import 'docking/dock_tree_operations.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_layout_profiles.dart';
 
@@ -17,8 +20,14 @@ class WorkbenchLayoutController extends ChangeNotifier {
   WorkbenchLayoutModel _layout;
   WorkbenchPanelId? _focusRequest;
   DockDropPreview? _dropPreview;
+  DockNode? _dockedRoot;
+  bool _usesDockTree = false;
 
   WorkbenchLayoutModel get layout => _layout;
+
+  /// The active recursive dock tree, or null while the compatibility
+  /// placement renderer is still in use.
+  DockNode? get dockedRoot => _usesDockTree ? _dockedRoot : null;
 
   /// Identifies a panel that should receive focus after a placement transition.
   ///
@@ -118,6 +127,25 @@ class WorkbenchLayoutController extends ChangeNotifier {
         placement == WorkbenchPanelPlacement.overlay) {
       nextOrder.add(id);
     }
+    if (_usesDockTree &&
+        _dockedRoot != null &&
+        (placement == WorkbenchPanelPlacement.floating ||
+            placement == WorkbenchPanelPlacement.overlay) &&
+        _dockedRootPanels.contains(id)) {
+      try {
+        _dockedRoot = DockTreeOperations.remove(root: _dockedRoot!, panel: id);
+      } on Object {
+        // The compatibility layout below remains authoritative if the tree
+        // was already missing this panel.
+      }
+    }
+    if (_usesDockTree &&
+        placement != WorkbenchPanelPlacement.floating &&
+        placement != WorkbenchPanelPlacement.overlay &&
+        !_dockedRootPanels.contains(id)) {
+      _usesDockTree = false;
+      _dockedRoot = null;
+    }
     _replaceAsCustom(
       _layout.copyWith(
         panels: {
@@ -128,6 +156,12 @@ class WorkbenchLayoutController extends ChangeNotifier {
       ),
     );
   }
+
+  Set<WorkbenchPanelId> get _dockedRootPanels => switch (_dockedRoot) {
+    DockPanelNode panel => panel.panels,
+    DockSplitNode split => split.panels,
+    _ => const <WorkbenchPanelId>{},
+  };
 
   void focusFloatingPanel(WorkbenchPanelId id) {
     final placement = panel(id).placement;
@@ -214,15 +248,49 @@ class WorkbenchLayoutController extends ChangeNotifier {
     DockDropPreview preview,
   ) {
     if (!preview.isValid || preview.sourcePanel != id) return;
-    final placement = switch (preview.zone) {
-      DockZone.left => WorkbenchPanelPlacement.left,
-      DockZone.right => WorkbenchPanelPlacement.right,
-      DockZone.top ||
-      DockZone.bottom ||
-      DockZone.center => WorkbenchPanelPlacement.center,
+    final root = _dockedRoot ?? DockLayoutAdapter.fromPlacementLayout(_layout);
+    if (root == null) return;
+    final nextRoot = DockTreeOperations.insert(
+      root: root,
+      panel: id,
+      target: preview.targetPanel,
+      zone: preview.zone,
+    );
+    final nextPanels = {
+      ..._layout.panels,
+      id: panel(id).copyWith(
+        placement: WorkbenchPanelPlacement.center,
+        visibility: WorkbenchPanelVisibility.visible,
+      ),
     };
-    setPlacement(id, placement);
+    _dockedRoot = nextRoot;
+    _usesDockTree = true;
+    _replace(_layout.copyWith(panels: nextPanels));
     requestPanelFocus(id);
+  }
+
+  /// Resizes a divider in the active recursive dock tree. The legacy
+  /// placement renderer remains available until a tree operation occurs.
+  void resizeDockDivider(
+    DockDividerLocation location,
+    double delta,
+    double availablePixels,
+  ) {
+    final root = _dockedRoot;
+    if (!_usesDockTree || root == null) return;
+    try {
+      _dockedRoot = DockTreeOperations.resize(
+        root: root,
+        splitPath: location.splitPath,
+        dividerIndex: location.dividerIndex,
+        deltaPixels: delta,
+        availablePixels: availablePixels,
+      );
+      notifyListeners();
+    } on Object {
+      // A stale divider gesture must not break the workbench. The next build
+      // will expose the current tree and a fresh divider path.
+    }
   }
 
   void resizeFloatingPanel(
@@ -341,6 +409,9 @@ class WorkbenchLayoutController extends ChangeNotifier {
   void _replace(WorkbenchLayoutModel next) {
     if (next == _layout) return;
     _layout = next;
+    if (!_usesDockTree) {
+      _dockedRoot = null;
+    }
     notifyListeners();
   }
 

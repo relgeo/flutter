@@ -1,6 +1,6 @@
 # Sub-Rencana 03 — Docking Tree, Split Layout, dan Drop Preview
 
-**Status:** Tahap 0 dan Tahap 1 selesai; Tahap 2 sebagian selesai; Tahap 3 terintegrasi parsial; Tahap 4–7 belum selesai
+**Status:** Tahap 0 dan Tahap 1 selesai; Tahap 2 sebagian selesai; Tahap 3 terintegrasi; Tahap 4 dan 5 sebagian selesai; Tahap 6–7 belum selesai
 **Repository pemilik:** `relgeo/flutter`
 **Pemilik keputusan:** Agus Made
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -335,7 +335,7 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 
 ### Tahap 4 — Integrasi panel RelGeo
 
-- [ ] migrasikan Editor, Preview, Inspector, dan Parameters ke tree;
+- [x] migrasikan Editor, Preview, Inspector, dan Parameters ke tree;
 - [ ] pertahankan Parameters sebagai panel mandiri bersyarat;
 - [ ] pertahankan View → Panels dan checkmark;
 - [ ] pertahankan collapse, float, overlay, dan focus restoration;
@@ -345,7 +345,7 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 
 - [x] hubungkan floating/overlay dengan drag session;
 - [x] tampilkan preview saat floating panel mendekati dock area;
-- [ ] dukung drop ke nested target, bukan hanya region global;
+- [x] dukung drop ke nested target, bukan hanya region global;
 - [x] dukung resize dan move floating tanpa mengubah dock tree;
 - [ ] clamp bounds dan pulihkan z-order/focus.
 
@@ -421,3 +421,5 @@ native smoke test.
 | 2026-09-29 | Tahap 3 — Preview overlay scaffold | Menambahkan `DockDropPreviewOverlay` yang menampilkan rectangle hasil, label zona, dan tidak menerima pointer event. Preview null/invalid tidak dirender. Widget test dan analyzer lulus; overlay belum dipasang ke drag session shell. |
 | 2026-09-29 | Quality gate preview overlay | `flutter analyze` lulus, seluruh 251 test lulus, `flutter build web --no-pub` berhasil, dan `git diff --check` bersih setelah penambahan overlay valid-only. |
 | 2026-09-29 | Tahap 3/5 — Shell drag-preview integration | Floating layer dipindahkan ke atas seluruh workbench termasuk Parameters; resize divider horizontal tidak lagi menghitung panel bawah sebagai panel samping; drag handle floating menghitung target dari adapter, menampilkan `DockDropPreviewOverlay` saat gesture melewati touch-slop, dan menghapus preview saat drop/cancel. Drop memakai zona preview sebagai compatibility bridge ke placement lama; nested dock tree belum menjadi sumber kebenaran. Regression shell dan analyzer lulus. |
+| 2026-09-29 | Tahap 4/5 — Recursive tree activation | Drop valid kini menjalankan `DockTreeOperations.insert`, mengaktifkan `DockLayoutRenderer` untuk nested Row/Column, dan mengarahkan resize divider ke `DockTreeOperations.resize`. Floating panel tetap dikelola di layer terluar, sedangkan panel hidden/Parameters unavailable diproyeksikan keluar dari tree saat render. Placement lama tetap dipakai sebelum operasi docking pertama dan untuk compatibility commands. Persistence tree, profile migration, serta re-dock menu penuh belum selesai. |
+| 2026-09-29 | Quality gate recursive tree activation | `flutter analyze` lulus, seluruh 253 test lulus, `flutter build web --no-pub` berhasil, dan `git diff --check` bersih. |

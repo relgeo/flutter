@@ -6,7 +6,9 @@ import 'workbench_window_policy.dart';
 import 'docking/dock_drop_preview.dart';
 import 'docking/dock_drop_preview_overlay.dart';
 import 'docking/dock_layout_adapter.dart';
+import 'docking/dock_layout_renderer.dart';
 import 'docking/dock_node.dart';
+import 'docking/dock_tree_operations.dart';
 
 /// Owns the workbench's high-level shell layout without owning feature state.
 ///
@@ -126,24 +128,44 @@ class WorkbenchCompositionShell extends StatelessWidget {
           }
         }
 
-        final panels = SizedBox(
-          width: panelWidth,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
-              ..._buildPanelDividerHitTargets(
-                controller,
-                dockedPanelIds,
-                dividerIds,
-                panelWidth,
-              ),
-            ],
-          ),
-        );
+        final activeTree = _treeForShell(controller);
+        final panels = activeTree == null
+            ? SizedBox(
+                width: panelWidth,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: children,
+                    ),
+                    ..._buildPanelDividerHitTargets(
+                      controller,
+                      dockedPanelIds,
+                      dividerIds,
+                      panelWidth,
+                    ),
+                  ],
+                ),
+              )
+            : SizedBox(
+                width: panelWidth,
+                child: LayoutBuilder(
+                  builder: (context, treeConstraints) => DockLayoutRenderer(
+                    node: activeTree,
+                    panelBuilder: (context, id) =>
+                        _buildPanelSurface(context, id, controller),
+                    onDividerDrag: (location, delta) =>
+                        controller.resizeDockDivider(
+                          location,
+                          delta,
+                          location.axis == DockAxis.horizontal
+                              ? treeConstraints.maxWidth
+                              : treeConstraints.maxHeight,
+                        ),
+                  ),
+                ),
+              );
         final main = _isCompact(constraints.maxWidth)
             ? SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -200,6 +222,33 @@ class WorkbenchCompositionShell extends StatelessWidget {
         );
       },
     );
+  }
+
+  DockNode? _treeForShell(WorkbenchLayoutController controller) {
+    var root = controller.dockedRoot;
+    if (root == null) return null;
+
+    final panelsToRemove = <WorkbenchPanelId>{
+      for (final id in WorkbenchPanelId.values)
+        if (controller.panel(id).visibility == WorkbenchPanelVisibility.hidden)
+          id,
+    };
+    if (parameters == null) panelsToRemove.add(WorkbenchPanelId.parameters);
+
+    for (final id in panelsToRemove) {
+      final contains = switch (root) {
+        DockPanelNode panel => panel.panelId == id,
+        DockSplitNode split => split.panels.contains(id),
+        _ => false,
+      };
+      if (!contains) continue;
+      try {
+        root = DockTreeOperations.remove(root: root!, panel: id);
+      } on Object {
+        // A transient visibility change must not make the shell disappear.
+      }
+    }
+    return root;
   }
 
   double _parametersSlotHeight(WorkbenchLayoutController controller) {
@@ -503,7 +552,9 @@ class WorkbenchCompositionShell extends StatelessWidget {
     required double canvasWidth,
     required double canvasHeight,
   }) {
-    final root = DockLayoutAdapter.fromPlacementLayout(controller.layout);
+    final root =
+        controller.dockedRoot ??
+        DockLayoutAdapter.fromPlacementLayout(controller.layout);
     if (root == null || canvasWidth <= 0 || canvasHeight <= 0) {
       controller.clearDropPreview();
       return;
@@ -604,6 +655,55 @@ class WorkbenchCompositionShell extends StatelessWidget {
       case WorkbenchPanelId.parameters:
         return parameters ?? const SizedBox.shrink();
     }
+  }
+
+  Widget _buildPanelSurface(
+    BuildContext context,
+    WorkbenchPanelId id,
+    WorkbenchLayoutController controller,
+  ) {
+    final state = controller.panel(id);
+    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          width: 44,
+          height: double.infinity,
+          child: Focus(
+            autofocus: controller.focusRequest == id,
+            onFocusChange: (focused) {
+              if (focused) controller.clearPanelFocusRequest(id);
+            },
+            child: Semantics(
+              label: '${id.name} panel collapsed',
+              button: true,
+              onTap: () => controller.toggleCollapsed(id),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => controller.toggleCollapsed(id),
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: RotatedBox(
+                    quarterTurns: 3,
+                    child: Center(child: Text(id.name.toUpperCase())),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Focus(
+      autofocus: controller.focusRequest == id,
+      onFocusChange: (focused) {
+        if (focused) controller.clearPanelFocusRequest(id);
+      },
+      child: KeyedSubtree(
+        key: ValueKey('workbench-panel-${id.name}'),
+        child: _panelWidget(id),
+      ),
+    );
   }
 
   bool _isCompact(double width) =>

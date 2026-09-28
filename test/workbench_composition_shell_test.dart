@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_composition_shell.dart';
+import 'package:relgeo_flutter/src/ui/docking/dock_node.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
 
@@ -393,6 +394,8 @@ void main() {
     await gesture.up();
     await tester.pump();
     expect(find.byKey(const ValueKey('dock-drop-preview')), findsNothing);
+    expect(controller.dockedRoot, isA<DockSplitNode>());
+    expect(find.byKey(const ValueKey('dock-split-horizontal')), findsOneWidget);
   });
 
   testWidgets('docking a floating panel restores focus to its docked surface', (
