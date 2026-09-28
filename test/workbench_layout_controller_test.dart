@@ -101,7 +101,7 @@ void main() {
     final controller = WorkbenchLayoutController();
 
     controller.resizeParameters(80, 700);
-    expect(controller.panel(WorkbenchPanelId.parameters).bounds.height, 300);
+    expect(controller.panel(WorkbenchPanelId.parameters).bounds.height, 140);
     expect(controller.layout.activeProfileId, 'custom');
   });
 

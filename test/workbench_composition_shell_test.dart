@@ -90,6 +90,14 @@ void main() {
       find.byKey(const ValueKey('workbench-divider-editor')),
       findsOneWidget,
     );
+    expect(
+      tester
+          .getSize(
+            find.byKey(const ValueKey('workbench-divider-visual-editor')),
+          )
+          .width,
+      1,
+    );
 
     await tester.drag(
       find.byKey(const ValueKey('workbench-divider-editor')),
@@ -148,7 +156,15 @@ void main() {
       find.byKey(const ValueKey('workbench-divider-parameters')),
       findsOneWidget,
     );
-    controller.resizeParameters(70, 600);
+    expect(
+      tester
+          .getSize(
+            find.byKey(const ValueKey('workbench-divider-visual-parameters')),
+          )
+          .height,
+      1,
+    );
+    controller.resizeParameters(-70, 600);
     await tester.pump();
     expect(
       controller.panel(WorkbenchPanelId.parameters).bounds.height,
@@ -156,7 +172,7 @@ void main() {
     );
     await tester.drag(
       find.byKey(const ValueKey('workbench-divider-parameters')),
-      const Offset(0, -60),
+      const Offset(0, 60),
     );
     expect(
       controller.panel(WorkbenchPanelId.parameters).bounds.height,
@@ -220,6 +236,10 @@ void main() {
     controller.toggleCollapsed(WorkbenchPanelId.inspector);
     await tester.pump();
     expect(find.text('INSPECTOR'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('floating-panel-inspector'))),
+      const Size(280, 44),
+    );
     expect(
       find.bySemanticsLabel('Resize floating workbench panel'),
       findsNothing,

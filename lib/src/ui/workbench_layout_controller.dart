@@ -263,7 +263,9 @@ class WorkbenchLayoutController extends ChangeNotifier {
     }
     final current = panel(WorkbenchPanelId.parameters).bounds.height ?? 220;
     final maxHeight = (availableHeight - 120).clamp(120.0, 420.0);
-    final next = (current + delta).clamp(120.0, maxHeight);
+    // Parameters is anchored to the bottom edge. A positive pointer delta
+    // moves the divider down, therefore the bottom panel becomes shorter.
+    final next = (current - delta).clamp(120.0, maxHeight);
     if (next == current) return;
     setBounds(
       WorkbenchPanelId.parameters,

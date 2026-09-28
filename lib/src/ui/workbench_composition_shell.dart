@@ -106,18 +106,17 @@ class WorkbenchCompositionShell extends StatelessWidget {
             )
             .toList();
         final children = <Widget>[];
+        final dividerIds = <WorkbenchPanelId>[];
         for (var index = 0; index < dockedPanelIds.length; index++) {
           final id = dockedPanelIds[index];
           children.add(
             _buildPanelSlot(context, id, controller, _panelWidget(id)),
           );
           if (index < dockedPanelIds.length - 1) {
-            final next = dockedPanelIds[index + 1];
+            dividerIds.add(id);
             children.add(
-              _WorkbenchPanelDivider(
-                key: ValueKey('workbench-divider-${id.name}'),
-                onDrag: (delta) =>
-                    controller.resizeBoundary(id, next, delta, panelWidth),
+              _WorkbenchPanelDividerVisual(
+                key: ValueKey('workbench-divider-visual-${id.name}'),
               ),
             );
           }
@@ -131,6 +130,12 @@ class WorkbenchCompositionShell extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: children,
+              ),
+              ..._buildPanelDividerHitTargets(
+                controller,
+                dockedPanelIds,
+                dividerIds,
+                panelWidth,
               ),
               ..._buildFloatingPanels(
                 context,
@@ -149,23 +154,116 @@ class WorkbenchCompositionShell extends StatelessWidget {
               )
             : panels;
         if (parameters == null) return main;
-        return Column(
+        final parameterHeight = _parametersSlotHeight(controller);
+        final dividerVisible =
+            parameterHeight > 0 &&
+            controller.panel(WorkbenchPanelId.parameters).visibility !=
+                WorkbenchPanelVisibility.collapsed;
+        final column = Column(
           children: [
             Expanded(child: main),
-            if (controller.panel(WorkbenchPanelId.parameters).visibility !=
-                    WorkbenchPanelVisibility.hidden &&
-                controller.panel(WorkbenchPanelId.parameters).visibility !=
-                    WorkbenchPanelVisibility.collapsed)
-              _WorkbenchHorizontalDivider(
-                key: const ValueKey('workbench-divider-parameters'),
-                onDrag: (delta) =>
-                    controller.resizeParameters(delta, constraints.maxHeight),
+            if (dividerVisible)
+              const _WorkbenchHorizontalDividerVisual(
+                key: ValueKey('workbench-divider-visual-parameters'),
               ),
             _buildParametersSlot(context, controller),
           ],
         );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            column,
+            if (dividerVisible)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: parameterHeight - 4,
+                height: 8,
+                child: _WorkbenchHorizontalDivider(
+                  key: const ValueKey('workbench-divider-parameters'),
+                  onDrag: (delta) =>
+                      controller.resizeParameters(delta, constraints.maxHeight),
+                ),
+              ),
+          ],
+        );
       },
     );
+  }
+
+  double _parametersSlotHeight(WorkbenchLayoutController controller) {
+    final state = controller.panel(WorkbenchPanelId.parameters);
+    if (parameters == null ||
+        state.placement != WorkbenchPanelPlacement.bottom ||
+        state.visibility == WorkbenchPanelVisibility.hidden) {
+      return 0;
+    }
+    return state.visibility == WorkbenchPanelVisibility.collapsed
+        ? 44
+        : state.bounds.height ?? 220;
+  }
+
+  List<Widget> _buildPanelDividerHitTargets(
+    WorkbenchLayoutController controller,
+    List<WorkbenchPanelId> panelIds,
+    List<WorkbenchPanelId> dividerIds,
+    double panelWidth,
+  ) {
+    if (dividerIds.isEmpty) return const [];
+    final collapsedWidth = panelIds
+        .where(
+          (id) =>
+              controller.panel(id).visibility ==
+              WorkbenchPanelVisibility.collapsed,
+        )
+        .length;
+    final expandedIds = panelIds
+        .where(
+          (id) =>
+              controller.panel(id).visibility !=
+              WorkbenchPanelVisibility.collapsed,
+        )
+        .toList();
+    final totalRatio = expandedIds.fold<double>(0, (sum, id) {
+      return sum +
+          (controller.layout.splitRatios[controller
+                  .panel(id)
+                  .placement
+                  .storageKey] ??
+              1 / 3);
+    });
+    final availableWidth =
+        panelWidth - collapsedWidth * 44 - dividerIds.length.toDouble();
+    var x = 0.0;
+    final targets = <Widget>[];
+    for (final id in panelIds) {
+      final state = controller.panel(id);
+      if (state.visibility == WorkbenchPanelVisibility.collapsed) {
+        x += 44;
+      } else {
+        final ratio =
+            controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
+        x += availableWidth * ratio / totalRatio;
+      }
+      if (dividerIds.contains(id)) {
+        final next = panelIds[panelIds.indexOf(id) + 1];
+        targets.add(
+          Positioned(
+            left: x - 4,
+            top: 0,
+            bottom: 0,
+            width: 9,
+            child: _WorkbenchPanelDivider(
+              key: ValueKey('workbench-divider-${id.name}'),
+              onDrag: (delta) =>
+                  controller.resizeBoundary(id, next, delta, panelWidth),
+            ),
+          ),
+        );
+        x += 1;
+      }
+    }
+    return targets;
   }
 
   Widget _buildParametersSlot(
@@ -244,7 +342,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
     final state = controller.panel(id);
     final bounds = controller.layout.floatingBounds[id] ?? state.bounds;
     final isCollapsed = state.visibility == WorkbenchPanelVisibility.collapsed;
-    final width = isCollapsed ? 44.0 : bounds.width ?? 320;
+    final width = bounds.width ?? 320;
     final height = isCollapsed ? 44.0 : bounds.height ?? 260;
     final left = (bounds.left ?? 24).clamp(
       0.0,
@@ -281,6 +379,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
               if (isCollapsed) controller.toggleCollapsed(id);
             },
             child: Material(
+              key: ValueKey('floating-panel-${id.name}'),
               elevation: state.placement == WorkbenchPanelPlacement.overlay
                   ? 8
                   : 4,
@@ -331,11 +430,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
                           id,
                           dx: delta.dx,
                           dy: delta.dy,
-                          canvasWidth: canvasWidth,
-                          canvasHeight: canvasHeight,
-                        );
-                        controller.dockFloatingPanelIfDropped(
-                          id,
                           canvasWidth: canvasWidth,
                           canvasHeight: canvasHeight,
                         );
@@ -583,21 +677,22 @@ class _WorkbenchPanelDivider extends StatelessWidget {
             hint: 'Increase or decrease the left panel width',
             onIncrease: () => onDrag(16),
             onDecrease: () => onDrag(-16),
-            child: SizedBox(
-              width: 8,
-              child: Center(
-                child: SizedBox(
-                  width: 1,
-                  height: double.infinity,
-                  child: ColoredBox(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-              ),
-            ),
+            child: const SizedBox.expand(),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _WorkbenchPanelDividerVisual extends StatelessWidget {
+  const _WorkbenchPanelDividerVisual({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 1,
+      child: ColoredBox(color: Theme.of(context).colorScheme.outlineVariant),
     );
   }
 }
@@ -630,23 +725,24 @@ class _WorkbenchHorizontalDivider extends StatelessWidget {
             label: 'Resize parameters panel',
             slider: true,
             hint: 'Increase or decrease the parameters panel height',
-            onIncrease: () => onDrag(16),
-            onDecrease: () => onDrag(-16),
-            child: SizedBox(
-              height: 8,
-              child: Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 1,
-                  child: ColoredBox(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-              ),
-            ),
+            onIncrease: () => onDrag(-16),
+            onDecrease: () => onDrag(16),
+            child: const SizedBox.expand(),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _WorkbenchHorizontalDividerVisual extends StatelessWidget {
+  const _WorkbenchHorizontalDividerVisual({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 1,
+      child: ColoredBox(color: Theme.of(context).colorScheme.outlineVariant),
     );
   }
 }
