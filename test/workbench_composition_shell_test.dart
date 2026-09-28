@@ -112,6 +112,33 @@ void main() {
     expect(find.text('inspector'), findsOneWidget);
   });
 
+  testWidgets('right splitter does not mutate the left panel ratio', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    final leftBefore = controller.layout.splitRatios['left']!;
+    await tester.drag(
+      find.byKey(const ValueKey('workbench-divider-preview')),
+      const Offset(60, 0),
+    );
+    await tester.pump();
+
+    expect(controller.layout.splitRatios['left'], leftBefore);
+    expect(controller.layout.splitRatios['center'], greaterThan(0.43));
+  });
+
   testWidgets('interactive shell keeps a collapsed panel as a labeled rail', (
     tester,
   ) async {
@@ -320,6 +347,52 @@ void main() {
       controller.panel(WorkbenchPanelId.inspector).placement,
       WorkbenchPanelPlacement.left,
     );
+  });
+
+  testWidgets('floating drag exposes a visible dock drop preview', (
+    tester,
+  ) async {
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(placement: WorkbenchPanelPlacement.floating),
+        },
+        floatingBounds: const {
+          WorkbenchPanelId.inspector: WorkbenchPanelBounds(
+            left: 24,
+            top: 24,
+            width: 280,
+            height: 220,
+          ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    final handle = find.bySemanticsLabel('Move inspector panel');
+    final gesture = await tester.startGesture(tester.getCenter(handle));
+    await gesture.moveBy(const Offset(-30, 0));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('dock-drop-preview')), findsOneWidget);
+    await gesture.up();
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dock-drop-preview')), findsNothing);
   });
 
   testWidgets('docking a floating panel restores focus to its docked surface', (

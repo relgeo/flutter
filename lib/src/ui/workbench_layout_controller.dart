@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'docking/dock_drop_preview.dart';
+import 'docking/dock_node.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_layout_profiles.dart';
 
@@ -14,6 +16,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
 
   WorkbenchLayoutModel _layout;
   WorkbenchPanelId? _focusRequest;
+  DockDropPreview? _dropPreview;
 
   WorkbenchLayoutModel get layout => _layout;
 
@@ -23,6 +26,18 @@ class WorkbenchLayoutController extends ChangeNotifier {
   /// receives focus. Keeping the request here lets a floating layer hand focus
   /// to its docked counterpart without coupling the controller to widgets.
   WorkbenchPanelId? get focusRequest => _focusRequest;
+
+  /// Preview shown while a floating panel is being dragged over a dock target.
+  /// It is transient UI state and is never persisted with the layout.
+  DockDropPreview? get dropPreview => _dropPreview;
+
+  void setDropPreview(DockDropPreview? preview) {
+    if (_dropPreview == preview) return;
+    _dropPreview = preview;
+    notifyListeners();
+  }
+
+  void clearDropPreview() => setDropPreview(null);
 
   void requestPanelFocus(WorkbenchPanelId id) {
     if (_focusRequest == id) return;
@@ -188,6 +203,26 @@ class WorkbenchLayoutController extends ChangeNotifier {
     final changed = state.placement != nextPlacement;
     setPlacement(id, nextPlacement);
     if (changed) requestPanelFocus(id);
+  }
+
+  /// Commits the exact zone that was shown to the user by the drag preview.
+  /// The legacy placement model cannot yet represent arbitrary nested splits,
+  /// so this is the compatibility bridge until the persisted dock tree becomes
+  /// the controller's primary layout state.
+  void dockFloatingPanelFromPreview(
+    WorkbenchPanelId id,
+    DockDropPreview preview,
+  ) {
+    if (!preview.isValid || preview.sourcePanel != id) return;
+    final placement = switch (preview.zone) {
+      DockZone.left => WorkbenchPanelPlacement.left,
+      DockZone.right => WorkbenchPanelPlacement.right,
+      DockZone.top ||
+      DockZone.bottom ||
+      DockZone.center => WorkbenchPanelPlacement.center,
+    };
+    setPlacement(id, placement);
+    requestPanelFocus(id);
   }
 
   void resizeFloatingPanel(

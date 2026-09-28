@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_window_policy.dart';
+import 'docking/dock_drop_preview.dart';
+import 'docking/dock_drop_preview_overlay.dart';
+import 'docking/dock_layout_adapter.dart';
+import 'docking/dock_node.dart';
 
 /// Owns the workbench's high-level shell layout without owning feature state.
 ///
@@ -137,13 +141,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
                 dividerIds,
                 panelWidth,
               ),
-              ..._buildFloatingPanels(
-                context,
-                controller,
-                panelIds,
-                panelWidth,
-                constraints.maxHeight,
-              ),
             ],
           ),
         );
@@ -153,26 +150,28 @@ class WorkbenchCompositionShell extends StatelessWidget {
                 child: panels,
               )
             : panels;
-        if (parameters == null) return main;
         final parameterHeight = _parametersSlotHeight(controller);
         final dividerVisible =
+            parameters != null &&
             parameterHeight > 0 &&
             controller.panel(WorkbenchPanelId.parameters).visibility !=
                 WorkbenchPanelVisibility.collapsed;
-        final column = Column(
-          children: [
-            Expanded(child: main),
-            if (dividerVisible)
-              const _WorkbenchHorizontalDividerVisual(
-                key: ValueKey('workbench-divider-visual-parameters'),
-              ),
-            _buildParametersSlot(context, controller),
-          ],
-        );
+        final dockedBody = parameters == null
+            ? main
+            : Column(
+                children: [
+                  Expanded(child: main),
+                  if (dividerVisible)
+                    const _WorkbenchHorizontalDividerVisual(
+                      key: ValueKey('workbench-divider-visual-parameters'),
+                    ),
+                  _buildParametersSlot(context, controller),
+                ],
+              );
         return Stack(
           fit: StackFit.expand,
           children: [
-            column,
+            dockedBody,
             if (dividerVisible)
               Positioned(
                 left: 0,
@@ -185,6 +184,18 @@ class WorkbenchCompositionShell extends StatelessWidget {
                       controller.resizeParameters(delta, constraints.maxHeight),
                 ),
               ),
+            // The floating layer deliberately wraps the complete workbench,
+            // including Parameters. This keeps a floating panel above every
+            // docked surface instead of painting it underneath the bottom
+            // region.
+            ..._buildFloatingPanels(
+              context,
+              controller,
+              panelIds,
+              panelWidth,
+              constraints.maxHeight,
+            ),
+            DockDropPreviewOverlay(preview: controller.dropPreview),
           ],
         );
       },
@@ -256,7 +267,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
             child: _WorkbenchPanelDivider(
               key: ValueKey('workbench-divider-${id.name}'),
               onDrag: (delta) =>
-                  controller.resizeBoundary(id, next, delta, panelWidth),
+                  controller.resizeBoundary(id, next, delta, availableWidth),
             ),
           ),
         );
@@ -424,6 +435,12 @@ class WorkbenchCompositionShell extends StatelessWidget {
                       onDragStart: () {
                         Focus.of(focusContext).requestFocus();
                         controller.focusFloatingPanel(id);
+                        _updateDropPreview(
+                          controller,
+                          id,
+                          canvasWidth: canvasWidth,
+                          canvasHeight: canvasHeight,
+                        );
                       },
                       onDrag: (delta) {
                         controller.moveFloatingPanel(
@@ -433,12 +450,26 @@ class WorkbenchCompositionShell extends StatelessWidget {
                           canvasWidth: canvasWidth,
                           canvasHeight: canvasHeight,
                         );
+                        _updateDropPreview(
+                          controller,
+                          id,
+                          canvasWidth: canvasWidth,
+                          canvasHeight: canvasHeight,
+                        );
                       },
-                      onDragEnd: () => controller.dockFloatingPanelIfDropped(
-                        id,
-                        canvasWidth: canvasWidth,
-                        canvasHeight: canvasHeight,
-                      ),
+                      onDragEnd: () {
+                        final preview = controller.dropPreview;
+                        if (preview != null) {
+                          controller.dockFloatingPanelFromPreview(id, preview);
+                        } else {
+                          controller.dockFloatingPanelIfDropped(
+                            id,
+                            canvasWidth: canvasWidth,
+                            canvasHeight: canvasHeight,
+                          );
+                        }
+                        controller.clearDropPreview();
+                      },
                     ),
                   ),
                   if (!isCollapsed &&
@@ -464,6 +495,45 @@ class WorkbenchCompositionShell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _updateDropPreview(
+    WorkbenchLayoutController controller,
+    WorkbenchPanelId sourcePanel, {
+    required double canvasWidth,
+    required double canvasHeight,
+  }) {
+    final root = DockLayoutAdapter.fromPlacementLayout(controller.layout);
+    if (root == null || canvasWidth <= 0 || canvasHeight <= 0) {
+      controller.clearDropPreview();
+      return;
+    }
+
+    final bounds =
+        controller.layout.floatingBounds[sourcePanel] ??
+        controller.panel(sourcePanel).bounds;
+    final pointer = Offset(
+      (bounds.left ?? 24) + (bounds.width ?? 320) / 2,
+      (bounds.top ?? 24) + (bounds.height ?? 260) / 2,
+    );
+    DockDropPreview? preview;
+    for (final target in WorkbenchPanelId.values) {
+      final containsTarget = switch (root) {
+        DockPanelNode panel => panel.panelId == target,
+        DockSplitNode split => split.panels.contains(target),
+        _ => false,
+      };
+      if (target == sourcePanel || !containsTarget) continue;
+      preview = DockDropPreviewCalculator.forPointer(
+        root: root,
+        canvasSize: Size(canvasWidth, canvasHeight),
+        pointer: pointer,
+        sourcePanel: sourcePanel,
+        targetPanel: target,
+      );
+      if (preview != null) break;
+    }
+    controller.setDropPreview(preview);
   }
 
   bool _isSideDocked(WorkbenchPanelPlacement placement) =>
@@ -575,6 +645,7 @@ class _FloatingPanelDragHandle extends StatelessWidget {
             onPanStart: (_) => onDragStart(),
             onPanUpdate: (details) => onDrag(details.delta),
             onPanEnd: (_) => onDragEnd(),
+            onPanCancel: onDragEnd,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: colorScheme.surface.withValues(alpha: 0.72),

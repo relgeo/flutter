@@ -913,7 +913,7 @@ objects:
 
     final shell = WorkbenchCompositionShell(
       menuBar: WorkbenchPlatformMenuBar.usesNativeMenu
-          ? (widget.showInWindowMenu == true
+          ? (widget.showInWindowMenu != false
                 ? WorkbenchMenuBar(registry: commandRegistry)
                 : null)
           : WorkbenchMenuBar(registry: commandRegistry),
