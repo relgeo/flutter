@@ -5,6 +5,7 @@ import '../../geometry/utils.dart' as geom;
 import '../../ui/relgeo_theme_extension.dart';
 import '../../ui/workbench_visual_profile.dart';
 import '../../ui/workbench_motion.dart';
+import '../../ui/keyboard_activatable.dart';
 
 // ─────────────────────────────────────────────
 // Inspector Panel — Tab Objects / Values / Errors / BOM
@@ -83,6 +84,11 @@ class _InspectorPanelState extends State<InspectorPanel>
         final id = entries[i].key;
         final obj = entries[i].value;
         final isExpanded = _expandedObjects[id] ?? false;
+        void toggleExpanded() {
+          setState(() {
+            _expandedObjects[id] = !isExpanded;
+          });
+        }
 
         return AnimatedContainer(
           duration: workbenchMotionDuration(
@@ -111,92 +117,95 @@ class _InspectorPanelState extends State<InspectorPanel>
                 hint: isExpanded
                     ? 'Collapse object details'
                     : 'Expand object details',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(6),
-                  onTap: () => setState(() {
-                    _expandedObjects[id] = !isExpanded;
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isExpanded ? Icons.expand_less : Icons.expand_more,
-                          color: _mutedColor,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  id,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontFamily: 'Courier',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _brandSoftColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  _typeLabel(obj),
-                                  style: TextStyle(
-                                    fontFamily: 'Courier',
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: _brandColor,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                              ),
-                            ],
+                onTap: toggleExpanded,
+                child: WorkbenchKeyboardActivatable(
+                  onActivate: toggleExpanded,
+                  focusColor: _brandColor,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: toggleExpanded,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            color: _mutedColor,
+                            size: 16,
                           ),
-                        ),
-                        // Role badge
-                        if (obj.meta.role.isNotEmpty &&
-                            obj.meta.role != 'final')
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 2,
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    id,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Courier',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _brandSoftColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    _typeLabel(obj),
+                                    style: TextStyle(
+                                      fontFamily: 'Courier',
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: _brandColor,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            decoration: BoxDecoration(
-                              color: _roleBadgeColor(
-                                obj.meta.role,
-                              ).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(3),
-                              border: Border.all(
+                          ),
+                          // Role badge
+                          if (obj.meta.role.isNotEmpty &&
+                              obj.meta.role != 'final')
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
                                 color: _roleBadgeColor(
                                   obj.meta.role,
-                                ).withValues(alpha: 0.5),
+                                ).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: _roleBadgeColor(
+                                    obj.meta.role,
+                                  ).withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                obj.meta.role.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: _roleBadgeColor(obj.meta.role),
+                                ),
                               ),
                             ),
-                            child: Text(
-                              obj.meta.role.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                                color: _roleBadgeColor(obj.meta.role),
-                              ),
-                            ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

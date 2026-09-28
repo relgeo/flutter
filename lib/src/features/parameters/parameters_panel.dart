@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../ui/keyboard_activatable.dart';
 import '../../ui/workbench_visual_profile.dart';
 
 /// Standalone parameters panel.
@@ -62,30 +63,35 @@ class ParametersPanel extends StatelessWidget {
                     button: true,
                     label: 'Reset parameter overrides',
                     hint: 'Restore default parameter values',
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: InkWell(
-                        onTap: onParamReset,
-                        borderRadius: BorderRadius.circular(4),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.refresh, size: 12),
-                              SizedBox(width: 4),
-                              Text(
-                                'RESET',
-                                style: TextStyle(
-                                  fontFamily: 'Courier',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9,
+                    onTap: onParamReset,
+                    child: WorkbenchKeyboardActivatable(
+                      onActivate: onParamReset,
+                      focusColor: visualProfile.accentColor,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          onTap: onParamReset,
+                          borderRadius: BorderRadius.circular(4),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.refresh, size: 12),
+                                SizedBox(width: 4),
+                                Text(
+                                  'RESET',
+                                  style: TextStyle(
+                                    fontFamily: 'Courier',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
