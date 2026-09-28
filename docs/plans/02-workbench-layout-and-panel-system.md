@@ -373,10 +373,11 @@ ruang lingkup Tahap D.
   traversal menyeluruh antar-child control serta verifikasi VoiceOver/TalkBack
   nyata belum; keyboard resize splitter dan aktivasi rail collapsed serta
   keyboard resize docked/floating sudah diuji/tersedia;
-- [~] analyzer, test, golden, dan web build tetap lulus; build native macOS
-  arm64 melalui Flutter pada terminal VSCode native-arm64 dan build universal
-  melalui Xcode langsung juga lulus. Runtime window macOS serta validasi
-  Ubuntu/Windows 11 masih tertunda;
+- [~] analyzer, test, golden, dan web build tetap lulus; debug build macOS
+  arm64 melalui Flutter pada terminal VSCode native-arm64, release build
+  macOS universal melalui Flutter, dan build universal melalui Xcode langsung
+  juga lulus. Runtime window macOS serta validasi Ubuntu/Windows 11 masih
+  tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
   shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
@@ -458,6 +459,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Native macOS Flutter arm64 build | Melalui terminal VSCode pada workspace Flutter, `pwd` benar di `/Users/agusmade/projects/relgeo-workspace/flutter`, `uname -m` menghasilkan `arm64`, dan `flutter build macos --debug --no-pub` berhasil menghasilkan `build/macos/Build/Products/Debug/RelGeo.app`. Binary hasil Flutter terverifikasi `Mach-O 64-bit executable arm64`. Runtime window macOS dan validasi Ubuntu/Windows 11 tetap tertunda. |
 | 2026-09-28 | Tahap G — VSCode native-arm64 quality gate | Dari terminal VSCode yang sama, `flutter analyze` selesai tanpa issue dan `flutter test --reporter compact` selesai dengan `+230: All tests passed!`. |
 | 2026-09-28 | Tahap G — macOS launch smoke test | Binary hasil Flutter dibuka melalui terminal VSCode; setelah persetujuan Gatekeeper lokal, `ps -ax` menunjukkan proses `RelGeo` aktif dari `build/macos/Build/Products/Debug/RelGeo.app`. Ini menutup launch smoke test, bukan validasi interaksi runtime penuh. |
+| 2026-09-28 | Tahap G — Native macOS Flutter release build | Dari terminal VSCode native-arm64, `flutter build macos --release --no-pub` berhasil menghasilkan `build/macos/Build/Products/Release/RelGeo.app`. Binary release terverifikasi Mach-O universal dengan arsitektur `x86_64 arm64`; runtime interaction dan packaging/notarization produksi tetap di luar gate ini. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |
