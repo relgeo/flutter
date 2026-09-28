@@ -25,6 +25,7 @@ import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
 import 'workbench_layout_persistence.dart';
 import 'workbench_layout_profiles.dart';
+import 'workbench_recent_documents.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -124,9 +125,13 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchLayoutController();
   final WorkbenchLayoutPersistenceController _layoutPersistenceController =
       WorkbenchLayoutPersistenceController();
+  final WorkbenchRecentDocumentsStore _recentDocumentsStore =
+      const WorkbenchRecentDocumentsStore();
 
   String? _documentPath;
   String? _documentName;
+  List<WorkbenchRecentDocument> _recentDocuments =
+      const <WorkbenchRecentDocument>[];
 
   Future<void> _openDocumentFromFileService() async {
     if (!await _confirmDiscardChangesIfNeeded()) return;
@@ -143,6 +148,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         path: document.path,
         name: document.name,
       );
+      await _recordRecentDocument(document);
       _editorController.editingController.text = document.source;
       _compileDSL(document.source);
       return;
@@ -155,6 +161,32 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     _documentSession.markLoaded(source: source);
     _editorController.editingController.text = source;
     _compileDSL(source);
+  }
+
+  Future<void> _openRecentDocument(String path) async {
+    if (!await _confirmDiscardChangesIfNeeded()) return;
+    final service = widget.fileService;
+    if (service is! WorkbenchRecentDocumentFileService) return;
+
+    final document = await service.openDocumentAtPath(path);
+    if (!mounted) return;
+    if (document == null) {
+      await _recentDocumentsStore.remove(path);
+      final remaining = await _recentDocumentsStore.load();
+      if (mounted) setState(() => _recentDocuments = remaining);
+      return;
+    }
+
+    _documentPath = document.path;
+    _documentName = document.name;
+    _documentSession.markLoaded(
+      source: document.source,
+      path: document.path,
+      name: document.name,
+    );
+    _editorController.editingController.text = document.source;
+    _compileDSL(document.source);
+    await _recordRecentDocument(document);
   }
 
   Future<void> _createNewDocument() async {
@@ -184,6 +216,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
           path: saved.path,
           name: saved.name,
         );
+        await _recordRecentDocument(saved);
       }
       return;
     }
@@ -198,6 +231,15 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         path: _documentPath,
         name: _documentName,
       );
+      if (_documentPath != null && _documentName != null) {
+        await _recordRecentDocument(
+          WorkbenchDocumentFile(
+            source: _editorController.text,
+            path: _documentPath,
+            name: _documentName,
+          ),
+        );
+      }
     }
   }
 
@@ -220,6 +262,39 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       path: _documentPath,
       name: _documentName,
     );
+    if (_documentPath != null && _documentName != null) {
+      await _recordRecentDocument(
+        WorkbenchDocumentFile(
+          source: _editorController.text,
+          path: _documentPath,
+          name: _documentName,
+        ),
+      );
+    }
+  }
+
+  Future<void> _recordRecentDocument(WorkbenchDocumentFile document) async {
+    final path = document.path;
+    final name = document.name;
+    if (path == null || path.isEmpty || name == null || name.isEmpty) return;
+    await _recentDocumentsStore.record(
+      WorkbenchRecentDocument(path: path, name: name),
+    );
+    final recent = await _recentDocumentsStore.load();
+    if (mounted) setState(() => _recentDocuments = recent);
+  }
+
+  Future<void> _closeDocument() async {
+    if (widget.onCloseDocument != null) {
+      await _runLifecycleAction(widget.onCloseDocument);
+      return;
+    }
+    if (!await _confirmDiscardChangesIfNeeded()) return;
+    _documentPath = null;
+    _documentName = null;
+    _documentSession.reset(source: '');
+    _editorController.editingController.text = '';
+    _compileDSL('');
   }
 
   WorkbenchVisualProfile get _workbenchProfile =>
@@ -502,6 +577,7 @@ objects:
     _applyBehaviorPreset(_workbenchProfile);
     _loadWorkbenchPreferences(initialDsl);
     _loadLayoutPreferences();
+    _loadRecentDocuments();
   }
 
   Future<void> _loadWorkbenchPreferences(String initialDsl) async {
@@ -528,6 +604,12 @@ objects:
     final saved = await _layoutPersistenceController.load();
     if (!mounted || saved == null) return;
     _layoutController.restore(saved);
+  }
+
+  Future<void> _loadRecentDocuments() async {
+    final recent = await _recentDocumentsStore.load();
+    if (!mounted) return;
+    setState(() => _recentDocuments = recent);
   }
 
   @override
@@ -573,8 +655,28 @@ objects:
   Future<bool> _confirmDiscardChangesIfNeeded() async {
     if (!_documentSession.isDirty) return true;
     final confirm = widget.onConfirmDiscardChanges;
-    if (confirm == null) return false;
-    return await confirm();
+    if (confirm != null) return await confirm();
+    if (!mounted) return false;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard unsaved changes?'),
+        content: const Text(
+          'The current document has unsaved changes. Discard them and continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard ?? false;
   }
 
   Future<void> _runLifecycleAction(VoidCallback? action) async {
@@ -941,6 +1043,26 @@ objects:
           control: true,
         ),
       ),
+      if (_recentDocuments.isNotEmpty ||
+          widget.fileService is WorkbenchRecentDocumentFileService)
+        if (_recentDocuments.isEmpty)
+          WorkbenchCommand(
+            id: WorkbenchCommandId.openRecentDocument,
+            menu: 'File',
+            submenuPath: const ['Recent'],
+            label: 'No recent documents',
+            enabled: false,
+            onInvoke: () {},
+          )
+        else
+          for (final document in _recentDocuments)
+            WorkbenchCommand(
+              id: WorkbenchCommandId.openRecentDocument,
+              menu: 'File',
+              submenuPath: const ['Recent'],
+              label: document.name,
+              onInvoke: () => unawaited(_openRecentDocument(document.path)),
+            ),
       WorkbenchCommand(
         id: WorkbenchCommandId.saveDocument,
         menu: 'File',
@@ -996,8 +1118,8 @@ objects:
         id: WorkbenchCommandId.closeDocument,
         menu: 'File',
         label: 'Close document',
-        enabled: widget.onCloseDocument != null,
-        onInvoke: () => unawaited(_runLifecycleAction(widget.onCloseDocument)),
+        enabled: widget.onCloseDocument != null || widget.fileService != null,
+        onInvoke: () => unawaited(_closeDocument()),
         shortcut: const SingleActivator(LogicalKeyboardKey.keyW, control: true),
         shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.keyW,

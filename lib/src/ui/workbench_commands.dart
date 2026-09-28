@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 enum WorkbenchCommandId {
   newDocument,
   openDocument,
+  openRecentDocument,
   saveDocument,
   saveAsDocument,
   closeDocument,

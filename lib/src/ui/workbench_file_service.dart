@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -76,11 +77,18 @@ abstract interface class WorkbenchDocumentFileService
   });
 }
 
+/// Optional extension used by the File → Recent menu.
+abstract interface class WorkbenchRecentDocumentFileService
+    implements WorkbenchDocumentFileService {
+  Future<WorkbenchDocumentFile?> openDocumentAtPath(String path);
+}
+
 /// Portable file-picker implementation for YAML/RelGeo source files.
 ///
 /// New/Close/Quit remain application lifecycle concerns and stay as host
 /// callbacks on [CADWorkbenchPage].
-class FilePickerWorkbenchFileService implements WorkbenchDocumentFileService {
+class FilePickerWorkbenchFileService
+    implements WorkbenchRecentDocumentFileService {
   const FilePickerWorkbenchFileService({this.defaultFileName = 'relgeo.yaml'});
 
   final String defaultFileName;
@@ -110,6 +118,21 @@ class FilePickerWorkbenchFileService implements WorkbenchDocumentFileService {
       path: file.path,
       name: file.name,
     );
+  }
+
+  @override
+  Future<WorkbenchDocumentFile?> openDocumentAtPath(String path) async {
+    try {
+      final file = File(path);
+      if (!await file.exists()) return null;
+      return WorkbenchDocumentFile(
+        source: await file.readAsString(),
+        path: path,
+        name: _fileName(path) ?? path,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

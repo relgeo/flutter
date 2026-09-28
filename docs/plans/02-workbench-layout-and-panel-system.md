@@ -1,9 +1,13 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A, B, dan C selesai; Tahap D, E, F, dan G sebagian selesai
+**Status:** Tahap A, B, C, D, dan E selesai; Tahap F dan G sebagian selesai
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
+
+**Docking architecture follow-up:** Detail arsitektur recursive docking tree,
+drop preview, dan migrasi dari placement-region ke nested row/column dicatat di
+[Sub-Rencana 03 — Docking Tree, Split Layout, dan Drop Preview](./03-docking-tree-and-drop-preview.md).
 
 ## 1. Tujuan
 
@@ -74,6 +78,36 @@ View        Workbench Profile, Panels, Appearance, Reset Layout, Full Screen
 Document    Compile, Recompile, Validate, Reset Parameters, Reload
 Help        Keyboard Shortcuts, Documentation, About RelGeo
 ```
+
+`File` wajib menjadi menu pertama, baik pada menu bar in-window maupun pada
+native system menu. RelGeo Flutter adalah desktop application/workbench, bukan
+sekadar playground; operasi dokumen dan filesystem merupakan capability inti.
+
+### 2.5 Desktop document lifecycle
+
+Menu `File` harus menyediakan lifecycle dokumen yang nyata dan konsisten:
+
+- `New` membuat dokumen baru yang valid;
+- `Open…` membaca file RelGeo/YAML dari filesystem;
+- `Save` menyimpan ke identity/path aktif atau meminta lokasi ketika belum ada;
+- `Save As…` selalu meminta identity/path baru;
+- `Recent` menampilkan dokumen terakhir yang berhasil dibuka/disimpan;
+- `Export` menghasilkan artefak dari dokumen aktif tanpa mengganti source;
+- `Close` menutup dokumen aktif setelah dirty-state guard;
+- `Quit` menutup aplikasi setelah seluruh dokumen melewati dirty-state guard.
+
+File picker, document identity, dirty state, discard confirmation, dan host
+window lifecycle harus dipisahkan dari renderer/layout. Web playground boleh
+memakai adapter berbeda, tetapi tidak boleh menjadi alasan untuk mengurangi
+kontrak desktop.
+
+Status implementasi saat ini: `New`, `Open`, `Save`, `Save As`, `Recent`,
+`Close`, dan export sudah memiliki command serta file-service path. Aplikasi
+default memakai file picker desktop, menyimpan daftar Recent secara lokal,
+membuka kembali path yang masih ada, membuang entry yang sudah hilang, dan
+menyediakan dialog discard bawaan ketika host tidak memasang callback sendiri.
+Callback host tetap diprioritaskan sehingga integrasi aplikasi yang lebih besar
+dapat mengambil alih lifecycle tersebut.
 
 Setiap command memiliki enabled/disabled state, label, shortcut, dan optional
 checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
@@ -327,6 +361,9 @@ ruang lingkup Tahap D.
   memakai `onSaveDocumentWithResult` untuk mengembalikan acknowledgement typed
   beserta identitas file; callback `VoidCallback` lama tetap tersedia sebagai
   jalur kompatibilitas tetapi tidak dapat melaporkan hasil Save.
+  `File` sudah berada di urutan pertama pada menu in-window dan native macOS.
+  Aplikasi default kini juga memasang Close document dan Recent files; validasi
+  interaksi native lintas platform dan parity shortcut penuh masih tertunda.
 
 ### Tahap G — Accessibility dan regression
 
@@ -366,10 +403,11 @@ ruang lingkup Tahap D.
   show/hide, resize, collapse, float, overlay, dan command placement sudah ada;
   drag-to-dock dan focus restoration setelah docking sudah ada; integrasi focus
   native window masih tertunda;
-- [~] lifecycle dokumen memiliki dirty-state dan guard konfirmasi untuk
+- [x] lifecycle dokumen memiliki dirty-state dan guard konfirmasi untuk
   New/Open/Close/Quit; persistence identity dan file-service Save sudah
-  mengembalikan state bersih, dan host kini memiliki callback Save typed yang
-  dapat mengembalikan `saved`, path, serta name. Callback Save legacy tetap
+  mengembalikan state bersih, host memiliki callback Save typed yang dapat
+  mengembalikan `saved`, path, serta name, dan aplikasi default menyediakan
+  dialog discard, Close, serta Recent files. Callback Save legacy tetap
   didukung, tetapi sengaja tidak dapat memberi acknowledgement hasil;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
@@ -494,3 +532,6 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-27 | Tahap G — Collapsed panel pointer restore | Collapsed docked, Parameters, dan floating/overlay panel kini juga dapat dipulihkan lewat pointer tap. Regression shell test mencakup pemulihan floating panel; full suite pada checkpoint ini: 213 test lulus. |
 | 2026-09-27 | Tahap G — Layout profile golden baselines | Menambahkan golden regression untuk lima preset layout utama (Standard, Writing, Preview, Inspect, Minimal). Full Flutter suite pada checkpoint ini: 218 test lulus. |
 | 2026-09-27 | Tahap G — Document identity quality gate | Setelah boundary identitas dokumen, `flutter analyze` lulus tanpa issue, seluruh 218 test lulus, dan `flutter build web --no-pub` berhasil. Native runtime dan lifecycle host tetap belum terverifikasi. |
+| 2026-09-28 | Tahap F — Default document lifecycle completion | Aplikasi default kini mengaktifkan `Close document` tanpa callback host dengan discard guard bawaan, menyimpan Recent files secara lokal, membuka kembali path yang masih tersedia, dan membersihkan entry yang sudah hilang. Regression test Recent lulus; `flutter analyze`, seluruh 233 test, dan `flutter build web --no-pub` menjadi gate verifikasi batch ini. |
+| 2026-09-28 | Tahap G — Workbench gate refresh setelah docking scaffold | Setelah penambahan pure docking tree dan renderer scaffold pada Sub-Rencana 03, analyzer tetap bersih, seluruh 241 test lulus, `flutter build web --no-pub` berhasil, dan `flutter build macos --debug --no-pub` menghasilkan binary arm64. Tidak ada regresi terdeteksi; validasi pointer native, assistive technology nyata, Ubuntu, Windows 11, dan packaging produksi tetap terbuka. |
+| 2026-09-29 | Tahap G — Workbench gate refresh setelah resize contract | Setelah divider tree memiliki hit-area terpisah dan adapter placement tersedia, analyzer tetap bersih, seluruh 246 test lulus, dan `flutter build web --no-pub` berhasil. Build macOS arm64 sudah lulus pada gate sebelumnya; validasi pointer native, assistive technology nyata, Ubuntu, Windows 11, dan packaging produksi tetap terbuka. |
