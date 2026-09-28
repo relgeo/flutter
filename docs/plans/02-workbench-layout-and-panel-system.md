@@ -273,8 +273,9 @@ ruang lingkup Tahap D.
 - [x] implementasikan controller debounced autosave versioned dan hubungkan ke
   perubahan layout pada `CADWorkbenchPage`;
 - [x] migrasikan/fallback data layout yang invalid ke Standard;
-- [~] test load/flush dan pemulihan layout sudah tersedia; restart penuh di
-  platform native masih tertunda.
+- [x] test load/flush dan pemulihan layout tersedia; restart native macOS juga
+  sudah diverifikasi: setelah aplikasi ditutup dan dibuka kembali, preset
+  `Standard` serta `Follow system appearance` dipulihkan tanpa assertion.
 
 ### Tahap F — Menu bar dan command registry
 
@@ -342,9 +343,11 @@ ruang lingkup Tahap D.
 - [x] golden dan widget test mencakup setiap preset utama; tersedia baseline
   golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
 - [~] validasi native window kini mencakup build macOS arm64 melalui Flutter
-  pada terminal VSCode native-arm64 dan build Xcode universal melalui direct
-  `xcodebuild`; launch smoke native macOS juga lulus. Interaksi runtime penuh,
-  restart/persistence native, dan validasi Ubuntu/Windows 11 masih tertunda;
+  pada terminal VSCode native-arm64, build Xcode universal melalui direct
+  `xcodebuild`, launch smoke, menu Appearance, dan preset Workbench Writing →
+  Standard. Restart/persistence native macOS juga lulus untuk state tema/layout.
+  Interaksi seluruh control, validasi Ubuntu/Windows 11, dan packaging produksi
+  masih tertunda;
 
 ## 8. Acceptance criteria
 
@@ -363,8 +366,8 @@ ruang lingkup Tahap D.
   di-float, dan di-overlay; transisi visual floating lanjutan masih dapat
   dipoles tanpa mengubah kontrak placement;
 - [x] preset dapat diterapkan tanpa mengubah dokumen;
-- [x] perubahan layout dipulihkan melalui persistence reload; verifikasi restart
-  native penuh masih menjadi bagian uji platform;
+- [x] perubahan layout dipulihkan melalui persistence reload; restart native
+  macOS diverifikasi dengan preset Standard dan state system appearance;
 - [x] layout rusak atau tidak dikenal kembali ke Standard dengan aman;
 - [x] layout preference terpisah dari theme dan document persistence;
 - [~] keyboard dan accessibility state tetap dapat digunakan; jalur menu,
@@ -375,10 +378,11 @@ ruang lingkup Tahap D.
   keyboard resize docked/floating sudah diuji/tersedia;
 - [~] analyzer, test, golden, dan web build tetap lulus; debug build macOS
   arm64 melalui Flutter pada terminal VSCode native-arm64, release build
-  macOS universal melalui Flutter, dan build universal melalui Xcode langsung
-  juga lulus; launch smoke native macOS lulus setelah migrasi preference.
-  Interaksi runtime penuh, restart/persistence native, dan validasi
-  Ubuntu/Windows 11 masih tertunda;
+  macOS universal melalui Flutter, build universal melalui Xcode langsung,
+  launch smoke, menu Appearance, preset Workbench, dan restart/persistence
+  tema/layout macOS juga lulus setelah migrasi preference. Interaksi seluruh
+  control, validasi Ubuntu/Windows 11, dan packaging/signing produksi masih
+  tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
   shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
@@ -463,6 +467,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Native macOS Flutter release build | Dari terminal VSCode native-arm64, `flutter build macos --release --no-pub` berhasil menghasilkan `build/macos/Build/Products/Release/RelGeo.app`. Binary release terverifikasi Mach-O universal dengan arsitektur `x86_64 arm64`; runtime interaction dan packaging/notarization produksi tetap di luar gate ini. |
 | 2026-09-28 | Tahap G — Legacy canvas profile migration | Native smoke test menemukan persisted id lama `cad-dark` yang membuat `DropdownButton` assertion. `WorkbenchPreferencesStore` kini menormalkan id legacy/unknown ke profile canvas canonical sebelum dipakai sebagai dropdown value; targeted tests, full suite `+231`, debug rebuild, dan restart native ulang lulus tanpa assertion. |
 | 2026-09-28 | Tahap G — Legacy profile cross-target gate | Setelah migrasi preference, `flutter analyze`, full suite `+231`, `flutter build macos --debug --no-pub`, dan `flutter build web --no-pub` seluruhnya lulus. Web build menghasilkan `build/web`; warning yang tersisa hanya rekomendasi WASM/tree-shaking dari Flutter, bukan kegagalan build. |
+| 2026-09-28 | Tahap G — Native menu and restart smoke | Melalui terminal/GUI native macOS, menu `Appearance` berhasil menjalankan `Dark`, `Light`, dan `Follow system appearance`; preset `Workbench → Writing` mengubah komposisi panel dan `Workbench → Standard` mengembalikannya. Setelah aplikasi ditutup dan dibuka ulang, tema mengikuti system (`Dark` pada mesin uji) dan layout Standard tetap pulih tanpa assertion. Ini memverifikasi command/menu serta persistence dasar, bukan seluruh interaksi child control atau validasi platform lain. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |
