@@ -352,10 +352,13 @@ ruang lingkup Tahap D.
   golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
 - [~] validasi native window kini mencakup build macOS arm64 melalui Flutter
   pada terminal VSCode native-arm64, build Xcode universal melalui direct
-  `xcodebuild`, launch smoke, menu Appearance, dan preset Workbench Writing →
-  Standard. Restart/persistence native macOS juga lulus untuk state tema/layout.
-  Interaksi seluruh control, validasi Ubuntu/Windows 11, dan packaging produksi
-  masih tertunda;
+  `xcodebuild`, launch smoke, menu Appearance, preset Workbench Writing →
+  Standard, serta smoke `Workbench → Float Code editor → Dock Code editor left`.
+  Binary terbaru juga memverifikasi menu `View` tanpa top-level `Appearance`,
+  header Float/Collapse, dan drag handle floating yang terlihat. Restart/
+  persistence native macOS lulus untuk state tema/layout. Interaksi drag
+  pointer langsung, resize pointer native, validasi Ubuntu/Windows 11, dan
+  packaging produksi masih tertunda;
 
 ## 8. Acceptance criteria
 
@@ -480,6 +483,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Native floating/overlay placement smoke | Menu `Workbench → Float Inspector` menempatkan Inspector sebagai panel mengambang di atas workbench; `Overlay Inspector` mengubahnya ke mode overlay; `Dock Inspector right` lalu `View → Inspector` mengembalikannya sebagai panel kanan yang terlihat. Semua transisi selesai tanpa error runtime. Drag pointer, resize handle, dan docking melalui zona drop masih belum diuji end-to-end pada native window. |
 | 2026-09-28 | Tahap G — Native floating persistence smoke | Setelah `Float Inspector` disimpan, aplikasi ditutup dan dibuka ulang melalui terminal VSCode; Inspector muncul kembali sebagai panel floating dengan isi tetap valid. Preset `Workbench → Standard` kemudian mengembalikan layout akhir ke kondisi docked standar. Persistence placement native macOS lulus untuk kasus ini. |
 | 2026-09-28 | Koreksi UX menu, collapse, splitter, dan floating | Struktur menu native/in-window disederhanakan menjadi `View → Panels` dan `View → Appearance`; panel visible diberi checkmark, sedangkan collapse dipindahkan ke icon button di header tiap panel. Splitter memakai garis visual 1 px dengan hit area 8 px, dan batas tinggi Parameters tidak lagi dipotong pada 220 px sehingga splitter bawah benar-benar mengubah tinggi. Header panel docked kini juga menyediakan aksi `Float` yang terlihat; panel floating memiliki drag handle dengan tooltip untuk memindahkan atau menjatuhkan panel ke zona dock. Header Inspector tetap responsif pada lebar sempit dengan menyembunyikan badge status, bukan kontrol panel. Full analyzer, full test `+231`, web build, dan macOS debug build lulus. |
+| 2026-09-28 | Tahap G — Native panel control smoke terbaru | Binary macOS terbaru diverifikasi melalui menu `View` yang tidak lagi memiliki top-level `Appearance`. `Workbench → Float Code editor` menghasilkan panel floating dengan drag handle terlihat, lalu `Dock Code editor left` mengembalikannya ke dock. Widget regression memastikan tombol Float/Collapse tersedia pada panel yang aktif. Drag pointer langsung dan native splitter resize masih menunggu verifikasi interaktif khusus. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |
