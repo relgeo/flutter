@@ -8,15 +8,24 @@ import 'workbench_editor_contract.dart';
 /// The page owns the document state and callbacks; this boundary owns only
 /// the contract needed to render and operate the editor feature.
 class WorkbenchEditorFeature extends StatelessWidget {
-  const WorkbenchEditorFeature({super.key, required this.contract});
+  const WorkbenchEditorFeature({
+    super.key,
+    required this.contract,
+    this.onCollapse,
+    this.onFloat,
+  });
 
   final WorkbenchEditorContract contract;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
     return EditorPanel(
       controller: contract.controller,
       visualProfile: contract.visualProfile,
+      onCollapse: onCollapse,
+      onFloat: onFloat,
     );
   }
 }

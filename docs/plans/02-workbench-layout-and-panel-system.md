@@ -68,8 +68,9 @@ Struktur menu awal:
 File        New, Open, Save, Save As, Recent, Export, Close, Quit
             Export > SVG > Model / Sheet View
 Edit        Undo, Redo, Cut, Copy, Paste, Select All, Find
-View        Workbench Profile, Panels, Reset Layout, Full Screen
-Appearance  App Theme, Canvas Appearance
+View        Workbench Profile, Panels, Appearance, Reset Layout, Full Screen
+            Panels > Code editor, Preview, Inspector, Parameters
+            Appearance > App Theme, Canvas Appearance
 Document    Compile, Recompile, Validate, Reset Parameters, Reload
 Help        Keyboard Shortcuts, Documentation, About RelGeo
 ```
@@ -77,7 +78,10 @@ Help        Keyboard Shortcuts, Documentation, About RelGeo
 Setiap command memiliki enabled/disabled state, label, shortcut, dan optional
 checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
 `Parameters` disabled atau tidak ditawarkan ketika dokumen tidak memiliki
-parameter, dan panel visible ditandai checkmark pada menu `View`.
+parameter, dan panel visible ditandai checkmark pada `View → Panels`.
+
+Collapse dilakukan melalui icon button di pojok kanan atas header panel
+masing-masing; collapse tidak menjadi command menu terpisah.
 
 SVG adalah format export, bukan aksi khusus milik Preview. Toolbar Preview tidak
 menampilkan tombol `SVG MODEL`; exporter dan filesystem boundary tetap menjadi
@@ -298,12 +302,16 @@ ruang lingkup Tahap D.
   tidak membebani keyboard global;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
+- [x] kelompokkan toggle panel di `View → Panels`, pindahkan appearance ke
+  `View → Appearance`, dan tampilkan checkmark panel yang sedang visible;
+- [x] pindahkan collapse dari menu ke icon button pada header Editor, Preview,
+  Inspector, dan Parameters;
 - [x] sediakan reset layout, reset appearance override, dan reset parameters;
   reset global workbench kini menyatukan layout, appearance override, overlay,
   dan role filter, sementara reset parameter tetap mengikuti dokumen aktif;
 - [x] tambahkan test command availability dan activation untuk command registry
   serta toggle panel utama;
-- [~] menu File/Edit/Appearance/Document/Help kini memiliki command surface
+- [~] menu File/Edit/View/Document/Help kini memiliki command surface
   dasar: callback New/Open/Save, Copy source, Recompile, Reset parameter, dan
   About. Callback Save As/Close/Quit kini juga tersedia; implementasi file I/O
   native untuk Open/Save/Save As kini memiliki `WorkbenchFileService`, adapter
@@ -471,6 +479,7 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Native panel visibility smoke | Menu `View → Inspector` berhasil menyembunyikan Inspector sehingga Editor/Preview melebar, lalu menampilkannya kembali ke layout Standard tanpa kehilangan Parameters atau error runtime. Ini menutup smoke test visibility melalui native menu; resize pointer, drag-to-dock, floating/overlay, dan traversal child control tetap belum menjadi verifikasi end-to-end. |
 | 2026-09-28 | Tahap G — Native floating/overlay placement smoke | Menu `Workbench → Float Inspector` menempatkan Inspector sebagai panel mengambang di atas workbench; `Overlay Inspector` mengubahnya ke mode overlay; `Dock Inspector right` lalu `View → Inspector` mengembalikannya sebagai panel kanan yang terlihat. Semua transisi selesai tanpa error runtime. Drag pointer, resize handle, dan docking melalui zona drop masih belum diuji end-to-end pada native window. |
 | 2026-09-28 | Tahap G — Native floating persistence smoke | Setelah `Float Inspector` disimpan, aplikasi ditutup dan dibuka ulang melalui terminal VSCode; Inspector muncul kembali sebagai panel floating dengan isi tetap valid. Preset `Workbench → Standard` kemudian mengembalikan layout akhir ke kondisi docked standar. Persistence placement native macOS lulus untuk kasus ini. |
+| 2026-09-28 | Koreksi UX menu, collapse, splitter, dan floating | Struktur menu native/in-window disederhanakan menjadi `View → Panels` dan `View → Appearance`; panel visible diberi checkmark, sedangkan collapse dipindahkan ke icon button di header tiap panel. Splitter memakai garis visual 1 px dengan hit area 8 px, dan batas tinggi Parameters tidak lagi dipotong pada 220 px sehingga splitter bawah benar-benar mengubah tinggi. Header panel docked kini juga menyediakan aksi `Float` yang terlihat; panel floating memiliki drag handle dengan tooltip untuk memindahkan atau menjatuhkan panel ke zona dock. Header Inspector tetap responsif pada lebar sempit dengan menyembunyikan badge status, bukan kontrol panel. Full analyzer, full test `+231`, web build, dan macOS debug build lulus. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |

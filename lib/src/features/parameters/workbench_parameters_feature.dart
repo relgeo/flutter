@@ -5,9 +5,16 @@ import 'workbench_parameters_contract.dart';
 
 /// Optional parameter editing surface for documents that declare parameters.
 class WorkbenchParametersFeature extends StatelessWidget {
-  const WorkbenchParametersFeature({super.key, required this.contract});
+  const WorkbenchParametersFeature({
+    super.key,
+    required this.contract,
+    this.onCollapse,
+    this.onFloat,
+  });
 
   final WorkbenchParametersContract contract;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +25,8 @@ class WorkbenchParametersFeature extends StatelessWidget {
       onParamChanged: contract.onParamChanged,
       onParamReset: contract.onParamReset,
       visualProfile: contract.visualProfile,
+      onCollapse: onCollapse,
+      onFloat: onFloat,
     );
   }
 }

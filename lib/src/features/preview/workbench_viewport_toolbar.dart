@@ -28,6 +28,8 @@ class WorkbenchViewportToolbar extends StatelessWidget {
     required this.onZoomOut,
     required this.onFitViewport,
     required this.onResetViewport,
+    this.onCollapse,
+    this.onFloat,
   });
 
   final WorkbenchVisualProfile visualProfile;
@@ -49,6 +51,8 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   final VoidCallback onZoomOut;
   final VoidCallback onFitViewport;
   final VoidCallback onResetViewport;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
@@ -68,40 +72,77 @@ class WorkbenchViewportToolbar extends StatelessWidget {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Icon(Icons.blur_circular, color: visualProfile.accentColor, size: 14),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'VIEWPORT',
-                style: TextStyle(
-                  fontFamily: 'Courier',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                  color: visualProfile.accentColor,
-                ),
+              Icon(
+                Icons.blur_circular,
+                color: visualProfile.accentColor,
+                size: 14,
               ),
-              Text(
-                'Zoom: ${(zoomLevel * 100).toInt()}% · $targetUnitLabel',
-                style: TextStyle(
-                  fontFamily: 'Courier',
-                  fontSize: 9,
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'VIEWPORT',
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                      color: visualProfile.accentColor,
+                    ),
+                  ),
+                  Text(
+                    'Zoom: ${(zoomLevel * 100).toInt()}% · $targetUnitLabel',
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontSize: 9,
+                      color: visualProfile.mutedColor,
+                    ),
+                  ),
+                  Text(
+                    previewRouteLabel,
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontSize: 9,
+                      color: selectedSheetId != null
+                          ? const Color(0xFF10B981)
+                          : visualProfile.mutedColor,
+                    ),
+                  ),
+                ],
+              ),
+              if (onFloat != null)
+                IconButton(
+                  key: const Key('float-preview-panel'),
+                  tooltip: 'Float Preview',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  icon: const Icon(Icons.open_in_new, size: 16),
                   color: visualProfile.mutedColor,
+                  onPressed: onFloat,
                 ),
-              ),
-              Text(
-                previewRouteLabel,
-                style: TextStyle(
-                  fontFamily: 'Courier',
-                  fontSize: 9,
-                  color: selectedSheetId != null
-                      ? const Color(0xFF10B981)
-                      : visualProfile.mutedColor,
+              if (onCollapse != null)
+                IconButton(
+                  key: const Key('collapse-preview-panel'),
+                  tooltip: 'Collapse Preview',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                  color: visualProfile.mutedColor,
+                  onPressed: onCollapse,
                 ),
-              ),
             ],
           ),
           WorkbenchDropdownField<String>(

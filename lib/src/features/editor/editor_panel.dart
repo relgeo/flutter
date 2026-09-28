@@ -9,11 +9,15 @@ import '../../ui/workbench_visual_profile.dart';
 class EditorPanel extends StatelessWidget {
   final CodeLineEditingController controller;
   final WorkbenchVisualProfile visualProfile;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   const EditorPanel({
     super.key,
     required this.controller,
     this.visualProfile = WorkbenchVisualProfile.cad,
+    this.onCollapse,
+    this.onFloat,
   });
 
   @override
@@ -50,6 +54,38 @@ class EditorPanel extends StatelessWidget {
                     color: visualProfile.accentColor,
                   ),
                 ),
+                if (onFloat != null) ...[
+                  const Spacer(),
+                  IconButton(
+                    key: const Key('float-editor-panel'),
+                    tooltip: 'Float Code editor',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    color: visualProfile.mutedColor,
+                    onPressed: onFloat,
+                  ),
+                ],
+                if (onCollapse != null) ...[
+                  if (onFloat == null) const Spacer(),
+                  IconButton(
+                    key: const Key('collapse-editor-panel'),
+                    tooltip: 'Collapse Code editor',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    icon: const Icon(Icons.keyboard_arrow_left, size: 18),
+                    color: visualProfile.mutedColor,
+                    onPressed: onCollapse,
+                  ),
+                ],
               ],
             ),
           ),

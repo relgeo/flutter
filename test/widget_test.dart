@@ -135,6 +135,12 @@ void main() {
     expect(find.text('DSL EDITOR'), findsOneWidget);
     expect(find.text('VIEWPORT'), findsOneWidget);
     expect(find.text('INSPECTOR'), findsOneWidget);
+    expect(find.byKey(const Key('float-editor-panel')), findsOneWidget);
+    expect(find.byKey(const Key('float-preview-panel')), findsOneWidget);
+    expect(find.byKey(const Key('float-inspector-panel')), findsOneWidget);
+    expect(find.byKey(const Key('collapse-editor-panel')), findsOneWidget);
+    expect(find.byKey(const Key('collapse-preview-panel')), findsOneWidget);
+    expect(find.byKey(const Key('collapse-inspector-panel')), findsOneWidget);
 
     await tester.tap(find.text('Workbench'));
     await tester.pumpAndSettle();
@@ -1113,9 +1119,7 @@ void main() {
       await tester.tap(find.text('BBox'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('View'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Collapse Preview'));
+      await tester.tap(find.byKey(const Key('collapse-preview-panel')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('workbench-panel-preview')), findsNothing);
 

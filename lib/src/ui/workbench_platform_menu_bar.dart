@@ -47,7 +47,7 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
     )) {
       menus.add(
         PlatformMenuItem(
-          label: command.label,
+          label: _labelFor(command),
           shortcut: command.shortcut,
           onSelected: command.enabled ? command.invoke : null,
         ),
@@ -79,7 +79,7 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
     )) {
       menus.add(
         PlatformMenuItem(
-          label: command.label,
+          label: _labelFor(command),
           shortcut: command.shortcut,
           onSelected: command.enabled ? command.invoke : null,
         ),
@@ -109,6 +109,12 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
     if (left.length != right.length) return false;
     return _startsWith(left, right);
   }
+
+  // Flutter's built-in PlatformMenuItem API does not expose a checked-state
+  // property. Prefixing the native label keeps the state visible on macOS,
+  // while the in-window MenuBar uses a true leading check icon.
+  String _labelFor(WorkbenchCommand command) =>
+      command.checked == true ? '\u2713 ${command.label}' : command.label;
 
   bool _startsWith(List<String> value, List<String> prefix) {
     if (value.length < prefix.length) return false;

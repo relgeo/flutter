@@ -830,6 +830,12 @@ objects:
             controller: _editorController.editingController,
             visualProfile: _workbenchProfile,
           ),
+          onCollapse: () =>
+              _layoutController.toggleCollapsed(WorkbenchPanelId.editor),
+          onFloat: () => _layoutController.setPlacement(
+            WorkbenchPanelId.editor,
+            WorkbenchPanelPlacement.floating,
+          ),
         ),
       ),
       parameters: _paramValues.isEmpty
@@ -852,6 +858,13 @@ objects:
                   },
                   visualProfile: _workbenchProfile,
                 ),
+                onCollapse: () => _layoutController.toggleCollapsed(
+                  WorkbenchPanelId.parameters,
+                ),
+                onFloat: () => _layoutController.setPlacement(
+                  WorkbenchPanelId.parameters,
+                  WorkbenchPanelPlacement.floating,
+                ),
               ),
             ),
       viewport: _buildViewportPanel(commandRegistry),
@@ -869,6 +882,12 @@ objects:
             targetUnit: _targetUnit.name,
             visualProfile: _workbenchProfile,
             themeTokens: Theme.of(context).extension<RelGeoThemeExtension>(),
+          ),
+          onCollapse: () =>
+              _layoutController.toggleCollapsed(WorkbenchPanelId.inspector),
+          onFloat: () => _layoutController.setPlacement(
+            WorkbenchPanelId.inspector,
+            WorkbenchPanelPlacement.floating,
           ),
         ),
       ),
@@ -1121,6 +1140,7 @@ objects:
       WorkbenchCommand(
         id: WorkbenchCommandId.toggleEditorPanel,
         menu: 'View',
+        submenuPath: const ['Panels'],
         label: 'Code editor',
         checked: _layoutController.isPanelVisible(WorkbenchPanelId.editor),
         onInvoke: () => _layoutController.togglePanel(WorkbenchPanelId.editor),
@@ -1128,6 +1148,7 @@ objects:
       WorkbenchCommand(
         id: WorkbenchCommandId.togglePreviewPanel,
         menu: 'View',
+        submenuPath: const ['Panels'],
         label: 'Preview',
         checked: _layoutController.isPanelVisible(WorkbenchPanelId.preview),
         onInvoke: () => _layoutController.togglePanel(WorkbenchPanelId.preview),
@@ -1135,6 +1156,7 @@ objects:
       WorkbenchCommand(
         id: WorkbenchCommandId.toggleInspectorPanel,
         menu: 'View',
+        submenuPath: const ['Panels'],
         label: 'Inspector',
         checked: _layoutController.isPanelVisible(WorkbenchPanelId.inspector),
         onInvoke: () =>
@@ -1143,6 +1165,7 @@ objects:
       WorkbenchCommand(
         id: WorkbenchCommandId.toggleParametersPanel,
         menu: 'View',
+        submenuPath: const ['Panels'],
         label: 'Parameters',
         enabled: _paramValues.isNotEmpty,
         checked:
@@ -1154,41 +1177,6 @@ objects:
               ? WorkbenchPanelAvailability.unavailable
               : WorkbenchPanelAvailability.available,
         ),
-      ),
-      WorkbenchCommand(
-        id: WorkbenchCommandId.collapseEditorPanel,
-        menu: 'View',
-        label: 'Collapse Code editor',
-        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.editor),
-        onInvoke: () =>
-            _layoutController.toggleCollapsed(WorkbenchPanelId.editor),
-      ),
-      WorkbenchCommand(
-        id: WorkbenchCommandId.collapsePreviewPanel,
-        menu: 'View',
-        label: 'Collapse Preview',
-        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.preview),
-        onInvoke: () =>
-            _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
-      ),
-      WorkbenchCommand(
-        id: WorkbenchCommandId.collapseInspectorPanel,
-        menu: 'View',
-        label: 'Collapse Inspector',
-        checked: _layoutController.isPanelCollapsed(WorkbenchPanelId.inspector),
-        onInvoke: () =>
-            _layoutController.toggleCollapsed(WorkbenchPanelId.inspector),
-      ),
-      WorkbenchCommand(
-        id: WorkbenchCommandId.collapseParametersPanel,
-        menu: 'View',
-        label: 'Collapse Parameters',
-        enabled: _paramValues.isNotEmpty,
-        checked:
-            _paramValues.isNotEmpty &&
-            _layoutController.isPanelCollapsed(WorkbenchPanelId.parameters),
-        onInvoke: () =>
-            _layoutController.toggleCollapsed(WorkbenchPanelId.parameters),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.resetLayout,
@@ -1213,21 +1201,24 @@ objects:
         ),
       WorkbenchCommand(
         id: WorkbenchCommandId.lightTheme,
-        menu: 'Appearance',
+        menu: 'View',
+        submenuPath: const ['Appearance'],
         label: 'Light',
         onInvoke: () =>
             widget.onThemePreferenceChanged?.call(RelGeoThemePreference.light),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.darkTheme,
-        menu: 'Appearance',
+        menu: 'View',
+        submenuPath: const ['Appearance'],
         label: 'Dark',
         onInvoke: () =>
             widget.onThemePreferenceChanged?.call(RelGeoThemePreference.dark),
       ),
       WorkbenchCommand(
         id: WorkbenchCommandId.followSystemTheme,
-        menu: 'Appearance',
+        menu: 'View',
+        submenuPath: const ['Appearance'],
         label: 'Follow system appearance',
         enabled: widget.onResetThemePreference != null,
         onInvoke: () => widget.onResetThemePreference?.call(),
@@ -1414,6 +1405,12 @@ objects:
       onZoomOut: _zoomOut,
       onFitViewport: _fitViewport,
       onResetViewport: _resetViewport,
+      onCollapse: () =>
+          _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
+      onFloat: () => _layoutController.setPlacement(
+        WorkbenchPanelId.preview,
+        WorkbenchPanelPlacement.floating,
+      ),
     );
   }
 

@@ -139,7 +139,6 @@ class WorkbenchCommandRegistry {
     'File',
     'Edit',
     'View',
-    'Appearance',
     'Document',
     'Workbench',
     'Help',

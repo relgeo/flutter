@@ -8,9 +8,16 @@ import 'workbench_inspector_contract.dart';
 /// Scene and diagnostic snapshots are supplied by the composition root so the
 /// inspector does not reach into editor, document, or viewport state directly.
 class WorkbenchInspectorFeature extends StatelessWidget {
-  const WorkbenchInspectorFeature({super.key, required this.contract});
+  const WorkbenchInspectorFeature({
+    super.key,
+    required this.contract,
+    this.onCollapse,
+    this.onFloat,
+  });
 
   final WorkbenchInspectorContract contract;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +28,8 @@ class WorkbenchInspectorFeature extends StatelessWidget {
       targetUnit: contract.targetUnit,
       visualProfile: contract.visualProfile,
       themeTokens: contract.themeTokens,
+      onCollapse: onCollapse,
+      onFloat: onFloat,
     );
   }
 }

@@ -280,33 +280,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
               controller.focusFloatingPanel(id);
               if (isCollapsed) controller.toggleCollapsed(id);
             },
-            onPanStart: (_) {
-              Focus.of(focusContext).requestFocus();
-              controller.focusFloatingPanel(id);
-            },
-            onPanUpdate: (details) {
-              controller.moveFloatingPanel(
-                id,
-                dx: details.delta.dx,
-                dy: details.delta.dy,
-                canvasWidth: canvasWidth,
-                canvasHeight: canvasHeight,
-              );
-              // Dock as soon as the panel crosses a drop zone. A state update
-              // during a drag can dispose this floating layer, so keeping the
-              // detection in the update path is more reliable than relying
-              // only on a final gesture callback.
-              controller.dockFloatingPanelIfDropped(
-                id,
-                canvasWidth: canvasWidth,
-                canvasHeight: canvasHeight,
-              );
-            },
-            onPanEnd: (_) => controller.dockFloatingPanelIfDropped(
-              id,
-              canvasWidth: canvasWidth,
-              canvasHeight: canvasHeight,
-            ),
             child: Material(
               elevation: state.placement == WorkbenchPanelPlacement.overlay
                   ? 8
@@ -344,6 +317,36 @@ class WorkbenchCompositionShell extends StatelessWidget {
                         ),
                       ),
                     ),
+                  Positioned(
+                    top: 2,
+                    right: 42,
+                    child: _FloatingPanelDragHandle(
+                      panelId: id,
+                      onDragStart: () {
+                        Focus.of(focusContext).requestFocus();
+                        controller.focusFloatingPanel(id);
+                      },
+                      onDrag: (delta) {
+                        controller.moveFloatingPanel(
+                          id,
+                          dx: delta.dx,
+                          dy: delta.dy,
+                          canvasWidth: canvasWidth,
+                          canvasHeight: canvasHeight,
+                        );
+                        controller.dockFloatingPanelIfDropped(
+                          id,
+                          canvasWidth: canvasWidth,
+                          canvasHeight: canvasHeight,
+                        );
+                      },
+                      onDragEnd: () => controller.dockFloatingPanelIfDropped(
+                        id,
+                        canvasWidth: canvasWidth,
+                        canvasHeight: canvasHeight,
+                      ),
+                    ),
+                  ),
                   if (!isCollapsed &&
                       state.placement == WorkbenchPanelPlacement.overlay)
                     Positioned(
@@ -449,6 +452,56 @@ class WorkbenchCompositionShell extends StatelessWidget {
       : width;
 }
 
+class _FloatingPanelDragHandle extends StatelessWidget {
+  const _FloatingPanelDragHandle({
+    required this.panelId,
+    required this.onDragStart,
+    required this.onDrag,
+    required this.onDragEnd,
+  });
+
+  final WorkbenchPanelId panelId;
+  final VoidCallback onDragStart;
+  final ValueChanged<Offset> onDrag;
+  final VoidCallback onDragEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: 'Drag to move ${panelId.name} panel; drop near an edge to dock',
+      child: Semantics(
+        label: 'Move ${panelId.name} panel',
+        hint: 'Drag to reposition or dock this panel',
+        button: true,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.move,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanStart: (_) => onDragStart(),
+            onPanUpdate: (details) => onDrag(details.delta),
+            onPanEnd: (_) => onDragEnd(),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withValues(alpha: 0.72),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                ),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: const SizedBox(
+                width: 34,
+                height: 26,
+                child: Icon(Icons.drag_indicator, size: 16),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FloatingPanelResizeHandle extends StatelessWidget {
   const _FloatingPanelResizeHandle({required this.onDrag});
 
@@ -532,8 +585,14 @@ class _WorkbenchPanelDivider extends StatelessWidget {
             onDecrease: () => onDrag(-16),
             child: SizedBox(
               width: 8,
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.outlineVariant,
+              child: Center(
+                child: SizedBox(
+                  width: 1,
+                  height: double.infinity,
+                  child: ColoredBox(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
               ),
             ),
           ),
@@ -575,8 +634,14 @@ class _WorkbenchHorizontalDivider extends StatelessWidget {
             onDecrease: () => onDrag(-16),
             child: SizedBox(
               height: 8,
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.outlineVariant,
+              child: Center(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 1,
+                  child: ColoredBox(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
               ),
             ),
           ),

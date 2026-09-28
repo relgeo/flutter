@@ -154,6 +154,14 @@ void main() {
       controller.panel(WorkbenchPanelId.parameters).bounds.height,
       greaterThan(220),
     );
+    await tester.drag(
+      find.byKey(const ValueKey('workbench-divider-parameters')),
+      const Offset(0, -60),
+    );
+    expect(
+      controller.panel(WorkbenchPanelId.parameters).bounds.height,
+      lessThan(290),
+    );
     controller.setPanelVisibility(
       WorkbenchPanelId.parameters,
       WorkbenchPanelVisibility.hidden,

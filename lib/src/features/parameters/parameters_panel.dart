@@ -18,6 +18,8 @@ class ParametersPanel extends StatelessWidget {
     required this.onParamChanged,
     required this.onParamReset,
     this.visualProfile = WorkbenchVisualProfile.cad,
+    this.onCollapse,
+    this.onFloat,
   });
 
   final Map<String, double> paramValues;
@@ -26,11 +28,13 @@ class ParametersPanel extends StatelessWidget {
   final void Function(String name, double value) onParamChanged;
   final VoidCallback onParamReset;
   final WorkbenchVisualProfile visualProfile;
+  final VoidCallback? onCollapse;
+  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 120, maxHeight: 220),
+      constraints: const BoxConstraints(minHeight: 120),
       decoration: BoxDecoration(
         color: visualProfile.overlayBackgroundColor,
         border: Border(
@@ -97,6 +101,38 @@ class ParametersPanel extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (onFloat != null) ...[
+                  const SizedBox(width: 6),
+                  IconButton(
+                    key: const Key('float-parameters-panel'),
+                    tooltip: 'Float Parameters',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    color: visualProfile.mutedColor,
+                    onPressed: onFloat,
+                  ),
+                ],
+                if (onCollapse != null) ...[
+                  const SizedBox(width: 6),
+                  IconButton(
+                    key: const Key('collapse-parameters-panel'),
+                    tooltip: 'Collapse Parameters',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                    color: visualProfile.mutedColor,
+                    onPressed: onCollapse,
+                  ),
+                ],
               ],
             ),
           ),
