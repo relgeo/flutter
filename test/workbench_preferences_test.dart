@@ -53,4 +53,14 @@ void main() {
       expect(loaded?.themePreference, isNull);
     },
   );
+
+  test('legacy themed canvas profile ids normalize to CAD', () async {
+    SharedPreferences.setMockInitialValues({
+      'relgeo.workbench.profileId': 'cad-dark',
+    });
+
+    final loaded = await WorkbenchPreferencesStore.load();
+
+    expect(loaded?.workbenchProfileId, 'cad');
+  });
 }

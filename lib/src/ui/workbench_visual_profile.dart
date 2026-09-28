@@ -185,11 +185,28 @@ class WorkbenchVisualProfile {
 
   static const all = [cad, blueprint, paper];
 
-  static WorkbenchVisualProfile byId(String id) {
+  /// Returns a profile id that is safe to pass to a dropdown or renderer.
+  ///
+  /// Older builds briefly encoded canvas appearance and app theme together
+  /// (`cad-dark`, `cad-light`, etc.). Theme is now an independent preference,
+  /// so those persisted ids must collapse back to their canvas profile.
+  static String normalizeId(String? id) {
+    if (id == null || id.isEmpty) return cad.id;
     for (final profile in all) {
-      if (profile.id == id) return profile;
+      if (profile.id == id) return profile.id;
     }
-    return cad;
+    final legacyBase = id.split('-').first;
+    for (final profile in all) {
+      if (profile.id == legacyBase) return profile.id;
+    }
+    return cad.id;
+  }
+
+  static WorkbenchVisualProfile byId(String id) {
+    return all.firstWhere(
+      (profile) => profile.id == normalizeId(id),
+      orElse: () => cad,
+    );
   }
 
   ThemeData materialTheme() {

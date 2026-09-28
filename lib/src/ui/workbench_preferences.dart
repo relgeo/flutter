@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'workbench_visual_profile.dart';
+
 enum RelGeoThemePreference {
   light('light', 'Light'),
   dark('dark', 'Dark');
@@ -125,8 +127,7 @@ class WorkbenchPreferencesStore {
 
       return WorkbenchPreferencesData(
         themePreference: RelGeoThemePreference.fromStorage(themePreference),
-        workbenchProfileId:
-            profileId ?? WorkbenchPreferencesData.defaults.workbenchProfileId,
+        workbenchProfileId: WorkbenchVisualProfile.normalizeId(profileId),
         followProfileOverlay:
             followOverlay ??
             WorkbenchPreferencesData.defaults.followProfileOverlay,
