@@ -341,10 +341,10 @@ ruang lingkup Tahap D.
   motion policy;
 - [x] golden dan widget test mencakup setiap preset utama; tersedia baseline
   golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
-- [~] validasi native window kini mencakup build Xcode macOS arm64/universal;
-  `flutter build macos --debug --no-pub` masih gagal memilih destination arm64
-  pada CLI meskipun Xcode langsung dapat membangun target tersebut. Runtime
-  window macOS serta validasi Ubuntu dan Windows 11 masih tertunda;
+- [~] validasi native window kini mencakup build macOS arm64 melalui Flutter
+  pada terminal VSCode native-arm64 dan build Xcode universal melalui direct
+  `xcodebuild`. Runtime window macOS serta validasi Ubuntu dan Windows 11 masih
+  tertunda;
 
 ## 8. Acceptance criteria
 
@@ -374,8 +374,9 @@ ruang lingkup Tahap D.
   nyata belum; keyboard resize splitter dan aktivasi rail collapsed serta
   keyboard resize docked/floating sudah diuji/tersedia;
 - [~] analyzer, test, golden, dan web build tetap lulus; build native macOS
-  arm64/universal lulus melalui Xcode langsung. Runtime window macOS, target
-  arm64 melalui Flutter CLI, serta validasi Ubuntu/Windows 11 masih tertunda;
+  arm64 melalui Flutter pada terminal VSCode native-arm64 dan build universal
+  melalui Xcode langsung juga lulus. Runtime window macOS serta validasi
+  Ubuntu/Windows 11 masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
   shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
@@ -452,8 +453,11 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap G — Child keyboard activation boundary | Reset parameter dan header object Inspector kini memakai `WorkbenchKeyboardActivatable` selain semantics action eksplisit. Enter/Space dan focus feedback mengikuti primitive workbench yang sama dengan overlay/autocomplete; validasi traversal end-to-end dan assistive technology nyata masih tertunda. |
 | 2026-09-28 | Tahap G — Child keyboard activation quality gate | Setelah keyboard activation boundary diperluas, targeted tests dan full suite 230 test lulus, analyzer bersih, serta `flutter build web --no-pub` berhasil. Validasi native runtime lintas platform tetap tertunda. |
 | 2026-09-27 | Tahap G parsial — Native macOS build evidence | Build native macOS berhasil melalui `xcodebuild` pada target `x86_64` dan menghasilkan aplikasi Runner. `flutter build macos --debug --no-pub` belum dapat dipakai pada mesin ini karena Flutter meminta target `macOS arm64` yang tidak terdaftar di Xcode; runtime window, arm64, Ubuntu, dan Windows 11 tetap menunggu validasi platform masing-masing. |
-| 2026-09-28 | Tahap G — Native macOS retry evidence | `flutter build macos --debug --no-pub` dicoba ulang setelah gate web/semantics. Hasil tetap terblokir sebelum kompilasi karena destination `{ platform:macOS, arch:arm64 }` tidak tersedia; Xcode hanya melaporkan `My Mac` `x86_64` dan `Any Mac`. Tidak ada indikasi regresi kode dari percobaan ini. |
-| 2026-09-28 | Tahap G — Native macOS arm64 Xcode build | Build langsung `xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Debug -sdk macosx -destination 'platform=macOS,arch=arm64' ONLY_ACTIVE_ARCH=NO build` berhasil. Binary `RelGeo.app` terverifikasi Mach-O universal dengan arsitektur `x86_64 arm64`; kegagalan yang tersisa khusus pada destination resolution Flutter CLI, bukan kompilasi native aplikasi. |
+| 2026-09-28 | Tahap G — Native macOS retry evidence (superseded) | Percobaan dari shell yang berjalan dalam konteks Rosetta menghasilkan daftar destination yang hanya menampilkan `x86_64`; evidence ini tidak merepresentasikan terminal VSCode native-arm64 dan tidak lagi menjadi blocker proyek. |
+| 2026-09-28 | Tahap G — Native macOS arm64 Xcode build | Build langsung `xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Debug -sdk macosx -destination 'platform=macOS,arch=arm64' ONLY_ACTIVE_ARCH=NO build` berhasil. Binary `RelGeo.app` terverifikasi Mach-O universal dengan arsitektur `x86_64 arm64`. |
+| 2026-09-28 | Tahap G — Native macOS Flutter arm64 build | Melalui terminal VSCode pada workspace Flutter, `pwd` benar di `/Users/agusmade/projects/relgeo-workspace/flutter`, `uname -m` menghasilkan `arm64`, dan `flutter build macos --debug --no-pub` berhasil menghasilkan `build/macos/Build/Products/Debug/RelGeo.app`. Binary hasil Flutter terverifikasi `Mach-O 64-bit executable arm64`. Runtime window macOS dan validasi Ubuntu/Windows 11 tetap tertunda. |
+| 2026-09-28 | Tahap G — VSCode native-arm64 quality gate | Dari terminal VSCode yang sama, `flutter analyze` selesai tanpa issue dan `flutter test --reporter compact` selesai dengan `+230: All tests passed!`. |
+| 2026-09-28 | Tahap G — macOS launch smoke test | Binary hasil Flutter dibuka melalui terminal VSCode; setelah persetujuan Gatekeeper lokal, `ps -ax` menunjukkan proses `RelGeo` aktif dari `build/macos/Build/Products/Debug/RelGeo.app`. Ini menutup launch smoke test, bukan validasi interaksi runtime penuh. |
 | 2026-09-27 | Tahap G — Local quality gate refresh | Setelah wiring file picker dan hierarchical export, `flutter analyze` lulus tanpa issue, seluruh 213 test lulus, dan `flutter build web --no-pub` berhasil. Hasil ini menutup gate kode/web pada checkpoint ini; tidak menggantikan validasi runtime native lintas platform. |
 | 2026-09-27 | Tahap G — Dock focus restoration | Controller kini mengeluarkan focus request satu kali ketika floating/overlay panel berhasil masuk ke zona dock. Panel docked mengonsumsi request tersebut setelah benar-benar menerima focus; regression test memastikan focus tidak hilang setelah docking. Full suite setelah perubahan: 208 test lulus. |
 | 2026-09-27 | Tahap G parsial — Panel keyboard traversal | Panel docked dibungkus focus boundary yang ikut traversal keyboard; regression test memverifikasi urutan Editor → Preview → Inspector melalui `Tab`. Traversal child control dan keyboard resize/collapse langsung masih menjadi pekerjaan berikutnya. |
