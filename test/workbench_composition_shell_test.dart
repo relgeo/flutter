@@ -214,6 +214,44 @@ void main() {
     expect(find.text('parameters'), findsNothing);
   });
 
+  testWidgets('parameters in the dock tree are rendered only once', (
+    tester,
+  ) async {
+    final controller = WorkbenchLayoutController();
+    final layout = controller.layout;
+    controller.restore(
+      layout,
+      dockedRoot: DockSplitNode(
+        axis: DockAxis.horizontal,
+        children: const [
+          DockPanelNode(WorkbenchPanelId.editor),
+          DockPanelNode(WorkbenchPanelId.parameters),
+        ],
+        ratios: const [0.7, 0.3],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const Text('inspector'),
+          parameters: const Text('parameters'),
+        ),
+      ),
+    );
+
+    expect(controller.dockedRoot, isNotNull);
+    expect(find.text('parameters'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('workbench-divider-parameters')),
+      findsNothing,
+    );
+  });
+
   testWidgets('floating placement renders above the docked panel layer', (
     tester,
   ) async {
@@ -353,6 +391,10 @@ void main() {
   testWidgets('floating drag exposes a visible dock drop preview', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(2400, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     final standard = WorkbenchLayoutModel.standard();
     final controller = WorkbenchLayoutController(
       initialLayout: standard.copyWith(
@@ -387,6 +429,7 @@ void main() {
 
     final handle = find.bySemanticsLabel('Move inspector panel');
     final gesture = await tester.startGesture(tester.getCenter(handle));
+    await gesture.moveBy(const Offset(-30, 0));
     await gesture.moveBy(const Offset(-30, 0));
     await tester.pump();
 

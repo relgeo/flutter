@@ -1,7 +1,11 @@
 import 'workbench_layout_model.dart';
+import 'docking/dock_layout_adapter.dart';
+import 'docking/dock_node.dart';
 
-/// Built-in workbench arrangements. Profiles contain layout only; they never
-/// contain document source, parameter values, or compile results.
+/// Built-in workbench arrangements. A profile keeps its compatibility layout
+/// and exposes a deterministic dock-tree projection for the recursive shell.
+/// Profiles never contain document source, parameter values, or compile
+/// results.
 class WorkbenchLayoutProfile {
   const WorkbenchLayoutProfile({
     required this.id,
@@ -12,6 +16,13 @@ class WorkbenchLayoutProfile {
   final String id;
   final String label;
   final WorkbenchLayoutModel layout;
+
+  /// Canonical dock-tree baseline derived from this profile's layout.
+  ///
+  /// This remains a projection until tree profiles have equivalent compact
+  /// layout constraints; deriving it on demand prevents two profile sources
+  /// of truth from drifting during the migration.
+  DockNode? get dockedRoot => DockLayoutAdapter.fromPlacementLayout(layout);
 }
 
 class WorkbenchLayoutProfiles {

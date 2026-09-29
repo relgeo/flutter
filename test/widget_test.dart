@@ -628,21 +628,16 @@ void main() {
 
     await tester.tap(find.byKey(const Key('theme-mode-selector')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('theme-mode-option-dark')).last);
-    await tester.pumpAndSettle();
-
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
-      ThemeMode.dark,
+      ThemeMode.light,
     );
 
     await tester.tap(find.byKey(const Key('theme-mode-selector')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('theme-mode-option-light')).last);
-    await tester.pumpAndSettle();
     expect(
-      Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
-      Brightness.light,
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
     );
 
     await tester.tap(find.byKey(const Key('theme-mode-reset')));
@@ -650,6 +645,10 @@ void main() {
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
       ThemeMode.system,
+    );
+    expect(
+      Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
+      Brightness.dark,
     );
   });
 
@@ -669,7 +668,7 @@ void main() {
     );
     expect(node.label, contains('Theme mode'));
     expect(node.value, contains('System'));
-    expect(node.hint, contains('Choose Light or Dark'));
+    expect(node.hint, contains('Toggle between Light and Dark'));
     semanticsHandle.dispose();
   });
 
@@ -886,7 +885,10 @@ void main() {
     );
     expect(find.textContaining('297.0, 210.0'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('sheet-selector')));
+    final surfaceSelector = find.byKey(const Key('sheet-selector'));
+    await tester.ensureVisible(surfaceSelector);
+    await tester.pumpAndSettle();
+    await tester.tap(surfaceSelector);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('sheet-option-sheet_a3')).last);
     await tester.pumpAndSettle();
@@ -913,7 +915,10 @@ void main() {
       expect(_scenePainter(tester).sheetId, 'sheet_a4');
       expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('sheet-selector')));
+      final surfaceSelector = find.byKey(const Key('sheet-selector'));
+      await tester.ensureVisible(surfaceSelector);
+      await tester.pumpAndSettle();
+      await tester.tap(surfaceSelector);
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('sheet-option-model-preview')).last,

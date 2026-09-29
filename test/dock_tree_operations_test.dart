@@ -86,6 +86,38 @@ void main() {
     },
   );
 
+  test('repeated moves retain each panel exactly once', () {
+    final initial = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+        DockPanelNode(WorkbenchPanelId.inspector),
+      ],
+      ratios: const [0.34, 0.33, 0.33],
+    );
+
+    final moved = DockTreeOperations.move(
+      root: initial,
+      panel: WorkbenchPanelId.preview,
+      target: WorkbenchPanelId.inspector,
+      zone: DockZone.bottom,
+    );
+    final movedAgain = DockTreeOperations.move(
+      root: moved,
+      panel: WorkbenchPanelId.preview,
+      target: WorkbenchPanelId.editor,
+      zone: DockZone.right,
+    );
+
+    expect(DockTreeOperations.isValid(movedAgain), isTrue);
+    expect((movedAgain as DockSplitNode).panels, {
+      WorkbenchPanelId.editor,
+      WorkbenchPanelId.preview,
+      WorkbenchPanelId.inspector,
+    });
+  });
+
   test('duplicate and missing targets are rejected without a partial tree', () {
     const root = DockPanelNode(WorkbenchPanelId.editor);
 

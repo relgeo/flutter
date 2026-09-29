@@ -312,22 +312,25 @@ dan migrator dipisahkan. Detail tree tidak ditanam di `CADWorkbenchPage`.
 
 ### Tahap 2 — Renderer dan splitter tree
 
-- [~] render PanelNode melalui builder sebagai panel mandiri; header/title tetap
-  menjadi tanggung jawab surface panel saat integrasi;
+- [x] render PanelNode melalui builder sebagai panel mandiri; header/title tetap
+  menjadi tanggung jawab surface panel;
 - [x] render SplitNode sebagai Row/Column sesuai axis;
 - [x] gunakan splitter visual 1px dengan hit area terpisah;
-- [x] terapkan min/max constraint dan arah resize konsisten; pure tree resize
-  sudah meng-clamp minimum dan terhubung ke `WorkbenchLayoutController`;
+- [~] terapkan min/max constraint dan arah resize konsisten; pure tree resize
+  meng-clamp minimum default dan terhubung ke controller, sedangkan constraint
+  berbasis ukuran minimum setiap feature saat divider digeser masih perlu
+  diselesaikan;
 - [ ] tambahkan golden untuk tree standard, nested, dan compact.
 
-Renderer tree awal sudah tersedia di
-`lib/src/ui/docking/dock_layout_renderer.dart`. Ia sengaja belum menggantikan
-shell lama: tree dapat dirender secara rekursif, split horizontal menjadi Row,
-split vertical menjadi Column, rasio menjadi flex, divider visual berukuran
-1 px memiliki hit-area 9 px terpisah, dan callback resize membawa path split
-serta index divider. `DockLayoutAdapter` memproyeksikan placement model lama ke
-tree untuk masa transisi. Integrasi ke controller/shell produksi, header panel,
-golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
+Renderer tree sudah tersedia di `lib/src/ui/docking/dock_layout_renderer.dart`
+dan aktif untuk tree hasil drop yang valid. Split horizontal menjadi Row, split
+vertical menjadi Column, rasio menjadi flex, divider visual berukuran 1 px
+memiliki hit-area 9 px terpisah, dan callback resize membawa path split serta
+index divider. `DockLayoutAdapter` memproyeksikan placement model lama selama
+transisi; profile bawaan kini juga mengekspos proyeksi tree deterministik,
+tetapi tetap memakai renderer compatibility sampai constraint compact tree
+setara. Golden tree standard/nested/compact dan clamp divider berdasar ukuran
+minimum feature masih tertunda.
 
 ### Tahap 3 — Drop target dan preview
 
@@ -337,12 +340,15 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [x] commit transformasi hanya saat drag end;
 - [x] dukung cancel dan outside drop tanpa mutasi;
 - [x] dukung Escape untuk membatalkan drag floating dan mengembalikan posisi/z-order;
-- [ ] uji pointer, touch, dan keyboard Escape.
+- [~] widget test pointer sintetis memverifikasi preview terlihat pada zona
+  split yang memenuhi minimum-size; test touch, Escape, dan pointer native
+  manual masih terbuka.
 
 ### Tahap 4 — Integrasi panel RelGeo
 
 - [x] migrasikan Editor, Preview, Inspector, dan Parameters ke tree;
-- [x] pertahankan Parameters sebagai panel mandiri bersyarat;
+- [x] pertahankan Parameters sebagai panel mandiri bersyarat dan uji agar
+  rendering tree tidak menggandakan slot bawah;
 - [x] pertahankan View → Panels dan checkmark;
 - [x] pertahankan collapse, float, overlay, dan focus restoration;
 - [x] tambahkan compatibility projection untuk API lama.
@@ -357,8 +363,10 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 
 ### Tahap 6 — Profiles, persistence, dan migration
 
-- [ ] ubah built-in profiles menjadi tree baseline; compatibility renderer
-  masih menjadi baseline untuk profile/reset agar compact layout tetap aman;
+- [~] built-in profiles kini mengekspos tree baseline deterministik yang
+  diturunkan dari compatibility layout dan diuji untuk setiap preset. Shell
+  profile/reset tetap memakai compatibility renderer sampai constraint
+  minimum-size dan compact layout tree setara;
 - [x] migrasikan schema layout lama ke schema tree baru;
 - [x] simpan tree, floating state, z-order, dan collapsed state dengan debounce;
 - [x] fallback corruption/unknown version ke Standard;
@@ -384,7 +392,8 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [ ] Parameters tidak tampil jika dokumen tidak memiliki parameter;
 - [x] layout tree dapat dipersist dan direstore setelah restart;
 - [x] schema lama dapat dimigrasikan atau fallback dengan aman;
-- [ ] preset menghasilkan tree deterministik;
+- [x] setiap preset menghasilkan tree deterministik, valid, dan tidak
+  menggandakan panel;
 - [ ] command/context menu sinkron dengan state tree;
 - [ ] pure model, widget, golden, dan native smoke test tersedia;
 - [ ] tidak ada regression terhadap editor, preview, inspector, export SVG,
@@ -435,3 +444,7 @@ native smoke test.
 | 2026-09-29 | Tahap 5 — Cancel drag dengan Escape | Drag handle floating kini memiliki focus target sendiri. Escape selama drag mengembalikan bounds dan z-order sebelum sesi dimulai; outside/cancel gesture memakai jalur rollback yang sama. Regression controller dan shell lulus. |
 | 2026-09-29 | Tahap 3 — Minimum-size validation | Drop preview menghitung ukuran minimum hasil split dari source dan target; preview tetap terlihat sebagai invalid tetapi tidak dapat di-commit. Profile/reset tetap memakai compatibility renderer sampai compact tree rendering memiliki constraint yang setara. |
 | 2026-09-29 | Quality gate full/native | Full Flutter suite lulus (256 test), `flutter build web --no-pub` berhasil, dan `flutter build macos --no-pub` berhasil sebagai universal `x86_64 + arm64`. Native manual interaction smoke, golden tree khusus, serta validasi Ubuntu/Windows masih terbuka. |
+| 2026-09-29 | Tahap 6 parsial — Deterministic profile tree baseline | `WorkbenchLayoutProfile` kini mengekspos `dockedRoot` deterministik hasil proyeksi layout profil; test memverifikasi semua preset menghasilkan tree valid, panel unik, dan baseline yang stabil. Renderer profile belum diaktifkan agar compatibility/compact layout tidak berubah sebelum constraint minimum-size tree setara. |
+| 2026-09-29 | Tahap 2/4 — Restore invariant regressions | Test controller memastikan restore mengabaikan tree dengan duplicate panel dan menolak panel yang juga berstatus floating. Perlindungan restore ini kemudian dilengkapi test repeated move, leaf terakhir, dan render-once Parameters pada entri berikutnya. |
+| 2026-09-29 | Tahap 2/4/5 — Tree dan panel invariant regressions | Menambah tes repeated move tanpa duplicate, membuang dock tree saat leaf terakhir di-float, serta memastikan Parameters hanya dirender sekali ketika berada di tree. Widget test drag-preview kini mengirim event gerak setelah pan dikenali dan memakai ukuran canvas yang memenuhi minimum split; tes terarah lulus. Pointer/touch/keyboard native dan round-trip native masih tertunda. |
+| 2026-09-29 | Quality gate refresh | Full Flutter suite lulus (279 test), analyzer bersih, dan golden shell serta lima profile layout diperbarui setelah verifikasi perubahan Preview full-height. Release build macOS yang dicoba bersamaan tidak menghasilkan progres dan dihentikan; Debug run macOS pengguna tetap berhasil. Golden khusus untuk tree nested/compact, validasi constraint divider per feature, pointer/touch/keyboard native, serta validasi Linux/Windows masih terbuka. |

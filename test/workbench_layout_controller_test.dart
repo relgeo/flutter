@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:relgeo_flutter/src/ui/docking/dock_node.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_profiles.dart';
@@ -108,6 +109,75 @@ void main() {
 
     expect(controller.layout.activeProfileId, 'standard');
     expect(controller.dockedRoot, isNull);
+  });
+
+  test('restore rejects duplicate panel leaves instead of rendering twice', () {
+    final layout = WorkbenchLayoutModel.standard();
+    final duplicate = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.editor),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+
+    controller.restore(layout, dockedRoot: duplicate);
+
+    expect(controller.dockedRoot, isNull);
+    expect(
+      controller.panel(WorkbenchPanelId.editor),
+      layout.panels[WorkbenchPanelId.editor],
+    );
+  });
+
+  test('restore keeps floating panels out of the dock tree', () {
+    final standard = WorkbenchLayoutModel.standard();
+    final layout = standard.copyWith(
+      panels: {
+        ...standard.panels,
+        WorkbenchPanelId.editor: standard.panels[WorkbenchPanelId.editor]!
+            .copyWith(placement: WorkbenchPanelPlacement.floating),
+      },
+    );
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: standard);
+
+    controller.restore(layout, dockedRoot: root);
+
+    expect(controller.dockedRoot, isNull);
+    expect(
+      controller.panel(WorkbenchPanelId.editor).placement,
+      WorkbenchPanelPlacement.floating,
+    );
+  });
+
+  test('floating the last dock-tree panel clears the tree', () {
+    final layout = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(
+      layout,
+      dockedRoot: const DockPanelNode(WorkbenchPanelId.editor),
+    );
+
+    controller.setPlacement(
+      WorkbenchPanelId.editor,
+      WorkbenchPanelPlacement.floating,
+    );
+
+    expect(controller.dockedRoot, isNull);
+    expect(
+      controller.panel(WorkbenchPanelId.editor).placement,
+      WorkbenchPanelPlacement.floating,
+    );
   });
 
   test('parameters can be resized within vertical bounds', () {
