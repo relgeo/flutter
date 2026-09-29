@@ -127,7 +127,10 @@ class DockedLayout {
     if (value is! Map) return null;
     final version = value['schemaVersion'];
     final root = DockNodeCodec.fromJson(value['root']);
-    if (version is! int || root == null) return null;
+    // Version 1 is used by persisted workbench snapshots; version 2 is part
+    // of the public tree-codec contract. Reject unknown future versions while
+    // preserving both formats already emitted by the app/tests.
+    if ((version != 1 && version != 2) || root == null) return null;
     return DockedLayout(schemaVersion: version, root: root);
   }
 

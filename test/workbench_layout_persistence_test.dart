@@ -122,4 +122,19 @@ void main() {
     expect(restored?.dockedRoot, isNull);
     reader.dispose();
   });
+
+  test('unknown dock-tree versions preserve the layout and drop the tree', () {
+    final layout = WorkbenchLayoutModel.standard(profileId: 'custom');
+    final snapshot = WorkbenchLayoutSnapshot.fromJson({
+      'schemaVersion': 2,
+      'layout': layout.toJson(),
+      'dockedLayout': {
+        'schemaVersion': 999,
+        'root': const DockPanelNode(WorkbenchPanelId.editor).toJson(),
+      },
+    });
+
+    expect(snapshot.layout, layout);
+    expect(snapshot.dockedRoot, isNull);
+  });
 }
