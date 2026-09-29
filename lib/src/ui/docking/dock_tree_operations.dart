@@ -81,14 +81,28 @@ class DockTreeOperations {
     required double deltaPixels,
     required double availablePixels,
     double minimumPixels = 120,
+    double? minimumFirstPixels,
+    double? minimumSecondPixels,
+    double maximumFirstPixels = double.infinity,
+    double maximumSecondPixels = double.infinity,
   }) {
     if (!deltaPixels.isFinite ||
         !availablePixels.isFinite ||
         availablePixels <= 0 ||
         !minimumPixels.isFinite ||
-        minimumPixels < 0) {
+        minimumPixels < 0 ||
+        (minimumFirstPixels != null &&
+            (!minimumFirstPixels.isFinite || minimumFirstPixels < 0)) ||
+        (minimumSecondPixels != null &&
+            (!minimumSecondPixels.isFinite || minimumSecondPixels < 0)) ||
+        maximumFirstPixels.isNaN ||
+        maximumFirstPixels < 0 ||
+        maximumSecondPixels.isNaN ||
+        maximumSecondPixels < 0) {
       throw ArgumentError('Resize dimensions must be finite and valid');
     }
+    final minimumFirst = minimumFirstPixels ?? minimumPixels;
+    final minimumSecond = minimumSecondPixels ?? minimumPixels;
     final result = _resizeAt(
       root,
       splitPath,
@@ -96,12 +110,87 @@ class DockTreeOperations {
       dividerIndex: dividerIndex,
       deltaPixels: deltaPixels,
       availablePixels: availablePixels,
-      minimumPixels: minimumPixels,
+      minimumFirstPixels: minimumFirst,
+      minimumSecondPixels: minimumSecond,
+      maximumFirstPixels: maximumFirstPixels,
+      maximumSecondPixels: maximumSecondPixels,
     );
     if (result == null) {
       throw StateError('Dock split or divider was not found');
     }
     return normalize(result);
+  }
+
+  /// Minimum extent a subtree needs along [axis], including its one-pixel
+  /// dividers. Orthogonal splits share the maximum child requirement; splits
+  /// in the requested axis add child requirements together.
+  static double minimumExtent(
+    DockNode node,
+    DockAxis axis, {
+    required double Function(WorkbenchPanelId panel, DockAxis axis)
+    panelMinimumExtent,
+    double dividerThickness = 1,
+  }) {
+    if (node is DockPanelNode) {
+      return panelMinimumExtent(node.panelId, axis);
+    }
+    if (node is! DockSplitNode || node.children.isEmpty) return 0;
+    final extents = [
+      for (final child in node.children)
+        minimumExtent(
+          child,
+          axis,
+          panelMinimumExtent: panelMinimumExtent,
+          dividerThickness: dividerThickness,
+        ),
+    ];
+    if (node.axis != axis) {
+      return extents.reduce((a, b) => a > b ? a : b);
+    }
+    return extents.fold<double>(0, (sum, value) => sum + value) +
+        (node.children.length - 1) * dividerThickness;
+  }
+
+  /// Maximum extent a subtree can occupy along [axis], or infinity when its
+  /// panel bounds do not define an upper limit. Orthogonal branches must all
+  /// fit within the same dimension, so their tightest upper bound wins.
+  static double maximumExtent(
+    DockNode node,
+    DockAxis axis, {
+    required double Function(WorkbenchPanelId panel, DockAxis axis)
+    panelMaximumExtent,
+  }) {
+    if (node is DockPanelNode) {
+      return panelMaximumExtent(node.panelId, axis);
+    }
+    if (node is! DockSplitNode || node.children.isEmpty) {
+      return double.infinity;
+    }
+    final extents = [
+      for (final child in node.children)
+        maximumExtent(child, axis, panelMaximumExtent: panelMaximumExtent),
+    ];
+    if (node.axis != axis) {
+      return extents.reduce((a, b) => a < b ? a : b);
+    }
+    if (extents.any((extent) => !extent.isFinite)) return double.infinity;
+    return extents.fold<double>(0, (sum, value) => sum + value) +
+        node.children.length -
+        1;
+  }
+
+  /// Returns the split at a child-index path, or null for a stale path.
+  static DockSplitNode? splitAt(DockNode root, List<int> path) {
+    var node = root;
+    for (final index in path) {
+      if (node is! DockSplitNode ||
+          index < 0 ||
+          index >= node.children.length) {
+        return null;
+      }
+      node = node.children[index];
+    }
+    return node is DockSplitNode ? node : null;
   }
 
   static DockNode normalize(DockNode node) {
@@ -263,7 +352,10 @@ class DockTreeOperations {
     required int dividerIndex,
     required double deltaPixels,
     required double availablePixels,
-    required double minimumPixels,
+    required double minimumFirstPixels,
+    required double minimumSecondPixels,
+    required double maximumFirstPixels,
+    required double maximumSecondPixels,
   }) {
     if (node is! DockSplitNode) return null;
     if (pathIndex < path.length) {
@@ -276,7 +368,10 @@ class DockTreeOperations {
         dividerIndex: dividerIndex,
         deltaPixels: deltaPixels,
         availablePixels: availablePixels,
-        minimumPixels: minimumPixels,
+        minimumFirstPixels: minimumFirstPixels,
+        minimumSecondPixels: minimumSecondPixels,
+        maximumFirstPixels: maximumFirstPixels,
+        maximumSecondPixels: maximumSecondPixels,
       );
       if (replacement == null) return null;
       final children = [...node.children]..[childIndex] = replacement;
@@ -294,10 +389,23 @@ class DockTreeOperations {
     final left = ratios[dividerIndex];
     final right = ratios[dividerIndex + 1];
     final pair = left + right;
-    final minimumRatio = (minimumPixels / availablePixels).clamp(0.0, pair / 2);
+    final pairExtent = pair * availablePixels;
+    final lowerFirstPixels =
+        minimumFirstPixels > pairExtent - maximumSecondPixels
+        ? minimumFirstPixels
+        : pairExtent - maximumSecondPixels;
+    final upperFirstPixels =
+        maximumFirstPixels < pairExtent - minimumSecondPixels
+        ? maximumFirstPixels
+        : pairExtent - minimumSecondPixels;
+    if (lowerFirstPixels > upperFirstPixels) {
+      return node;
+    }
+    final minimumFirstRatio = lowerFirstPixels / availablePixels;
+    final maximumFirstRatio = upperFirstPixels / availablePixels;
     final nextLeft = (left + deltaPixels / availablePixels).clamp(
-      minimumRatio,
-      pair - minimumRatio,
+      minimumFirstRatio,
+      maximumFirstRatio,
     );
     final nextRatios = [...ratios];
     nextRatios[dividerIndex] = nextLeft;

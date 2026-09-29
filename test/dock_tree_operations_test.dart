@@ -221,4 +221,119 @@ void main() {
     expect(nested.ratios.last, closeTo(0.2, 0.0001));
     expect(DockTreeOperations.isValid(resized), isTrue);
   });
+
+  test('resize clamps each adjacent subtree to its own minimum extent', () {
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+
+    final resized =
+        DockTreeOperations.resize(
+              root: root,
+              splitPath: const [],
+              dividerIndex: 0,
+              deltaPixels: -1000,
+              availablePixels: 800,
+              minimumFirstPixels: 280,
+              minimumSecondPixels: 360,
+            )
+            as DockSplitNode;
+
+    expect(resized.ratios.first, closeTo(0.35, 0.0001));
+    expect(resized.ratios.last, closeTo(0.65, 0.0001));
+  });
+
+  test('resize honors each adjacent subtree maximum extent', () {
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+
+    final resized =
+        DockTreeOperations.resize(
+              root: root,
+              splitPath: const [],
+              dividerIndex: 0,
+              deltaPixels: 1000,
+              availablePixels: 800,
+              minimumFirstPixels: 120,
+              minimumSecondPixels: 120,
+              maximumFirstPixels: 240,
+              maximumSecondPixels: 600,
+            )
+            as DockSplitNode;
+
+    expect(resized.ratios.first, closeTo(0.3, 0.0001));
+    expect(resized.ratios.last, closeTo(0.7, 0.0001));
+  });
+
+  test('minimum extent composes nested splits by their orientation', () {
+    final nested = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: [
+        const DockPanelNode(WorkbenchPanelId.editor),
+        DockSplitNode(
+          axis: DockAxis.vertical,
+          children: const [
+            DockPanelNode(WorkbenchPanelId.preview),
+            DockPanelNode(WorkbenchPanelId.inspector),
+          ],
+          ratios: const [0.5, 0.5],
+        ),
+      ],
+      ratios: const [0.4, 0.6],
+    );
+    double minimum(WorkbenchPanelId panel, DockAxis axis) => switch (axis) {
+      DockAxis.horizontal => switch (panel) {
+        WorkbenchPanelId.editor => 280,
+        WorkbenchPanelId.preview => 360,
+        WorkbenchPanelId.inspector => 240,
+        WorkbenchPanelId.parameters => 120,
+      },
+      DockAxis.vertical => 120,
+    };
+
+    expect(
+      DockTreeOperations.minimumExtent(
+        nested,
+        DockAxis.horizontal,
+        panelMinimumExtent: minimum,
+      ),
+      641,
+    );
+    expect(
+      DockTreeOperations.minimumExtent(
+        nested,
+        DockAxis.vertical,
+        panelMinimumExtent: minimum,
+      ),
+      241,
+    );
+    double maximum(WorkbenchPanelId panel, DockAxis axis) =>
+        axis == DockAxis.horizontal
+        ? switch (panel) {
+            WorkbenchPanelId.editor => 400,
+            WorkbenchPanelId.preview => 700,
+            WorkbenchPanelId.inspector => 500,
+            WorkbenchPanelId.parameters => 300,
+          }
+        : double.infinity;
+    expect(
+      DockTreeOperations.maximumExtent(
+        nested,
+        DockAxis.horizontal,
+        panelMaximumExtent: maximum,
+      ),
+      901,
+    );
+  });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:relgeo_flutter/src/ui/docking/dock_layout_renderer.dart';
 import 'package:relgeo_flutter/src/ui/docking/dock_node.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
@@ -177,6 +178,71 @@ void main() {
     expect(
       controller.panel(WorkbenchPanelId.editor).placement,
       WorkbenchPanelPlacement.floating,
+    );
+  });
+
+  test('dock divider resize uses feature-specific minimum widths', () {
+    final layout = WorkbenchLayoutModel.standard();
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(layout, dockedRoot: root);
+
+    controller.resizeDockDivider(
+      const DockDividerLocation(
+        splitPath: [],
+        axis: DockAxis.horizontal,
+        dividerIndex: 0,
+      ),
+      -1000,
+      800,
+    );
+
+    expect(
+      (controller.dockedRoot! as DockSplitNode).ratios.first,
+      closeTo(0.35, 0.0001),
+    );
+  });
+
+  test('dock divider resize respects feature-specific maximum widths', () {
+    final standard = WorkbenchLayoutModel.standard();
+    final layout = standard.copyWith(
+      panels: {
+        ...standard.panels,
+        WorkbenchPanelId.editor: standard.panels[WorkbenchPanelId.editor]!
+            .copyWith(bounds: const WorkbenchPanelBounds(maxWidth: 400)),
+      },
+    );
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(layout, dockedRoot: root);
+
+    controller.resizeDockDivider(
+      const DockDividerLocation(
+        splitPath: [],
+        axis: DockAxis.horizontal,
+        dividerIndex: 0,
+      ),
+      1000,
+      800,
+    );
+
+    expect(
+      (controller.dockedRoot! as DockSplitNode).ratios.first,
+      closeTo(0.5, 0.0001),
     );
   });
 

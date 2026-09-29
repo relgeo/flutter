@@ -316,10 +316,11 @@ dan migrator dipisahkan. Detail tree tidak ditanam di `CADWorkbenchPage`.
   menjadi tanggung jawab surface panel;
 - [x] render SplitNode sebagai Row/Column sesuai axis;
 - [x] gunakan splitter visual 1px dengan hit area terpisah;
-- [~] terapkan min/max constraint dan arah resize konsisten; pure tree resize
-  meng-clamp minimum default dan terhubung ke controller, sedangkan constraint
-  berbasis ukuran minimum setiap feature saat divider digeser masih perlu
-  diselesaikan;
+- [~] terapkan min/max constraint dan arah resize konsisten; min/max per
+  feature kini dihitung pada dua subtree divider, termasuk komposisi nested
+  split. Jika ukuran canvas tidak dapat memenuhi rentang kedua sisi, resize
+  tetap mempertahankan rasio; golden tree dan verifikasi visual compact masih
+  terbuka;
 - [ ] tambahkan golden untuk tree standard, nested, dan compact.
 
 Renderer tree sudah tersedia di `lib/src/ui/docking/dock_layout_renderer.dart`
@@ -329,8 +330,8 @@ memiliki hit-area 9 px terpisah, dan callback resize membawa path split serta
 index divider. `DockLayoutAdapter` memproyeksikan placement model lama selama
 transisi; profile bawaan kini juga mengekspos proyeksi tree deterministik,
 tetapi tetap memakai renderer compatibility sampai constraint compact tree
-setara. Golden tree standard/nested/compact dan clamp divider berdasar ukuran
-minimum feature masih tertunda.
+setara. Golden tree standard/nested/compact dan validasi visual splitter pada
+layout compact masih tertunda.
 
 ### Tahap 3 — Drop target dan preview
 
@@ -448,3 +449,5 @@ native smoke test.
 | 2026-09-29 | Tahap 2/4 — Restore invariant regressions | Test controller memastikan restore mengabaikan tree dengan duplicate panel dan menolak panel yang juga berstatus floating. Perlindungan restore ini kemudian dilengkapi test repeated move, leaf terakhir, dan render-once Parameters pada entri berikutnya. |
 | 2026-09-29 | Tahap 2/4/5 — Tree dan panel invariant regressions | Menambah tes repeated move tanpa duplicate, membuang dock tree saat leaf terakhir di-float, serta memastikan Parameters hanya dirender sekali ketika berada di tree. Widget test drag-preview kini mengirim event gerak setelah pan dikenali dan memakai ukuran canvas yang memenuhi minimum split; tes terarah lulus. Pointer/touch/keyboard native dan round-trip native masih tertunda. |
 | 2026-09-29 | Quality gate refresh | Full Flutter suite lulus (279 test), analyzer bersih, dan golden shell serta lima profile layout diperbarui setelah verifikasi perubahan Preview full-height. Release build macOS yang dicoba bersamaan tidak menghasilkan progres dan dihentikan; Debug run macOS pengguna tetap berhasil. Golden khusus untuk tree nested/compact, validasi constraint divider per feature, pointer/touch/keyboard native, serta validasi Linux/Windows masih terbuka. |
+| 2026-09-29 | Tahap 2 parsial — Per-feature minimum splitter constraints | Resize tree kini menghitung minimum extent rekursif berdasarkan arah split dan minimum setiap panel; resize controller menerapkan batas berbeda untuk subtree di kedua sisi divider dan menjadi no-op jika ruang total tak dapat memenuhi minimum. Tes asymmetric clamp, nested min extent, dan integrasi controller lulus (29 tes docking/layout), analyzer bersih. Maximum feature constraints, full suite setelah batch ini, dan tree goldens masih menunggu. |
+| 2026-09-29 | Tahap 2 parsial — Per-feature maximum splitter constraints | Resize kini turut menghitung maximum extent subtree secara rekursif dan membatasi kedua sisi secara terpisah; nested split paralel menjumlahkan batas, sedangkan cabang ortogonal memakai batas terketat. Tes maximum asymmetric/nested dan integrasi controller lulus; full suite lulus 284 test dan analyzer bersih. Golden tree standard/nested/compact masih menunggu. |

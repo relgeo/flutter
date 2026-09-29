@@ -321,18 +321,64 @@ class WorkbenchLayoutController extends ChangeNotifier {
     final root = _dockedRoot;
     if (!_usesDockTree || root == null) return;
     try {
+      final split = DockTreeOperations.splitAt(root, location.splitPath);
+      if (split == null ||
+          location.dividerIndex < 0 ||
+          location.dividerIndex >= split.children.length - 1) {
+        return;
+      }
+      final firstMinimum = DockTreeOperations.minimumExtent(
+        split.children[location.dividerIndex],
+        location.axis,
+        panelMinimumExtent: _panelMinimumExtent,
+      );
+      final secondMinimum = DockTreeOperations.minimumExtent(
+        split.children[location.dividerIndex + 1],
+        location.axis,
+        panelMinimumExtent: _panelMinimumExtent,
+      );
+      final firstMaximum = DockTreeOperations.maximumExtent(
+        split.children[location.dividerIndex],
+        location.axis,
+        panelMaximumExtent: _panelMaximumExtent,
+      );
+      final secondMaximum = DockTreeOperations.maximumExtent(
+        split.children[location.dividerIndex + 1],
+        location.axis,
+        panelMaximumExtent: _panelMaximumExtent,
+      );
       _dockedRoot = DockTreeOperations.resize(
         root: root,
         splitPath: location.splitPath,
         dividerIndex: location.dividerIndex,
         deltaPixels: delta,
         availablePixels: availablePixels,
+        minimumFirstPixels: firstMinimum,
+        minimumSecondPixels: secondMinimum,
+        maximumFirstPixels: firstMaximum,
+        maximumSecondPixels: secondMaximum,
       );
       notifyListeners();
     } on Object {
       // A stale divider gesture must not break the workbench. The next build
       // will expose the current tree and a fresh divider path.
     }
+  }
+
+  double _panelMinimumExtent(WorkbenchPanelId id, DockAxis axis) {
+    final bounds = panel(id).bounds;
+    final value = axis == DockAxis.horizontal
+        ? bounds.minWidth
+        : bounds.minHeight;
+    return value ?? 120;
+  }
+
+  double _panelMaximumExtent(WorkbenchPanelId id, DockAxis axis) {
+    final bounds = panel(id).bounds;
+    final value = axis == DockAxis.horizontal
+        ? bounds.maxWidth
+        : bounds.maxHeight;
+    return value ?? double.infinity;
   }
 
   void resizeFloatingPanel(
@@ -430,7 +476,8 @@ class WorkbenchLayoutController extends ChangeNotifier {
   }
 
   void restore(WorkbenchLayoutModel layout, {DockNode? dockedRoot}) {
-    _dockedRoot = dockedRoot != null &&
+    _dockedRoot =
+        dockedRoot != null &&
             DockTreeOperations.isValid(dockedRoot) &&
             _dockTreeMatchesLayout(dockedRoot, layout)
         ? dockedRoot
