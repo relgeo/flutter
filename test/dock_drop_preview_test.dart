@@ -85,4 +85,18 @@ void main() {
       isNull,
     );
   });
+
+  test('marks a target invalid when the resulting split is too small', () {
+    final preview = DockDropPreviewCalculator.forPointer(
+      root: const DockPanelNode(WorkbenchPanelId.editor),
+      canvasSize: const Size(200, 200),
+      pointer: const Offset(100, 100),
+      sourcePanel: WorkbenchPanelId.inspector,
+      targetPanel: WorkbenchPanelId.editor,
+      minimumPanelSize: const Size(120, 120),
+    );
+
+    expect(preview, isNotNull);
+    expect(preview!.isValid, isFalse);
+  });
 }

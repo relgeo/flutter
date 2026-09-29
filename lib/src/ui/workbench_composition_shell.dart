@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'workbench_layout_controller.dart';
@@ -580,6 +582,16 @@ class WorkbenchCompositionShell extends StatelessWidget {
         pointer: pointer,
         sourcePanel: sourcePanel,
         targetPanel: target,
+        minimumPanelSize: Size(
+          math.max(
+            controller.panel(sourcePanel).bounds.minWidth ?? 120,
+            controller.panel(target).bounds.minWidth ?? 120,
+          ),
+          math.max(
+            controller.panel(sourcePanel).bounds.minHeight ?? 120,
+            controller.panel(target).bounds.minHeight ?? 120,
+          ),
+        ),
       );
       if (preview != null) break;
     }

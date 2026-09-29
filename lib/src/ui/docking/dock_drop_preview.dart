@@ -44,6 +44,8 @@ class DockDropPreviewCalculator {
     required WorkbenchPanelId targetPanel,
     double dividerThickness = 1,
     double edgeFraction = 0.25,
+    Size minimumPanelSize = const Size(120, 120),
+    DockAxis centerAxis = DockAxis.vertical,
   }) {
     if (sourcePanel == targetPanel ||
         !canvasSize.width.isFinite ||
@@ -52,7 +54,11 @@ class DockDropPreviewCalculator {
         canvasSize.height <= 0 ||
         !edgeFraction.isFinite ||
         edgeFraction <= 0 ||
-        edgeFraction >= 0.5) {
+        edgeFraction >= 0.5 ||
+        !minimumPanelSize.width.isFinite ||
+        !minimumPanelSize.height.isFinite ||
+        minimumPanelSize.width <= 0 ||
+        minimumPanelSize.height <= 0) {
       return null;
     }
 
@@ -110,6 +116,12 @@ class DockDropPreviewCalculator {
       ),
       DockZone.center => targetRect.deflate(4),
     };
+    final isLargeEnough = _isLargeEnough(
+      targetRect,
+      zone,
+      minimumPanelSize,
+      centerAxis,
+    );
     return DockDropPreview(
       sourcePanel: sourcePanel,
       targetPanel: targetPanel,
@@ -118,8 +130,24 @@ class DockDropPreviewCalculator {
       rect: rect,
       zone: zone,
       orientation: orientation,
-      isValid: true,
+      isValid: isLargeEnough,
     );
+  }
+
+  static bool _isLargeEnough(
+    Rect target,
+    DockZone zone,
+    Size minimum,
+    DockAxis centerAxis,
+  ) {
+    final horizontal = switch (zone) {
+      DockZone.left || DockZone.right => true,
+      DockZone.top || DockZone.bottom => false,
+      DockZone.center => centerAxis == DockAxis.horizontal,
+    };
+    final childWidth = horizontal ? target.width / 2 : target.width;
+    final childHeight = horizontal ? target.height : target.height / 2;
+    return childWidth >= minimum.width && childHeight >= minimum.height;
   }
 
   static _PanelRect? _findPanelRect(

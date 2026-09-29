@@ -151,8 +151,9 @@ menghitung rectangle hasil, dan menyatakan orientation tanpa memutasi layout.
 `DockDropPreviewOverlay` sudah terintegrasi ke shell dan hanya tampil untuk
 preview valid, dengan label zona serta tanpa mengambil pointer event. Commit
 hanya terjadi untuk preview valid; pelepasan di luar zona mempertahankan panel
-sebagai floating. Validasi minimum-size yang benar-benar berbasis ukuran hasil
-dan target locked masih menjadi pekerjaan lanjutan.
+sebagai floating. Validasi minimum-size kini diterapkan pada hasil split
+berdasarkan minimum panel source dan target. Validasi target locked yang
+eksplisit masih menjadi pekerjaan lanjutan.
 
 ### 3.2 Validasi drop
 
@@ -356,7 +357,8 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 
 ### Tahap 6 — Profiles, persistence, dan migration
 
-- [ ] ubah built-in profiles menjadi tree baseline;
+- [ ] ubah built-in profiles menjadi tree baseline; compatibility renderer
+  masih menjadi baseline untuk profile/reset agar compact layout tetap aman;
 - [x] migrasikan schema layout lama ke schema tree baru;
 - [x] simpan tree, floating state, z-order, dan collapsed state dengan debounce;
 - [x] fallback corruption/unknown version ke Standard;
@@ -431,4 +433,5 @@ native smoke test.
 | 2026-09-29 | Tahap 5/6 — Durable tree snapshot dan safe drop | Snapshot persistence sekarang menyimpan layout compatibility serta dock tree aktif dalam wrapper schema v2, membaca payload v1, memvalidasi tree saat restore, dan merestore tree setelah reload. Profile/reset dan perintah placement menu mematikan tree aktif agar tidak ada sumber kebenaran stale. Drag yang dilepas di luar preview valid tidak lagi menjalankan heuristik global; panel tetap floating pada posisi terakhir. |
 | 2026-09-29 | Quality gate durable snapshot | Persistence/controller/shell tests terarah lulus (29 test), `flutter analyze` lulus, dan tidak ada perubahan pada kontrak storage lama selain payload wrapper yang backward-readable. Full test, web build, dan macOS native kemudian lulus pada gate penutupan. |
 | 2026-09-29 | Tahap 5 — Cancel drag dengan Escape | Drag handle floating kini memiliki focus target sendiri. Escape selama drag mengembalikan bounds dan z-order sebelum sesi dimulai; outside/cancel gesture memakai jalur rollback yang sama. Regression controller dan shell lulus. |
+| 2026-09-29 | Tahap 3 — Minimum-size validation | Drop preview menghitung ukuran minimum hasil split dari source dan target; preview tetap terlihat sebagai invalid tetapi tidak dapat di-commit. Profile/reset tetap memakai compatibility renderer sampai compact tree rendering memiliki constraint yang setara. |
 | 2026-09-29 | Quality gate full/native | Full Flutter suite lulus (256 test), `flutter build web --no-pub` berhasil, dan `flutter build macos --no-pub` berhasil sebagai universal `x86_64 + arm64`. Native manual interaction smoke, golden tree khusus, serta validasi Ubuntu/Windows masih terbuka. |

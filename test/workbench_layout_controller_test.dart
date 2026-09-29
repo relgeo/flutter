@@ -97,6 +97,19 @@ void main() {
     expect(controller.layout.activeProfileId, 'custom');
   });
 
+  test('reset restores the standard profile baseline', () {
+    final controller = WorkbenchLayoutController();
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.floating,
+    );
+
+    controller.reset();
+
+    expect(controller.layout.activeProfileId, 'standard');
+    expect(controller.dockedRoot, isNull);
+  });
+
   test('parameters can be resized within vertical bounds', () {
     final controller = WorkbenchLayoutController();
 

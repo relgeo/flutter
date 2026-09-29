@@ -423,7 +423,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
 
   void restore(WorkbenchLayoutModel layout, {DockNode? dockedRoot}) {
     _dockedRoot = dockedRoot;
-    _usesDockTree = dockedRoot != null;
+    _usesDockTree = _dockedRoot != null;
     _layout = layout;
     _dropPreview = null;
     notifyListeners();
