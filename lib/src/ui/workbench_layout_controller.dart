@@ -146,6 +146,15 @@ class WorkbenchLayoutController extends ChangeNotifier {
       _usesDockTree = false;
       _dockedRoot = null;
     }
+    // Menu placement commands describe the compatibility layout, not an
+    // arbitrary tree drop. Rebuild that authoritative representation rather
+    // than leaving a stale recursive tree behind it.
+    if (_usesDockTree &&
+        placement != WorkbenchPanelPlacement.floating &&
+        placement != WorkbenchPanelPlacement.overlay) {
+      _usesDockTree = false;
+      _dockedRoot = null;
+    }
     _replaceAsCustom(
       _layout.copyWith(
         panels: {
@@ -382,14 +391,22 @@ class WorkbenchLayoutController extends ChangeNotifier {
   }
 
   void applyProfile(WorkbenchLayoutProfile profile) {
+    _usesDockTree = false;
+    _dockedRoot = null;
     _replace(profile.layout);
   }
 
-  void restore(WorkbenchLayoutModel layout) {
-    _replace(layout);
+  void restore(WorkbenchLayoutModel layout, {DockNode? dockedRoot}) {
+    _dockedRoot = dockedRoot;
+    _usesDockTree = dockedRoot != null;
+    _layout = layout;
+    _dropPreview = null;
+    notifyListeners();
   }
 
   void reset() {
+    _usesDockTree = false;
+    _dockedRoot = null;
     _replace(WorkbenchLayoutModel.standard());
   }
 

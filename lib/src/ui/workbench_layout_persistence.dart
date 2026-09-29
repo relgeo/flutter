@@ -3,7 +3,57 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'docking/dock_node.dart';
+import 'docking/dock_tree_operations.dart';
 import 'workbench_layout_model.dart';
+
+/// The complete user-owned workbench snapshot.
+///
+/// Older releases persisted only [layout]. Keeping the legacy shape readable
+/// lets the dock tree become durable without invalidating existing users'
+/// saved profiles.
+class WorkbenchLayoutSnapshot {
+  const WorkbenchLayoutSnapshot({required this.layout, this.dockedRoot});
+
+  final WorkbenchLayoutModel layout;
+  final DockNode? dockedRoot;
+
+  Map<String, Object> toJson() {
+    final json = <String, Object>{
+      'schemaVersion': 2,
+      'layout': layout.toJson(),
+    };
+    final root = dockedRoot;
+    if (root != null) {
+      json['dockedLayout'] = DockedLayout(
+        schemaVersion: 1,
+        root: root,
+      ).toJson();
+    }
+    return json;
+  }
+
+  static WorkbenchLayoutSnapshot fromJson(Object value) {
+    if (value is Map && value['layout'] is Map) {
+      if (value['schemaVersion'] != 2) {
+        throw const FormatException('Unsupported workbench snapshot version');
+      }
+      final layout = WorkbenchLayoutModel.fromJson(value['layout']);
+      DockNode? root;
+      final dockedLayout = DockedLayout.fromJson(value['dockedLayout']);
+      if (dockedLayout != null &&
+          DockTreeOperations.isValid(dockedLayout.root)) {
+        root = dockedLayout.root;
+      }
+      return WorkbenchLayoutSnapshot(layout: layout, dockedRoot: root);
+    }
+
+    // Migration path for schema v1, which stored WorkbenchLayoutModel directly.
+    return WorkbenchLayoutSnapshot(
+      layout: WorkbenchLayoutModel.fromJson(value),
+    );
+  }
+}
 
 /// Versioned local persistence for workbench layout preferences.
 ///
@@ -28,20 +78,28 @@ class WorkbenchLayoutPersistenceController {
   final Duration debounceDuration;
 
   Timer? _timer;
-  WorkbenchLayoutModel? _pending;
+  WorkbenchLayoutSnapshot? _pending;
 
   Future<WorkbenchLayoutModel?> load() async {
+    return (await loadSnapshot())?.layout;
+  }
+
+  Future<WorkbenchLayoutSnapshot?> loadSnapshot() async {
     try {
       final raw = await _loadRaw();
       if (raw == null || raw.isEmpty) return null;
-      return WorkbenchLayoutModel.fromJson(jsonDecode(raw));
+      return WorkbenchLayoutSnapshot.fromJson(jsonDecode(raw));
     } catch (_) {
-      return WorkbenchLayoutModel.standard();
+      return WorkbenchLayoutSnapshot(layout: WorkbenchLayoutModel.standard());
     }
   }
 
   void scheduleSave(WorkbenchLayoutModel layout) {
-    _pending = layout;
+    scheduleSnapshot(WorkbenchLayoutSnapshot(layout: layout));
+  }
+
+  void scheduleSnapshot(WorkbenchLayoutSnapshot snapshot) {
+    _pending = snapshot;
     _timer?.cancel();
     _timer = Timer(debounceDuration, () {
       unawaited(flush());
@@ -51,11 +109,11 @@ class WorkbenchLayoutPersistenceController {
   Future<void> flush() async {
     _timer?.cancel();
     _timer = null;
-    final layout = _pending;
+    final snapshot = _pending;
     _pending = null;
-    if (layout == null) return;
+    if (snapshot == null) return;
     try {
-      await _saveRaw(jsonEncode(layout.toJson()));
+      await _saveRaw(jsonEncode(snapshot.toJson()));
     } catch (_) {
       // Preferences are non-critical; the in-memory layout remains valid.
     }

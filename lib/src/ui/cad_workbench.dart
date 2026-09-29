@@ -601,9 +601,9 @@ objects:
   }
 
   Future<void> _loadLayoutPreferences() async {
-    final saved = await _layoutPersistenceController.load();
+    final saved = await _layoutPersistenceController.loadSnapshot();
     if (!mounted || saved == null) return;
-    _layoutController.restore(saved);
+    _layoutController.restore(saved.layout, dockedRoot: saved.dockedRoot);
   }
 
   Future<void> _loadRecentDocuments() async {
@@ -644,7 +644,12 @@ objects:
   }
 
   void _onLayoutChanged() {
-    _layoutPersistenceController.scheduleSave(_layoutController.layout);
+    _layoutPersistenceController.scheduleSnapshot(
+      WorkbenchLayoutSnapshot(
+        layout: _layoutController.layout,
+        dockedRoot: _layoutController.dockedRoot,
+      ),
+    );
     if (mounted) setState(() {});
   }
 

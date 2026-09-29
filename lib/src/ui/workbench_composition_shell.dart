@@ -510,12 +510,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
                         final preview = controller.dropPreview;
                         if (preview != null) {
                           controller.dockFloatingPanelFromPreview(id, preview);
-                        } else {
-                          controller.dockFloatingPanelIfDropped(
-                            id,
-                            canvasWidth: canvasWidth,
-                            canvasHeight: canvasHeight,
-                          );
                         }
                         controller.clearDropPreview();
                       },

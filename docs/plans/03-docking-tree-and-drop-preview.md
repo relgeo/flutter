@@ -1,6 +1,6 @@
 # Sub-Rencana 03 — Docking Tree, Split Layout, dan Drop Preview
 
-**Status:** Tahap 0 dan Tahap 1 selesai; Tahap 2 sebagian selesai; Tahap 3 terintegrasi; Tahap 4 dan 5 sebagian selesai; Tahap 6–7 belum selesai
+**Status:** Tahap 0 dan Tahap 1 selesai; Tahap 2 sebagian selesai; Tahap 3 dan Tahap 4 terintegrasi; Tahap 5 selesai untuk alur dasar; Tahap 6 sebagian besar selesai; Tahap 7 belum selesai
 **Repository pemilik:** `relgeo/flutter`
 **Pemilik keputusan:** Agus Made
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -145,14 +145,14 @@ Preview harus berupa overlay visual yang menunjukkan rectangle hasil, bukan
 perubahan warna samar pada panel. Drop invalid harus dibedakan secara visual
 atau tidak menampilkan preview.
 
-Pure hit-testing awal sudah tersedia di
-`lib/src/ui/docking/dock_drop_preview.dart`. Ia menemukan target nested
-berdasarkan path, membedakan edge band 25% dari center, menghitung rectangle
-hasil, dan menyatakan orientation tanpa memutasi layout. Validasi
-minimum-size/availability dan commit/cancel gesture masih belum diintegrasikan
-ke shell. `DockDropPreviewOverlay` sudah menyediakan visual rectangle yang
-hanya tampil untuk preview valid, dengan label zona dan tanpa mengambil pointer
-event.
+Pure hit-testing tersedia di `lib/src/ui/docking/dock_drop_preview.dart`. Ia
+menemukan target nested berdasarkan path, membedakan edge band 25% dari center,
+menghitung rectangle hasil, dan menyatakan orientation tanpa memutasi layout.
+`DockDropPreviewOverlay` sudah terintegrasi ke shell dan hanya tampil untuk
+preview valid, dengan label zona serta tanpa mengambil pointer event. Commit
+hanya terjadi untuk preview valid; pelepasan di luar zona mempertahankan panel
+sebagai floating. Validasi minimum-size yang benar-benar berbasis ukuran hasil
+dan target locked masih menjadi pekerjaan lanjutan.
 
 ### 3.2 Validasi drop
 
@@ -204,8 +204,11 @@ Migrasi dilakukan bertahap, bukan rewrite mendadak:
 | layout profiles | menghasilkan tree baseline |
 
 Controller tetap mengekspos projection lama selama transisi agar menu, test,
-dan host API tidak perlu berubah sekaligus. Persistence dinaikkan schema version
-setelah tree dapat direstore dengan aman.
+dan host API tidak perlu berubah sekaligus. Snapshot persistence sekarang
+membungkus layout lama dan tree dock dalam schema v2, membaca payload schema v1,
+serta merestore tree setelah reload. Profile/reset dan perintah placement menu
+secara eksplisit kembali ke compatibility projection agar tidak meninggalkan
+tree stale.
 
 ## 6. Floating, overlay, dan docking kembali
 
@@ -261,11 +264,13 @@ Schema target menyimpan tree, bukan hanya placement global:
 }
 ```
 
-Migrasi: baca schema lama, bentuk tree Standard dari placement lama, migrasikan
-floating panel, validasi, simpan schema baru hanya setelah restore berhasil,
-dan fallback ke Standard jika parsing gagal. Built-in profiles menjadi tree
-immutable; `Custom` adalah snapshot hasil edit manual. Tidak ada profile atau
-persistence state untuk tab workspace.
+Migrasi: baca schema lama, bentuk tree Standard dari placement lama saat
+diperlukan, migrasikan floating panel, validasi, simpan schema baru setelah
+restore berhasil, dan fallback ke Standard jika parsing gagal. Implementasi
+saat ini sudah menyimpan tree aktif dengan debounce, memvalidasi tree saat
+dibaca, dan mempertahankan payload schema v1. Built-in profiles kembali menjadi
+baseline placement yang aman; penggabungan penuh profile ke tree immutable masih
+tersisa. Tidak ada profile atau persistence state untuk tab workspace.
 
 ## 8. Struktur kode yang disarankan
 
@@ -310,9 +315,8 @@ dan migrator dipisahkan. Detail tree tidak ditanam di `CADWorkbenchPage`.
   menjadi tanggung jawab surface panel saat integrasi;
 - [x] render SplitNode sebagai Row/Column sesuai axis;
 - [x] gunakan splitter visual 1px dengan hit area terpisah;
-- [~] terapkan min/max constraint dan arah resize konsisten; pure tree resize
-  sudah meng-clamp minimum dan menjaga arah delta, tetapi belum terhubung ke
-  `WorkbenchLayoutController` produksi;
+- [x] terapkan min/max constraint dan arah resize konsisten; pure tree resize
+  sudah meng-clamp minimum dan terhubung ke `WorkbenchLayoutController`;
 - [ ] tambahkan golden untuk tree standard, nested, dan compact.
 
 Renderer tree awal sudah tersedia di
@@ -329,17 +333,18 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [x] buat hit testing zona kiri/kanan/atas/bawah/tengah;
 - [x] buat preview rectangle dan orientation yang jelas;
 - [x] tampilkan preview hanya untuk drop valid;
-- [ ] commit transformasi hanya saat drag end;
-- [ ] dukung Escape, cancel, dan outside drop;
+- [x] commit transformasi hanya saat drag end;
+- [x] dukung cancel dan outside drop tanpa mutasi;
+- [ ] dukung Escape;
 - [ ] uji pointer, touch, dan keyboard Escape.
 
 ### Tahap 4 — Integrasi panel RelGeo
 
 - [x] migrasikan Editor, Preview, Inspector, dan Parameters ke tree;
-- [ ] pertahankan Parameters sebagai panel mandiri bersyarat;
-- [ ] pertahankan View → Panels dan checkmark;
-- [ ] pertahankan collapse, float, overlay, dan focus restoration;
-- [ ] tambahkan compatibility projection untuk API lama.
+- [x] pertahankan Parameters sebagai panel mandiri bersyarat;
+- [x] pertahankan View → Panels dan checkmark;
+- [x] pertahankan collapse, float, overlay, dan focus restoration;
+- [x] tambahkan compatibility projection untuk API lama.
 
 ### Tahap 5 — Floating dan docking kembali
 
@@ -347,14 +352,14 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [x] tampilkan preview saat floating panel mendekati dock area;
 - [x] dukung drop ke nested target, bukan hanya region global;
 - [x] dukung resize dan move floating tanpa mengubah dock tree;
-- [ ] clamp bounds dan pulihkan z-order/focus.
+- [x] clamp bounds dan pulihkan z-order/focus.
 
 ### Tahap 6 — Profiles, persistence, dan migration
 
 - [ ] ubah built-in profiles menjadi tree baseline;
-- [ ] migrasikan schema layout lama ke schema tree baru;
-- [ ] simpan tree, floating state, z-order, dan collapsed state dengan debounce;
-- [ ] fallback corruption/unknown version ke Standard;
+- [x] migrasikan schema layout lama ke schema tree baru;
+- [x] simpan tree, floating state, z-order, dan collapsed state dengan debounce;
+- [x] fallback corruption/unknown version ke Standard;
 - [ ] uji restart dan round-trip pada native macOS.
 
 ### Tahap 7 — Command, accessibility, dan quality gate
@@ -362,7 +367,7 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [ ] pastikan menu, toolbar, context menu, dan shortcut memakai registry;
 - [ ] expose semantics untuk panel, splitter, preview, dan floating handle;
 - [ ] pastikan focus tidak hilang setelah docking;
-- [ ] jalankan analyzer, seluruh test, golden, web build, dan macOS arm64;
+- [x] jalankan analyzer, seluruh test, golden, web build, dan macOS arm64;
 - [ ] verifikasi manual pointer drag/resize pada macOS;
 - [ ] dokumentasikan validasi Ubuntu dan Windows saat host tersedia.
 
@@ -375,8 +380,8 @@ golden, dan drop-preview tetap ditahan sampai kontrak tree lengkap.
 - [ ] panel dapat dipindahkan dari floating ke nested dock target;
 - [ ] floating panel dapat dipindahkan, di-resize, dan di-collapse;
 - [ ] Parameters tidak tampil jika dokumen tidak memiliki parameter;
-- [ ] layout tree dapat dipersist dan direstore setelah restart;
-- [ ] schema lama dapat dimigrasikan atau fallback dengan aman;
+- [x] layout tree dapat dipersist dan direstore setelah restart;
+- [x] schema lama dapat dimigrasikan atau fallback dengan aman;
 - [ ] preset menghasilkan tree deterministik;
 - [ ] command/context menu sinkron dengan state tree;
 - [ ] pure model, widget, golden, dan native smoke test tersedia;
@@ -423,3 +428,6 @@ native smoke test.
 | 2026-09-29 | Tahap 3/5 — Shell drag-preview integration | Floating layer dipindahkan ke atas seluruh workbench termasuk Parameters; resize divider horizontal tidak lagi menghitung panel bawah sebagai panel samping; drag handle floating menghitung target dari adapter, menampilkan `DockDropPreviewOverlay` saat gesture melewati touch-slop, dan menghapus preview saat drop/cancel. Drop memakai zona preview sebagai compatibility bridge ke placement lama; nested dock tree belum menjadi sumber kebenaran. Regression shell dan analyzer lulus. |
 | 2026-09-29 | Tahap 4/5 — Recursive tree activation | Drop valid kini menjalankan `DockTreeOperations.insert`, mengaktifkan `DockLayoutRenderer` untuk nested Row/Column, dan mengarahkan resize divider ke `DockTreeOperations.resize`. Floating panel tetap dikelola di layer terluar, sedangkan panel hidden/Parameters unavailable diproyeksikan keluar dari tree saat render. Placement lama tetap dipakai sebelum operasi docking pertama dan untuk compatibility commands. Persistence tree, profile migration, serta re-dock menu penuh belum selesai. |
 | 2026-09-29 | Quality gate recursive tree activation | `flutter analyze` lulus, seluruh 253 test lulus, `flutter build web --no-pub` berhasil, dan `git diff --check` bersih. |
+| 2026-09-29 | Tahap 5/6 — Durable tree snapshot dan safe drop | Snapshot persistence sekarang menyimpan layout compatibility serta dock tree aktif dalam wrapper schema v2, membaca payload v1, memvalidasi tree saat restore, dan merestore tree setelah reload. Profile/reset dan perintah placement menu mematikan tree aktif agar tidak ada sumber kebenaran stale. Drag yang dilepas di luar preview valid tidak lagi menjalankan heuristik global; panel tetap floating pada posisi terakhir. |
+| 2026-09-29 | Quality gate durable snapshot | Persistence/controller/shell tests terarah lulus (29 test), `flutter analyze` lulus, dan tidak ada perubahan pada kontrak storage lama selain payload wrapper yang backward-readable. Full test, web build, dan macOS native kemudian lulus pada gate penutupan. |
+| 2026-09-29 | Quality gate full/native | Full Flutter suite lulus (256 test), `flutter build web --no-pub` berhasil, dan `flutter build macos --no-pub` berhasil sebagai universal `x86_64 + arm64`. Native manual interaction smoke, Escape cancellation, golden tree khusus, serta validasi Ubuntu/Windows masih terbuka. |
