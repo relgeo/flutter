@@ -316,12 +316,12 @@ dan migrator dipisahkan. Detail tree tidak ditanam di `CADWorkbenchPage`.
   menjadi tanggung jawab surface panel;
 - [x] render SplitNode sebagai Row/Column sesuai axis;
 - [x] gunakan splitter visual 1px dengan hit area terpisah;
-- [~] terapkan min/max constraint dan arah resize konsisten; min/max per
-  feature kini dihitung pada dua subtree divider, termasuk komposisi nested
-  split. Jika ukuran canvas tidak dapat memenuhi rentang kedua sisi, resize
-  tetap mempertahankan rasio; golden tree dan verifikasi visual compact masih
-  terbuka;
-- [ ] tambahkan golden untuk tree standard, nested, dan compact.
+- [x] terapkan min/max constraint dan arah resize konsisten; min/max per
+  feature dihitung pada dua subtree divider, termasuk komposisi nested split.
+  Jika ukuran canvas tidak dapat memenuhi rentang kedua sisi, resize
+  mempertahankan rasio;
+- [x] tambahkan golden renderer untuk tree standard, nested, dan compact
+  (compact menggunakan tree vertikal pada viewport sempit).
 
 Renderer tree sudah tersedia di `lib/src/ui/docking/dock_layout_renderer.dart`
 dan aktif untuk tree hasil drop yang valid. Split horizontal menjadi Row, split
@@ -330,8 +330,8 @@ memiliki hit-area 9 px terpisah, dan callback resize membawa path split serta
 index divider. `DockLayoutAdapter` memproyeksikan placement model lama selama
 transisi; profile bawaan kini juga mengekspos proyeksi tree deterministik,
 tetapi tetap memakai renderer compatibility sampai constraint compact tree
-setara. Golden tree standard/nested/compact dan validasi visual splitter pada
-layout compact masih tertunda.
+setara. Golden renderer mengunci tree standard, nested, dan vertical compact;
+validasi interaksi splitter dan scrolling pada shell compact masih terpisah.
 
 ### Tahap 3 — Drop target dan preview
 
@@ -451,3 +451,5 @@ native smoke test.
 | 2026-09-29 | Quality gate refresh | Full Flutter suite lulus (279 test), analyzer bersih, dan golden shell serta lima profile layout diperbarui setelah verifikasi perubahan Preview full-height. Release build macOS yang dicoba bersamaan tidak menghasilkan progres dan dihentikan; Debug run macOS pengguna tetap berhasil. Golden khusus untuk tree nested/compact, validasi constraint divider per feature, pointer/touch/keyboard native, serta validasi Linux/Windows masih terbuka. |
 | 2026-09-29 | Tahap 2 parsial — Per-feature minimum splitter constraints | Resize tree kini menghitung minimum extent rekursif berdasarkan arah split dan minimum setiap panel; resize controller menerapkan batas berbeda untuk subtree di kedua sisi divider dan menjadi no-op jika ruang total tak dapat memenuhi minimum. Tes asymmetric clamp, nested min extent, dan integrasi controller lulus (29 tes docking/layout), analyzer bersih. Maximum feature constraints, full suite setelah batch ini, dan tree goldens masih menunggu. |
 | 2026-09-29 | Tahap 2 parsial — Per-feature maximum splitter constraints | Resize kini turut menghitung maximum extent subtree secara rekursif dan membatasi kedua sisi secara terpisah; nested split paralel menjumlahkan batas, sedangkan cabang ortogonal memakai batas terketat. Tes maximum asymmetric/nested dan integrasi controller lulus; full suite lulus 284 test dan analyzer bersih. Golden tree standard/nested/compact masih menunggu. |
+| 2026-09-29 | Tahap 2 — Dock renderer goldens | Menambahkan golden standard horizontal, nested horizontal/vertical, dan compact-vertical pada renderer tree; hasil divisual-inspeksi dan test khusus lulus. Full suite setelah penambahan snapshot masih perlu dijalankan. Goldens ini tidak mengklaim profile tree sudah menjadi renderer default atau menguji interaksi splitter di shell compact. |
+| 2026-09-29 | Tahap 2/6 parsial — Compact recursive shell test | Shell compact kini dites dengan tree recursive aktif pada viewport 420×780; renderer tetap berada di canvas minimum yang dapat discroll horizontal tanpa overflow dan setiap panel tetap tersedia. Regression composition shell + tree goldens (20 test) dan analyzer lulus. Profile tree belum menjadi baseline aktif sampai parity layout/persistence tervalidasi. |

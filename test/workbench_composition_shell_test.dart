@@ -70,6 +70,51 @@ void main() {
     expect(scrollView.scrollDirection, Axis.horizontal);
   });
 
+  testWidgets('recursive dock tree remains scrollable in compact shell mode', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final layout = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(
+      layout,
+      dockedRoot: DockSplitNode(
+        axis: DockAxis.horizontal,
+        children: const [
+          DockPanelNode(WorkbenchPanelId.editor),
+          DockPanelNode(WorkbenchPanelId.preview),
+          DockPanelNode(WorkbenchPanelId.inspector),
+        ],
+        ratios: const [0.32, 0.43, 0.25],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('preview'),
+          inspector: const Text('inspector'),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey('dock-split-horizontal')), findsOneWidget);
+    final scrollView = tester.widget<SingleChildScrollView>(
+      find.byType(SingleChildScrollView),
+    );
+    expect(scrollView.scrollDirection, Axis.horizontal);
+    expect(find.text('editor'), findsOneWidget);
+    expect(find.text('preview'), findsOneWidget);
+    expect(find.text('inspector'), findsOneWidget);
+  });
+
   testWidgets('interactive shell honors panel visibility and splitter drags', (
     tester,
   ) async {
