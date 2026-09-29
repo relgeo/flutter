@@ -482,6 +482,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
                     child: _FloatingPanelDragHandle(
                       panelId: id,
                       onDragStart: () {
+                        controller.beginFloatingPanelDrag(id);
                         Focus.of(focusContext).requestFocus();
                         controller.focusFloatingPanel(id);
                         _updateDropPreview(
@@ -511,7 +512,11 @@ class WorkbenchCompositionShell extends StatelessWidget {
                         if (preview != null) {
                           controller.dockFloatingPanelFromPreview(id, preview);
                         }
+                        controller.endFloatingPanelDrag(id);
                         controller.clearDropPreview();
+                      },
+                      onDragCancel: () {
+                        controller.cancelFloatingPanelDrag(id);
                       },
                     ),
                   ),
@@ -710,48 +715,97 @@ class WorkbenchCompositionShell extends StatelessWidget {
       : width;
 }
 
-class _FloatingPanelDragHandle extends StatelessWidget {
+class _FloatingPanelDragHandle extends StatefulWidget {
   const _FloatingPanelDragHandle({
     required this.panelId,
     required this.onDragStart,
     required this.onDrag,
     required this.onDragEnd,
+    required this.onDragCancel,
   });
 
   final WorkbenchPanelId panelId;
   final VoidCallback onDragStart;
   final ValueChanged<Offset> onDrag;
   final VoidCallback onDragEnd;
+  final VoidCallback onDragCancel;
+
+  @override
+  State<_FloatingPanelDragHandle> createState() =>
+      _FloatingPanelDragHandleState();
+}
+
+class _FloatingPanelDragHandleState extends State<_FloatingPanelDragHandle> {
+  late final FocusNode _focusNode;
+  bool _dragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode(debugLabel: 'floating-panel-drag-handle');
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
-      message: 'Drag to move ${panelId.name} panel; drop near an edge to dock',
+      message:
+          'Drag to move ${widget.panelId.name} panel; drop near an edge to dock',
       child: Semantics(
-        label: 'Move ${panelId.name} panel',
+        label: 'Move ${widget.panelId.name} panel',
         hint: 'Drag to reposition or dock this panel',
         button: true,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.move,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanStart: (_) => onDragStart(),
-            onPanUpdate: (details) => onDrag(details.delta),
-            onPanEnd: (_) => onDragEnd(),
-            onPanCancel: onDragEnd,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: colorScheme.surface.withValues(alpha: 0.72),
-                border: Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+        child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.escape &&
+                _dragging) {
+              _dragging = false;
+              widget.onDragCancel();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.move,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) {
+                _focusNode.requestFocus();
+                _dragging = true;
+                widget.onDragStart();
+              },
+              onPanUpdate: (details) => widget.onDrag(details.delta),
+              onPanEnd: (_) {
+                if (!_dragging) return;
+                _dragging = false;
+                widget.onDragEnd();
+              },
+              onPanCancel: () {
+                if (!_dragging) return;
+                _dragging = false;
+                widget.onDragCancel();
+              },
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.72),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                  ),
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: const SizedBox(
-                width: 34,
-                height: 26,
-                child: Icon(Icons.drag_indicator, size: 16),
+                child: const SizedBox(
+                  width: 34,
+                  height: 26,
+                  child: Icon(Icons.drag_indicator, size: 16),
+                ),
               ),
             ),
           ),

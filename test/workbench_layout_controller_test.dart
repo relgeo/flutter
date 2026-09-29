@@ -236,4 +236,32 @@ void main() {
     expect(minimum.width, 240);
     expect(minimum.height, 160);
   });
+
+  test('cancelled floating drag restores bounds and z-order', () {
+    final controller = WorkbenchLayoutController();
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.floating,
+    );
+    controller.setFloatingBounds(
+      WorkbenchPanelId.inspector,
+      const WorkbenchPanelBounds(left: 32, top: 24, width: 320, height: 240),
+    );
+    controller.setPlacement(
+      WorkbenchPanelId.preview,
+      WorkbenchPanelPlacement.floating,
+    );
+    final originalOrder = controller.layout.floatingOrder;
+
+    controller.beginFloatingPanelDrag(WorkbenchPanelId.inspector);
+    controller.focusFloatingPanel(WorkbenchPanelId.inspector);
+    controller.moveFloatingPanel(WorkbenchPanelId.inspector, dx: 120, dy: 80);
+    controller.cancelFloatingPanelDrag(WorkbenchPanelId.inspector);
+
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector],
+      const WorkbenchPanelBounds(left: 32, top: 24, width: 320, height: 240),
+    );
+    expect(controller.layout.floatingOrder, originalOrder);
+  });
 }

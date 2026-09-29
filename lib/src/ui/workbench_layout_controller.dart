@@ -22,6 +22,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
   DockDropPreview? _dropPreview;
   DockNode? _dockedRoot;
   bool _usesDockTree = false;
+  final Map<WorkbenchPanelId, _FloatingDragSnapshot> _dragSnapshots = {};
 
   WorkbenchLayoutModel get layout => _layout;
 
@@ -217,6 +218,29 @@ class WorkbenchLayoutController extends ChangeNotifier {
     );
   }
 
+  void beginFloatingPanelDrag(WorkbenchPanelId id) {
+    _dragSnapshots[id] = _FloatingDragSnapshot(
+      bounds: _layout.floatingBounds[id] ?? panel(id).bounds,
+      floatingOrder: List.unmodifiable(_layout.floatingOrder),
+    );
+  }
+
+  void cancelFloatingPanelDrag(WorkbenchPanelId id) {
+    final snapshot = _dragSnapshots.remove(id);
+    if (snapshot == null) return;
+    _replaceAsCustom(
+      _layout.copyWith(
+        floatingBounds: {..._layout.floatingBounds, id: snapshot.bounds},
+        floatingOrder: snapshot.floatingOrder,
+      ),
+    );
+    clearDropPreview();
+  }
+
+  void endFloatingPanelDrag(WorkbenchPanelId id) {
+    _dragSnapshots.remove(id);
+  }
+
   /// Docks a floating panel when its current center enters a workbench drop
   /// zone. Pointer, touch, and pen gestures can share this placement policy.
   void dockFloatingPanelIfDropped(
@@ -276,6 +300,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
     _usesDockTree = true;
     _replace(_layout.copyWith(panels: nextPanels));
     requestPanelFocus(id);
+    endFloatingPanelDrag(id);
   }
 
   /// Resizes a divider in the active recursive dock tree. The legacy
@@ -453,4 +478,14 @@ class WorkbenchLayoutController extends ChangeNotifier {
     }
     return (canvasSize - origin).clamp(minimum, double.infinity).toDouble();
   }
+}
+
+class _FloatingDragSnapshot {
+  const _FloatingDragSnapshot({
+    required this.bounds,
+    required this.floatingOrder,
+  });
+
+  final WorkbenchPanelBounds bounds;
+  final List<WorkbenchPanelId> floatingOrder;
 }
