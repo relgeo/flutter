@@ -9,18 +9,27 @@ class WorkbenchNavbar extends StatelessWidget {
     required this.hasError,
     required this.exportButtonLabel,
     required this.onExport,
+    this.documentName,
+    this.documentPath,
+    this.documentDirty = false,
+    this.toolbar,
     this.commandRegistry,
   });
 
   final bool hasError;
   final String exportButtonLabel;
   final VoidCallback onExport;
+  final String? documentName;
+  final String? documentPath;
+  final bool documentDirty;
+  final Widget? toolbar;
   final WorkbenchCommandRegistry? commandRegistry;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 44,
+      height: toolbar == null ? 44 : 58,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
@@ -70,7 +79,59 @@ class WorkbenchNavbar extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(),
+          if (documentName != null) ...[
+            const SizedBox(width: 12),
+            Flexible(
+              child: Tooltip(
+                message: documentPath ?? documentName!,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      size: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        documentName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Courier',
+                          fontSize: 11,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    if (documentDirty) ...[
+                      const SizedBox(width: 5),
+                      const Tooltip(
+                        message: 'Unsaved changes',
+                        child: Icon(
+                          Icons.circle,
+                          size: 7,
+                          color: Color(0xFFF59E0B),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (toolbar != null) ...[
+            const SizedBox(width: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Align(alignment: Alignment.centerLeft, child: toolbar),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ] else
+            const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(

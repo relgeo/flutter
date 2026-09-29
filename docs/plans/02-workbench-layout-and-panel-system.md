@@ -109,6 +109,12 @@ menyediakan dialog discard bawaan ketika host tidak memasang callback sendiri.
 Callback host tetap diprioritaskan sehingga integrasi aplikasi yang lebih besar
 dapat mengambil alih lifecycle tersebut.
 
+Perilaku filesystem yang harus dijaga: `Save` menulis langsung ke path dokumen
+aktif; hanya dokumen tanpa path atau `Save As` yang membuka pemilih tujuan.
+`Open` baru meminta konfirmasi discard setelah pengguna benar-benar memilih
+dan file berhasil dibaca. Pembatalan picker/read tidak boleh mengganti dokumen;
+error baca/tulis harus terlihat di UI dan tidak boleh menandai sesi bersih.
+
 Setiap command memiliki enabled/disabled state, label, shortcut, dan optional
 checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
 `Parameters` disabled atau tidak ditawarkan ketika dokumen tidak memiliki
@@ -299,6 +305,16 @@ ruang lingkup Tahap D.
 - [x] dukung dock kembali ke region pilihan melalui command `Workbench`;
 - [x] dukung drag-to-dock melalui zona drop kiri, tengah, kanan, dan bawah
   khusus Parameters; kebijakan zona dipusatkan di layout controller;
+- [~] divider pada recursive dock tree kini membawa ukuran ruang lokal split
+  agar resize nested tidak memakai ukuran workbench root; regression otomatis
+  untuk drag divider pada nested split masih perlu ditambahkan/dijalankan;
+- [~] perpindahan panel memakai transformasi remove-then-insert atomik dan
+  restore menolak dock tree invalid/duplikat serta node yang sekaligus
+  berstatus floating/overlay; keluar dari dock tree satu-node mengosongkan tree
+  agar panel tidak muncul lagi sebagai floating sekaligus docked. Parameters
+  juga hanya dirender oleh tree atau slot bawah, tidak keduanya. Regression
+  khusus untuk perpindahan berulang, dock satu-node, dan rendering Parameters
+  masih perlu ditambahkan/dijalankan;
 - [x] cegah panel keluar sepenuhnya dari batas canvas saat drag/resize dan
   pertahankan batas ukuran minimum/maksimum;
 
@@ -334,12 +350,27 @@ ruang lingkup Tahap D.
   sekarang juga terdaftar; command layout, appearance, dan sebagian navigasi
   visual tetap sengaja diakses melalui menu, toolbar, atau context menu agar
   tidak membebani keyboard global;
+- [x] tempatkan toolbar viewport di header/navbar workbench, bukan di panel
+  Preview;
+- [x] ubah pemilih tema Light/Dark menjadi tombol ikon toggle; pilihan awal
+  tetap mengikuti system sampai pengguna memilih mode secara eksplisit, dan
+  perintah `View → Appearance → Follow system` tetap tersedia untuk reset;
+- [x] sembunyikan kontrol yang hanya bermakna untuk viewport (appearance
+  kanvas, status/zoom, pemilih sheet, zoom/fit/reset, serta aksi collapse/float
+  Preview) ketika panel Preview tidak visible; kontrol tema dan profil dokumen
+  tetap tersedia di header;
 - [x] dukung checkmark untuk panel yang aktif pada menu View;
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [x] kelompokkan toggle panel di `View → Panels`, pindahkan appearance ke
   `View → Appearance`, dan tampilkan checkmark panel yang sedang visible;
 - [x] pindahkan collapse dari menu ke icon button pada header Editor, Preview,
   Inspector, dan Parameters;
+- [x] berikan Preview caption/title bar dengan ikon, judul, serta tombol Float
+  dan Collapse yang konsisten dengan panel lain; toolbar viewport tetap berada
+  di navbar terpisah;
+- [~] Preview kini memaksa root feature mengisi slot dock dan feature-lah yang
+  membagi tinggi antara caption/kontrol dan viewport. Verifikasi visual pada
+  layout dock yang sebelumnya memperlihatkan ruang kosong masih perlu dilakukan;
 - [x] sediakan reset layout, reset appearance override, dan reset parameters;
   reset global workbench kini menyatukan layout, appearance override, overlay,
   dan role filter, sementara reset parameter tetap mengikuti dokumen aktif;
@@ -361,12 +392,35 @@ ruang lingkup Tahap D.
   memakai `onSaveDocumentWithResult` untuk mengembalikan acknowledgement typed
   beserta identitas file; callback `VoidCallback` lama tetap tersedia sebagai
   jalur kompatibilitas tetapi tidak dapat melaporkan hasil Save.
-  `File` sudah berada di urutan pertama pada menu in-window dan native macOS.
-  Aplikasi default kini juga memasang Close document dan Recent files; validasi
-  interaksi native lintas platform dan parity shortcut penuh masih tertunda.
+  `File` sudah berada di urutan pertama pada menu in-window dan menjadi menu
+  dokumen native macOS pertama setelah menu aplikasi. Aplikasi default kini
+  juga memasang Close document dan Recent files; validasi interaksi native
+  lintas platform dan parity shortcut penuh masih tertunda.
+- [~] filesystem desktop kini menulis `Save` ke identity/path aktif tanpa
+  memunculkan dialog Save As, sedangkan Save As/dokumen tanpa path memakai
+  picker. Open dan Open Recent membaca dulu sebelum meminta konfirmasi discard;
+  kegagalan file operation ditampilkan lewat feedback UI, dan error baca Recent
+  tidak lagi dianggap sebagai file hilang. Identitas/nama dokumen dan penanda
+  dirty kini tampak di navbar. `WorkbenchDocumentSession` menjadi satu-satunya
+  pemilik path/nama; penggantian dokumen juga membersihkan undo history agar
+  aksi Undo tidak menyeberang ke dokumen sebelumnya. Analyzer lulus dan seluruh
+  regression filesystem/Recent serta focused widget tests untuk cancel Open,
+  status dokumen, reset undo, dan kegagalan Open/Save lulus. Full widget suite
+  masih memiliki kegagalan tema dan pemilih surface yang bukan bagian dari alur
+  filesystem; test suite keseluruhan tetap perlu direkonsiliasi dengan perubahan
+  docking/golden/UI pada working tree. File picker native macOS/Windows/Linux
+  dan perilaku izin I/O nyata masih perlu smoke test.
 
 ### Tahap G — Accessibility dan regression
 
+- [x] kompilasi DSL setelah edit editor memakai debounce 180 ms; perubahan
+  status dokumen hanya membangun ulang navbar dan transformasi viewport hanya
+  membangun ulang surface preview, bukan seluruh workbench. Autocomplete editor
+  tidak meminta focus otomatis ketika panel dock sedang dipulihkan. Pengguna
+  mengonfirmasi aplikasi lokal terasa kembali ringan setelah fresh run; analyzer,
+  tes editor terarah, dan build/run macOS berhasil. Full suite tetap perlu
+  direkonsiliasi karena gate terakhir pada working tree ini melaporkan 13 test
+  gagal, terutama di area docking/layout/theme;
 - [~] semua panel dan splitter memiliki label semantics; surface floating,
   collapsed, splitter, resize handle, object expand/collapse, parameter reset,
   dan parameter slider kini memiliki label/value/hint yang bermakna. Editor
@@ -535,3 +589,10 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-28 | Tahap F — Default document lifecycle completion | Aplikasi default kini mengaktifkan `Close document` tanpa callback host dengan discard guard bawaan, menyimpan Recent files secara lokal, membuka kembali path yang masih tersedia, dan membersihkan entry yang sudah hilang. Regression test Recent lulus; `flutter analyze`, seluruh 233 test, dan `flutter build web --no-pub` menjadi gate verifikasi batch ini. |
 | 2026-09-28 | Tahap G — Workbench gate refresh setelah docking scaffold | Setelah penambahan pure docking tree dan renderer scaffold pada Sub-Rencana 03, analyzer tetap bersih, seluruh 241 test lulus, `flutter build web --no-pub` berhasil, dan `flutter build macos --debug --no-pub` menghasilkan binary arm64. Tidak ada regresi terdeteksi; validasi pointer native, assistive technology nyata, Ubuntu, Windows 11, dan packaging produksi tetap terbuka. |
 | 2026-09-29 | Tahap G — Workbench gate refresh setelah resize contract | Setelah divider tree memiliki hit-area terpisah dan adapter placement tersedia, analyzer tetap bersih, seluruh 246 test lulus, dan `flutter build web --no-pub` berhasil. Build macOS arm64 sudah lulus pada gate sebelumnya; validasi pointer native, assistive technology nyata, Ubuntu, Windows 11, dan packaging produksi tetap terbuka. |
+| 2026-09-29 | Tahap F parsial — Header viewport toolbar dan theme toggle | Toolbar viewport dipindahkan dari panel Preview ke navbar; mode tema kini dikendalikan tombol ikon Light/Dark dengan Follow system sebagai reset; kontrol khusus viewport disembunyikan saat Preview tidak visible. Belum diverifikasi dengan analyzer/widget tests atau smoke UI pada putaran ini. |
+| 2026-09-29 | Tahap F — Preview panel caption | Preview kini memiliki caption `PREVIEW` dengan ikon serta tombol Float dan Collapse pada title bar, mengikuti pola panel Editor/Inspector/Parameters. Aksi panel dipindahkan dari toolbar viewport agar tidak tampil ganda; validasi analyzer/widget dan interaksi floating masih menunggu. |
+| 2026-09-29 | Tahap G parsial — Preview dock height | Screenshot menunjukkan Preview berhenti sebelum dasar workbench sementara Editor/Inspector mengisi slot. Root Preview kini expand ke seluruh slot yang dialokasikan dock; `WorkbenchPreviewFeature` mengelola flex viewport dan `WorkbenchViewportPanel` tidak lagi memiliki `Expanded` internal. Analyzer, widget test, dan verifikasi visual pada layout tersimpan masih menunggu. |
+| 2026-09-29 | Tahap D — Dock interaction corrections | Drop preview floating kini memakai posisi pointer aktual; divider recursive memakai usable extent split lokal; operasi move menghapus node sebelumnya sebelum insert; restore memeriksa validitas/keunikan serta mencegah node tree sekaligus berstatus floating/overlay; dock tree satu-node dikosongkan saat panel di-float; dan Parameters tidak dirender ganda antara tree dan slot bawah. Regression automated untuk invariant unik/render tunggal serta validasi drag pointer native belum dijalankan pada batch ini. |
+| 2026-09-29 | Tahap F parsial — Filesystem vertical slice | `FilePickerWorkbenchFileService` membedakan Save ke path aktif dari Save As/picker dan menulis UTF-8; Open/Open Recent membaca sebelum discard confirmation; missing recent dibedakan dari read error; kegagalan operasi diberi feedback dan tidak membersihkan dirty state. Navbar menampilkan nama dokumen/dirty marker; session menjadi pemilik identity dan penggantian dokumen membersihkan undo history. Analyzer lulus; 7 test file-service/Recent dan 7 focused widget regression lulus. Full widget file masih menunjukkan 4 kegagalan tema/pemilih surface di luar alur filesystem; file picker native macOS/Windows/Linux dan I/O permission nyata tetap perlu diuji. |
+| 2026-09-29 | Tahap F — macOS native menu ordering correction | Menu native sekarang memiliki menu aplikasi `RelGeo` pada slot platform pertama; `About RelGeo` dan `Quit RelGeo` ditempatkan di sana, lalu `File` menjadi menu dokumen pertama. In-window menu tetap mempertahankan `File` sebagai menu paling kiri. Test adapter pada `TargetPlatform.macOS`, seluruh `workbench_platform_menu_bar_test.dart`, dan analyzer lulus. Perlu hot restart/build dan verifikasi visual pada menu bar macOS untuk memastikan hasil native tampil seperti yang diharapkan. |
+| 2026-09-29 | Tahap G — Editor/workbench responsiveness | Kompilasi DSL setelah input editor kini di-debounce 180 ms. Pembaruan dirty state dan zoom tidak lagi memanggil rebuild seluruh workbench: navbar mendengarkan document session, preview mendengarkan transform controller, dan zoom toolbar memakai notifier khusus. `CodeEditor` tidak lagi autofocus saat dock panel direstore; `re_editor` diperbarui ke 0.10.0. Analyzer dan tes editor/autocomplete terarah lulus; pengguna mengonfirmasi aplikasi macOS hasil `flutter clean`, `flutter pub get`, dan `flutter run -d macos` terasa tidak berat. Log run yang dikirim tidak memuat assertion editor. Full suite terakhir masih memiliki 13 kegagalan lintas docking/layout/theme sehingga gate regresi global belum tertutup. |

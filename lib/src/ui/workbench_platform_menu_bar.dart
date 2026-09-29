@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'workbench_commands.dart';
@@ -30,14 +31,42 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
 
     return PlatformMenuBar(
       menus: [
+        _buildApplicationMenu(),
         for (final menu in WorkbenchCommandRegistry.menuOrder)
           PlatformMenu(
             label: menu,
-            menus: _buildMenus(registry.forMenu(menu).toList()),
+            menus: _buildMenus(_commandsForNativeMenu(menu)),
           ),
       ],
       child: child,
     );
+  }
+
+  PlatformMenu _buildApplicationMenu() {
+    final applicationCommands = <WorkbenchCommand>[
+      ...registry
+          .forMenu('Help')
+          .where((command) => command.id == WorkbenchCommandId.aboutRelGeo),
+      ...registry
+          .forMenu('File')
+          .where((command) => command.id == WorkbenchCommandId.quitApplication),
+    ];
+    return PlatformMenu(
+      label: 'RelGeo',
+      menus: _buildMenus(applicationCommands),
+    );
+  }
+
+  List<WorkbenchCommand> _commandsForNativeMenu(String menu) {
+    return registry
+        .forMenu(menu)
+        .where(
+          (command) =>
+              !(menu == 'File' &&
+                  command.id == WorkbenchCommandId.quitApplication) &&
+              !(menu == 'Help' && command.id == WorkbenchCommandId.aboutRelGeo),
+        )
+        .toList();
   }
 
   List<PlatformMenuItem> _buildMenus(List<WorkbenchCommand> commands) {
@@ -48,7 +77,7 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
       menus.add(
         PlatformMenuItem(
           label: _labelFor(command),
-          shortcut: command.shortcut,
+          shortcut: _nativeShortcut(command),
           onSelected: command.enabled ? command.invoke : null,
         ),
       );
@@ -115,6 +144,13 @@ class WorkbenchPlatformMenuBar extends StatelessWidget {
   // while the in-window MenuBar uses a true leading check icon.
   String _labelFor(WorkbenchCommand command) =>
       command.checked == true ? '\u2713 ${command.label}' : command.label;
+
+  MenuSerializableShortcut? _nativeShortcut(WorkbenchCommand command) {
+    if (command.id == WorkbenchCommandId.quitApplication) {
+      return SingleActivator(LogicalKeyboardKey.keyQ, meta: true);
+    }
+    return command.shortcut;
+  }
 
   bool _startsWith(List<String> value, List<String> prefix) {
     if (value.length < prefix.length) return false;

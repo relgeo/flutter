@@ -13,6 +13,13 @@ class WorkbenchEditorController {
 
   String get text => editingController.text.toString();
 
+  /// Replaces the active document and prevents undo from crossing document
+  /// boundaries. User edits continue to use the editor's normal undo history.
+  void replaceDocument(String source) {
+    editingController.text = source;
+    editingController.clearHistory();
+  }
+
   void addListener(VoidCallback listener) =>
       editingController.addListener(listener);
 

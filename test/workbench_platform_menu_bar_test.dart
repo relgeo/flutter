@@ -5,6 +5,65 @@ import 'package:relgeo_flutter/src/ui/workbench_commands.dart';
 import 'package:relgeo_flutter/src/ui/workbench_platform_menu_bar.dart';
 
 void main() {
+  testWidgets('macOS reserves its app menu before File', (tester) async {
+    final registry = WorkbenchCommandRegistry([
+      WorkbenchCommand(
+        id: WorkbenchCommandId.openDocument,
+        menu: 'File',
+        label: 'Open document…',
+        onInvoke: () {},
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.quitApplication,
+        menu: 'File',
+        label: 'Quit RelGeo',
+        onInvoke: () {},
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.aboutRelGeo,
+        menu: 'Help',
+        label: 'About RelGeo',
+        onInvoke: () {},
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchPlatformMenuBar(
+          registry: registry,
+          child: const SizedBox(),
+        ),
+      ),
+    );
+
+    final platformMenuBar = tester.widget<PlatformMenuBar>(
+      find.byType(PlatformMenuBar),
+    );
+    expect(
+      platformMenuBar.menus.map((menu) => menu.label),
+      containsAllInOrder(<String>[
+        'RelGeo',
+        ...WorkbenchCommandRegistry.menuOrder,
+      ]),
+    );
+    final applicationMenu = platformMenuBar.menus.first as PlatformMenu;
+    expect(
+      applicationMenu.menus
+          .whereType<PlatformMenuItem>()
+          .map((item) => item.label),
+      containsAllInOrder(<String>['About RelGeo', 'Quit RelGeo']),
+    );
+    final fileMenu = platformMenuBar.menus[1] as PlatformMenu;
+    expect(
+      fileMenu.menus.whereType<PlatformMenuItem>().map((item) => item.label),
+      contains('Open document…'),
+    );
+    expect(
+      fileMenu.menus.whereType<PlatformMenuItem>().map((item) => item.label),
+      isNot(contains('Quit RelGeo')),
+    );
+  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
   testWidgets('platform menu adapter preserves its child and platform policy', (
     WidgetTester tester,
   ) async {

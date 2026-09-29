@@ -112,7 +112,9 @@ class FilePickerWorkbenchFileService
     if (result == null || result.files.isEmpty) return null;
     final file = result.files.single;
     final bytes = file.bytes;
-    if (bytes == null) return null;
+    if (bytes == null) {
+      throw FileSystemException('The selected document could not be read.');
+    }
     return WorkbenchDocumentFile(
       source: utf8.decode(bytes),
       path: file.path,
@@ -122,17 +124,13 @@ class FilePickerWorkbenchFileService
 
   @override
   Future<WorkbenchDocumentFile?> openDocumentAtPath(String path) async {
-    try {
-      final file = File(path);
-      if (!await file.exists()) return null;
-      return WorkbenchDocumentFile(
-        source: await file.readAsString(),
-        path: path,
-        name: _fileName(path) ?? path,
-      );
-    } catch (_) {
-      return null;
-    }
+    final file = File(path);
+    if (!await file.exists()) return null;
+    return WorkbenchDocumentFile(
+      source: await file.readAsString(),
+      path: path,
+      name: _fileName(path) ?? path,
+    );
   }
 
   @override
@@ -147,15 +145,22 @@ class FilePickerWorkbenchFileService
     String? currentPath,
     String? currentName,
   }) async {
-    final bytes = Uint8List.fromList(utf8.encode(source));
-    final path = await FilePicker.platform.saveFile(
-      type: FileType.custom,
-      allowedExtensions: _extensions,
-      fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
-      bytes: bytes,
-      lockParentWindow: true,
-    );
+    // Save writes directly to the document identity already associated with
+    // the session. Only Save As (or Save on an untitled document) opens a
+    // destination picker.
+    final path = !saveAs && currentPath != null && currentPath.isNotEmpty
+        ? currentPath
+        : await FilePicker.platform.saveFile(
+            type: FileType.custom,
+            allowedExtensions: _extensions,
+            fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
+            lockParentWindow: true,
+          );
     if (path == null) return null;
+
+    await File(
+      path,
+    ).writeAsBytes(Uint8List.fromList(utf8.encode(source)), flush: true);
     return WorkbenchDocumentFile(
       source: source,
       path: path,

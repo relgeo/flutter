@@ -131,6 +131,14 @@ class WorkbenchCompositionShell extends StatelessWidget {
         }
 
         final activeTree = _treeForShell(controller);
+        final parametersInDockTree = switch (activeTree) {
+          DockPanelNode panel =>
+            panel.panelId == WorkbenchPanelId.parameters,
+          DockSplitNode split => split.panels.contains(
+            WorkbenchPanelId.parameters,
+          ),
+          _ => false,
+        };
         final panels = activeTree == null
             ? SizedBox(
                 width: panelWidth,
@@ -157,14 +165,18 @@ class WorkbenchCompositionShell extends StatelessWidget {
                     node: activeTree,
                     panelBuilder: (context, id) =>
                         _buildPanelSurface(context, id, controller),
-                    onDividerDrag: (location, delta) =>
-                        controller.resizeDockDivider(
-                          location,
-                          delta,
-                          location.axis == DockAxis.horizontal
-                              ? treeConstraints.maxWidth
-                              : treeConstraints.maxHeight,
-                        ),
+                    onDividerDrag: (location, delta) {
+                      final availablePixels = location.availablePixels > 0
+                          ? location.availablePixels
+                          : location.axis == DockAxis.horizontal
+                          ? treeConstraints.maxWidth
+                          : treeConstraints.maxHeight;
+                      controller.resizeDockDivider(
+                        location,
+                        delta,
+                        availablePixels,
+                      );
+                    },
                   ),
                 ),
               );
@@ -174,7 +186,9 @@ class WorkbenchCompositionShell extends StatelessWidget {
                 child: panels,
               )
             : panels;
-        final parameterHeight = _parametersSlotHeight(controller);
+        final parameterHeight = parametersInDockTree
+            ? 0.0
+            : _parametersSlotHeight(controller);
         final dividerVisible =
             parameters != null &&
             parameterHeight > 0 &&
@@ -189,7 +203,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
                     const _WorkbenchHorizontalDividerVisual(
                       key: ValueKey('workbench-divider-visual-parameters'),
                     ),
-                  _buildParametersSlot(context, controller),
+                  if (!parametersInDockTree)
+                    _buildParametersSlot(context, controller),
                 ],
               );
         return Stack(
@@ -487,14 +502,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
                         controller.beginFloatingPanelDrag(id);
                         Focus.of(focusContext).requestFocus();
                         controller.focusFloatingPanel(id);
-                        _updateDropPreview(
-                          controller,
-                          id,
-                          canvasWidth: canvasWidth,
-                          canvasHeight: canvasHeight,
-                        );
                       },
-                      onDrag: (delta) {
+                      onDrag: (delta, globalPosition) {
                         controller.moveFloatingPanel(
                           id,
                           dx: delta.dx,
@@ -502,12 +511,20 @@ class WorkbenchCompositionShell extends StatelessWidget {
                           canvasWidth: canvasWidth,
                           canvasHeight: canvasHeight,
                         );
-                        _updateDropPreview(
-                          controller,
-                          id,
-                          canvasWidth: canvasWidth,
-                          canvasHeight: canvasHeight,
-                        );
+                        final renderObject = context.findRenderObject();
+                        if (renderObject is RenderBox) {
+                          _updateDropPreview(
+                            controller,
+                            id,
+                            pointer: renderObject.globalToLocal(
+                              globalPosition,
+                            ),
+                            canvasWidth: canvasWidth,
+                            canvasHeight: canvasHeight,
+                          );
+                        } else {
+                          controller.clearDropPreview();
+                        }
                       },
                       onDragEnd: () {
                         final preview = controller.dropPreview;
@@ -550,6 +567,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
   void _updateDropPreview(
     WorkbenchLayoutController controller,
     WorkbenchPanelId sourcePanel, {
+    required Offset pointer,
     required double canvasWidth,
     required double canvasHeight,
   }) {
@@ -561,13 +579,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
       return;
     }
 
-    final bounds =
-        controller.layout.floatingBounds[sourcePanel] ??
-        controller.panel(sourcePanel).bounds;
-    final pointer = Offset(
-      (bounds.left ?? 24) + (bounds.width ?? 320) / 2,
-      (bounds.top ?? 24) + (bounds.height ?? 260) / 2,
-    );
     DockDropPreview? preview;
     for (final target in WorkbenchPanelId.values) {
       final containsTarget = switch (root) {
@@ -738,7 +749,7 @@ class _FloatingPanelDragHandle extends StatefulWidget {
 
   final WorkbenchPanelId panelId;
   final VoidCallback onDragStart;
-  final ValueChanged<Offset> onDrag;
+  final void Function(Offset delta, Offset globalPosition) onDrag;
   final VoidCallback onDragEnd;
   final VoidCallback onDragCancel;
 
@@ -794,7 +805,8 @@ class _FloatingPanelDragHandleState extends State<_FloatingPanelDragHandle> {
                 _dragging = true;
                 widget.onDragStart();
               },
-              onPanUpdate: (details) => widget.onDrag(details.delta),
+              onPanUpdate: (details) =>
+                  widget.onDrag(details.delta, details.globalPosition),
               onPanEnd: (_) {
                 if (!_dragging) return;
                 _dragging = false;

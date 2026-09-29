@@ -127,148 +127,169 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchLayoutPersistenceController();
   final WorkbenchRecentDocumentsStore _recentDocumentsStore =
       const WorkbenchRecentDocumentsStore();
+  Timer? _compileDebounce;
+  final ValueNotifier<double> _zoomLevel = ValueNotifier<double>(1.0);
 
-  String? _documentPath;
-  String? _documentName;
+  String? get _documentPath => _documentSession.path;
+  String? get _documentName => _documentSession.name;
   List<WorkbenchRecentDocument> _recentDocuments =
       const <WorkbenchRecentDocument>[];
 
   Future<void> _openDocumentFromFileService() async {
-    if (!await _confirmDiscardChangesIfNeeded()) return;
     final service = widget.fileService;
     if (service == null) return;
 
-    if (service is WorkbenchDocumentFileService) {
-      final document = await service.openDocumentWithIdentity();
-      if (!mounted || document == null) return;
-      _documentPath = document.path;
-      _documentName = document.name;
-      _documentSession.markLoaded(
-        source: document.source,
-        path: document.path,
-        name: document.name,
-      );
-      await _recordRecentDocument(document);
-      _editorController.editingController.text = document.source;
-      _compileDSL(document.source);
-      return;
-    }
+    try {
+      if (service is WorkbenchDocumentFileService) {
+        final document = await service.openDocumentWithIdentity();
+        if (!mounted || document == null) return;
+        // Ask only after a document was selected. Cancelling the picker must
+        // not ask the user to discard the current work.
+        if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+        _loadDocument(document);
+        await _recordRecentDocument(document);
+        return;
+      }
 
-    final source = await service.openDocument();
-    if (!mounted || source == null) return;
-    _documentPath = null;
-    _documentName = null;
-    _documentSession.markLoaded(source: source);
-    _editorController.editingController.text = source;
-    _compileDSL(source);
+      final source = await service.openDocument();
+      if (!mounted || source == null) return;
+      if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+      _documentSession.markLoaded(source: source);
+      _editorController.replaceDocument(source);
+      _compileDSL(source);
+    } catch (error) {
+      _showDocumentOperationError('Open document', error);
+    }
   }
 
   Future<void> _openRecentDocument(String path) async {
-    if (!await _confirmDiscardChangesIfNeeded()) return;
     final service = widget.fileService;
     if (service is! WorkbenchRecentDocumentFileService) return;
 
-    final document = await service.openDocumentAtPath(path);
-    if (!mounted) return;
-    if (document == null) {
-      await _recentDocumentsStore.remove(path);
-      final remaining = await _recentDocumentsStore.load();
-      if (mounted) setState(() => _recentDocuments = remaining);
-      return;
+    try {
+      final document = await service.openDocumentAtPath(path);
+      if (!mounted) return;
+      if (document == null) {
+        await _recentDocumentsStore.remove(path);
+        final remaining = await _recentDocumentsStore.load();
+        if (mounted) setState(() => _recentDocuments = remaining);
+        return;
+      }
+      if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+      _loadDocument(document);
+      await _recordRecentDocument(document);
+    } catch (error) {
+      _showDocumentOperationError('Open recent document', error);
     }
+  }
 
-    _documentPath = document.path;
-    _documentName = document.name;
+  void _loadDocument(WorkbenchDocumentFile document) {
     _documentSession.markLoaded(
       source: document.source,
       path: document.path,
       name: document.name,
     );
-    _editorController.editingController.text = document.source;
+    _editorController.replaceDocument(document.source);
     _compileDSL(document.source);
-    await _recordRecentDocument(document);
   }
 
   Future<void> _createNewDocument() async {
     if (!await _confirmDiscardChangesIfNeeded()) return;
-    _documentPath = null;
-    _documentName = null;
     _documentSession.markLoaded(source: _newDocumentDSL);
-    _editorController.editingController.text = _newDocumentDSL;
+    _editorController.replaceDocument(_newDocumentDSL);
     _compileDSL(_newDocumentDSL);
   }
 
   Future<void> _saveDocumentToFileService({required bool saveAs}) async {
     final service = widget.fileService;
     if (service == null) return;
-    if (service is WorkbenchDocumentFileService) {
-      final saved = await service.saveDocumentWithIdentity(
+    try {
+      if (service is WorkbenchDocumentFileService) {
+        final saved = await service.saveDocumentWithIdentity(
+          _editorController.text,
+          saveAs: saveAs,
+          currentPath: _documentPath,
+          currentName: _documentName,
+        );
+        if (saved != null && mounted) {
+          _documentSession.markSaved(
+            source: saved.source,
+            path: saved.path,
+            name: saved.name,
+          );
+          await _recordRecentDocument(saved);
+        }
+        return;
+      }
+
+      final saved = await service.saveDocument(
         _editorController.text,
         saveAs: saveAs,
-        currentPath: _documentPath,
-        currentName: _documentName,
       );
-      if (saved != null) {
-        _documentPath = saved.path;
-        _documentName = saved.name;
+      if (saved && mounted) {
         _documentSession.markSaved(
-          source: saved.source,
-          path: saved.path,
-          name: saved.name,
+          source: _editorController.text,
+          path: _documentPath,
+          name: _documentName,
         );
-        await _recordRecentDocument(saved);
+        if (_documentPath != null && _documentName != null) {
+          await _recordRecentDocument(
+            WorkbenchDocumentFile(
+              source: _editorController.text,
+              path: _documentPath,
+              name: _documentName,
+            ),
+          );
+        }
       }
-      return;
-    }
-
-    final saved = await service.saveDocument(
-      _editorController.text,
-      saveAs: saveAs,
-    );
-    if (saved) {
-      _documentSession.markSaved(
-        source: _editorController.text,
-        path: _documentPath,
-        name: _documentName,
+    } catch (error) {
+      _showDocumentOperationError(
+        saveAs ? 'Save document as' : 'Save document',
+        error,
       );
-      if (_documentPath != null && _documentName != null) {
-        await _recordRecentDocument(
-          WorkbenchDocumentFile(
-            source: _editorController.text,
-            path: _documentPath,
-            name: _documentName,
-          ),
-        );
-      }
     }
+  }
+
+  void _showDocumentOperationError(String operation, Object error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$operation failed: $error')));
   }
 
   Future<void> _saveDocumentWithHostResult({required bool saveAs}) async {
     final handler = widget.onSaveDocumentWithResult;
     if (handler == null) return;
-    final result = await handler(
-      WorkbenchDocumentSaveRequest(
-        source: _editorController.text,
-        saveAs: saveAs,
-        currentPath: _documentPath,
-        currentName: _documentName,
-      ),
-    );
-    if (!result.saved) return;
-    _documentPath = result.path ?? _documentPath;
-    _documentName = result.name ?? _documentName;
-    _documentSession.markSaved(
-      source: _editorController.text,
-      path: _documentPath,
-      name: _documentName,
-    );
-    if (_documentPath != null && _documentName != null) {
-      await _recordRecentDocument(
-        WorkbenchDocumentFile(
+    try {
+      final result = await handler(
+        WorkbenchDocumentSaveRequest(
           source: _editorController.text,
-          path: _documentPath,
-          name: _documentName,
+          saveAs: saveAs,
+          currentPath: _documentPath,
+          currentName: _documentName,
         ),
+      );
+      if (!result.saved || !mounted) return;
+      final savedPath = result.path ?? _documentPath;
+      final savedName = result.name ?? _documentName;
+      _documentSession.markSaved(
+        source: _editorController.text,
+        path: savedPath,
+        name: savedName,
+      );
+      if (savedPath != null && savedName != null) {
+        await _recordRecentDocument(
+          WorkbenchDocumentFile(
+            source: _editorController.text,
+            path: savedPath,
+            name: savedName,
+          ),
+        );
+      }
+    } catch (error) {
+      _showDocumentOperationError(
+        saveAs ? 'Save document as' : 'Save document',
+        error,
       );
     }
   }
@@ -290,10 +311,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       return;
     }
     if (!await _confirmDiscardChangesIfNeeded()) return;
-    _documentPath = null;
-    _documentName = null;
     _documentSession.reset(source: '');
-    _editorController.editingController.text = '';
+    _editorController.replaceDocument('');
     _compileDSL('');
   }
 
@@ -565,7 +584,7 @@ objects:
     _editorController = WorkbenchEditorController.fromText(initialDsl);
     _editorController.addListener(_onCodeChanged);
     _viewportController.addListener(() {
-      if (mounted) setState(() {});
+      _zoomLevel.value = _viewportController.zoomLevel;
     });
     _overlayController.addListener(() {
       if (mounted) setState(() {});
@@ -637,6 +656,8 @@ objects:
     _layoutPersistenceController.dispose();
     _layoutController.dispose();
     _editorController.dispose();
+    _compileDebounce?.cancel();
+    _zoomLevel.dispose();
     _viewportController.dispose();
     _overlayController.dispose();
     _documentController.dispose();
@@ -695,20 +716,16 @@ objects:
 
   void _onCodeChanged() {
     _documentSession.updateSource(_editorController.text);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _compileDSL(_editorController.text);
-      }
+    _compileDebounce?.cancel();
+    _compileDebounce = Timer(const Duration(milliseconds: 180), () {
+      if (mounted) _compileDSL(_editorController.text);
     });
   }
 
   void _compileDSL(String code) {
+    _compileDebounce?.cancel();
+    _compileDebounce = null;
     try {
-      setState(() {
-        _yamlError = null;
-        _compilerError = null;
-      });
-
       final doc = loadYaml(code);
       if (doc is! Map) {
         throw Exception('YAML format must represent a Map structure.');
@@ -734,6 +751,8 @@ objects:
       );
 
       setState(() {
+        _yamlError = null;
+        _compilerError = null;
         _scene = scene;
         if (scene.sheets.isEmpty) {
           _selectedSheetId = null;
@@ -745,9 +764,11 @@ objects:
     } on YamlException catch (e) {
       setState(() {
         _yamlError = e.message;
+        _compilerError = null;
       });
     } catch (e) {
       setState(() {
+        _yamlError = null;
         _compilerError = e.toString();
       });
     }
@@ -1465,54 +1486,84 @@ objects:
   // ── Navbar ─────────────────────────────────────
 
   Widget _buildNavbar(bool hasError, WorkbenchCommandRegistry commandRegistry) {
-    return WorkbenchNavbar(
-      hasError: hasError,
-      exportButtonLabel: _exportButtonLabel,
-      onExport: _exportSVG,
-      commandRegistry: commandRegistry,
+    return AnimatedBuilder(
+      animation: _documentSession,
+      builder: (context, _) => WorkbenchNavbar(
+        hasError: hasError,
+        exportButtonLabel: _exportButtonLabel,
+        onExport: _exportSVG,
+        documentName: _documentName ?? 'Untitled',
+        documentPath: _documentPath,
+        documentDirty: _documentSession.isDirty,
+        toolbar: ValueListenableBuilder<double>(
+          valueListenable: _zoomLevel,
+          builder: (context, zoomLevel, _) => _buildViewportToolbar(
+            commandRegistry,
+            zoomLevel: zoomLevel,
+            showPreviewTools:
+                _layoutController.panel(WorkbenchPanelId.preview).visibility ==
+                WorkbenchPanelVisibility.visible,
+          ),
+        ),
+        commandRegistry: commandRegistry,
+      ),
     );
   }
 
   // ── Viewport Panel (tengah) ─────────────────
 
   Widget _buildViewportPanel(WorkbenchCommandRegistry commandRegistry) {
-    return WorkbenchCommandContextMenu(
-      registry: commandRegistry,
-      child: WorkbenchPreviewFeature(
-        toolbar: _buildViewportToolbar(commandRegistry),
-        overlayToolbar: _buildOverlayToolbar(),
-        panel: WorkbenchViewportPanel(
+    return AnimatedBuilder(
+      animation: _viewportController.transformationController,
+      builder: (context, _) => WorkbenchCommandContextMenu(
+        registry: commandRegistry,
+        child: WorkbenchPreviewFeature(
+          overlayToolbar: _buildOverlayToolbar(),
+          panel: WorkbenchViewportPanel(
+            visualProfile: _workbenchProfile,
+            viewportController: _viewportController.transformationController,
+            scene: _scene,
+            displayBounds: _displayBounds,
+            overlay: _overlayController.overlay,
+            zoomLevel: _zoomLevel.value,
+            selectedSheetId: _selectedSheetId,
+            hiddenRoles: _overlayController.hiddenRoles,
+            onViewportSizeChanged: (size) {
+              _viewportController.setViewportSize(size);
+            },
+            activeSheetPhysicalTargetLabel: _activeSheet != null
+                ? _activeSheetPhysicalTargetLabel
+                : null,
+            activeSheetViewSummaryLabel: _activeSheet != null
+                ? _activeSheetViewSummaryLabel
+                : null,
+          ),
           visualProfile: _workbenchProfile,
-          viewportController: _viewportController.transformationController,
-          scene: _scene,
-          displayBounds: _displayBounds,
-          overlay: _overlayController.overlay,
-          zoomLevel: _viewportController.zoomLevel,
-          selectedSheetId: _selectedSheetId,
-          hiddenRoles: _overlayController.hiddenRoles,
-          onViewportSizeChanged: (size) {
-            _viewportController.setViewportSize(size);
-          },
-          activeSheetPhysicalTargetLabel: _activeSheet != null
-              ? _activeSheetPhysicalTargetLabel
-              : null,
-          activeSheetViewSummaryLabel: _activeSheet != null
-              ? _activeSheetViewSummaryLabel
-              : null,
+          onCollapse: () =>
+              _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
+          onFloat: () => _layoutController.setPlacement(
+            WorkbenchPanelId.preview,
+            WorkbenchPanelPlacement.floating,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildViewportToolbar(WorkbenchCommandRegistry commandRegistry) {
+  Widget _buildViewportToolbar(
+    WorkbenchCommandRegistry commandRegistry, {
+    double? zoomLevel,
+    required bool showPreviewTools,
+  }) {
     return WorkbenchViewportToolbar(
       visualProfile: _workbenchProfile,
       commandRegistry: commandRegistry,
-      zoomLevel: _viewportController.zoomLevel,
+      zoomLevel: zoomLevel ?? _viewportController.zoomLevel,
       targetUnitLabel: _targetUnit.name.toUpperCase(),
       previewRouteLabel: _activePreviewRouteLabel,
       workbenchProfileId: widget.workbenchProfileId,
       themePreference: widget.themePreference,
+      showPreviewTools: showPreviewTools,
       onWorkbenchProfileChanged: widget.onWorkbenchProfileChanged,
       onThemePreferenceChanged: widget.onThemePreferenceChanged,
       documentProfileNames: _profiles.keys.toList(),
@@ -1532,12 +1583,6 @@ objects:
       onZoomOut: _zoomOut,
       onFitViewport: _fitViewport,
       onResetViewport: _resetViewport,
-      onCollapse: () =>
-          _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
-      onFloat: () => _layoutController.setPlacement(
-        WorkbenchPanelId.preview,
-        WorkbenchPanelPlacement.floating,
-      ),
     );
   }
 

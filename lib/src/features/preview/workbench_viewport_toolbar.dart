@@ -16,6 +16,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
     required this.previewRouteLabel,
     required this.workbenchProfileId,
     required this.themePreference,
+    this.showPreviewTools = true,
     required this.onWorkbenchProfileChanged,
     required this.onThemePreferenceChanged,
     required this.documentProfileNames,
@@ -28,8 +29,6 @@ class WorkbenchViewportToolbar extends StatelessWidget {
     required this.onZoomOut,
     required this.onFitViewport,
     required this.onResetViewport,
-    this.onCollapse,
-    this.onFloat,
   });
 
   final WorkbenchVisualProfile visualProfile;
@@ -39,6 +38,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   final String previewRouteLabel;
   final String workbenchProfileId;
   final RelGeoThemePreference? themePreference;
+  final bool showPreviewTools;
   final ValueChanged<String>? onWorkbenchProfileChanged;
   final ValueChanged<RelGeoThemePreference>? onThemePreferenceChanged;
   final List<String> documentProfileNames;
@@ -51,27 +51,26 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   final VoidCallback onZoomOut;
   final VoidCallback onFitViewport;
   final VoidCallback onResetViewport;
-  final VoidCallback? onCollapse;
-  final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration:
-          const BoxDecoration(
-            border: Border(bottom: BorderSide(width: 1)),
-          ).copyWith(
-            color: visualProfile.toolbarBackgroundColor,
-            border: Border(
-              bottom: BorderSide(color: visualProfile.borderColor, width: 1),
-            ),
-          ),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final nextTheme = isDark
+        ? RelGeoThemePreference.light
+        : RelGeoThemePreference.dark;
+    final nextThemeCommand = isDark
+        ? WorkbenchCommandId.lightTheme
+        : WorkbenchCommandId.darkTheme;
+    final toggleTheme =
+        commandRegistry.find(nextThemeCommand)?.invoke ??
+        () => onThemePreferenceChanged?.call(nextTheme);
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (showPreviewTools)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -115,36 +114,9 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                   ),
                 ],
               ),
-              if (onFloat != null)
-                IconButton(
-                  key: const Key('float-preview-panel'),
-                  tooltip: 'Float Preview',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  color: visualProfile.mutedColor,
-                  onPressed: onFloat,
-                ),
-              if (onCollapse != null)
-                IconButton(
-                  key: const Key('collapse-preview-panel'),
-                  tooltip: 'Collapse Preview',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-                  color: visualProfile.mutedColor,
-                  onPressed: onCollapse,
-                ),
             ],
           ),
+        if (showPreviewTools)
           WorkbenchDropdownField<String>(
             semanticsKey: const Key('workbench-profile-semantics'),
             buttonKey: const Key('workbench-profile-selector'),
@@ -169,44 +141,24 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                 )
                 .toList(),
           ),
-          WorkbenchDropdownField<RelGeoThemePreference>(
-            semanticsKey: const Key('theme-mode-semantics'),
-            buttonKey: const Key('theme-mode-selector'),
-            value:
-                themePreference ??
-                (Theme.of(context).brightness == Brightness.dark
-                    ? RelGeoThemePreference.dark
-                    : RelGeoThemePreference.light),
-            semanticsLabel: 'Theme mode',
-            semanticsValue: themePreference == null
-                ? '${Theme.of(context).brightness == Brightness.dark ? 'Dark' : 'Light'} (System)'
+          Semantics(
+            key: const Key('theme-mode-semantics'),
+            label: 'Theme mode',
+            value: themePreference == null
+                ? '${isDark ? 'Dark' : 'Light'} (System)'
                 : themePreference!.label,
-            semanticsHint:
-                'Choose Light or Dark. Reset to system appearance when an override is active.',
-            backgroundColor: visualProfile.overlayBackgroundColor,
-            borderColor: visualProfile.borderColor,
-            mutedColor: visualProfile.mutedColor,
-            accentColor: visualProfile.accentColor,
-            icon: Icons.brightness_6,
-            iconSize: 15,
-            onChanged: (value) {
-              if (value == RelGeoThemePreference.light) {
-                commandRegistry.find(WorkbenchCommandId.lightTheme)?.invoke();
-              } else if (value == RelGeoThemePreference.dark) {
-                commandRegistry.find(WorkbenchCommandId.darkTheme)?.invoke();
-              } else if (value != null) {
-                onThemePreferenceChanged?.call(value);
-              }
-            },
-            items: RelGeoThemePreference.values
-                .map(
-                  (preference) => DropdownMenuItem<RelGeoThemePreference>(
-                    value: preference,
-                    key: Key('theme-mode-option-${preference.storageValue}'),
-                    child: Text('Theme: ${preference.label}'),
-                  ),
-                )
-                .toList(),
+            hint:
+                'Toggle between Light and Dark. Use View, Appearance to follow system appearance.',
+            button: true,
+            onTap: toggleTheme,
+            child: IconButton(
+              key: const Key('theme-mode-selector'),
+              tooltip: 'Switch to ${nextTheme.label} mode',
+              visualDensity: VisualDensity.compact,
+              onPressed: toggleTheme,
+              icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+              color: visualProfile.accentColor,
+            ),
           ),
           if (themePreference != null)
             IconButton(
@@ -248,7 +200,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                 ),
               ],
             ),
-          if (sheetIds.isNotEmpty)
+          if (showPreviewTools && sheetIds.isNotEmpty)
             WorkbenchDropdownField<String?>(
               buttonKey: const Key('sheet-selector'),
               value: selectedSheetId,
@@ -291,17 +243,20 @@ class WorkbenchViewportToolbar extends StatelessWidget {
             color: visualProfile.mutedColor,
             buttonKey: const Key('reset-workbench-preferences'),
           ),
+        if (showPreviewTools)
           WorkbenchIconButton(
             Icons.zoom_in,
             'Perbesar',
             commandRegistry.find(WorkbenchCommandId.zoomIn)?.invoke ?? onZoomIn,
           ),
+        if (showPreviewTools)
           WorkbenchIconButton(
             Icons.zoom_out,
             'Perkecil',
             commandRegistry.find(WorkbenchCommandId.zoomOut)?.invoke ??
                 onZoomOut,
           ),
+        if (showPreviewTools)
           WorkbenchIconButton(
             Icons.center_focus_strong,
             'Fit',
@@ -309,14 +264,14 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                 onFitViewport,
             color: const Color(0xFF00FFCC),
           ),
+        if (showPreviewTools)
           WorkbenchIconButton(
             Icons.refresh,
             'Reset',
             commandRegistry.find(WorkbenchCommandId.resetViewport)?.invoke ??
                 onResetViewport,
           ),
-        ],
-      ),
+      ],
     );
   }
 }

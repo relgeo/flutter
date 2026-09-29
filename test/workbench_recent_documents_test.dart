@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/cad_workbench.dart';
+import 'package:relgeo_flutter/src/features/editor/workbench_editor_feature.dart';
 import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 import 'package:relgeo_flutter/src/ui/workbench_recent_documents.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ scene:
 
 class _RecentFileService implements WorkbenchRecentDocumentFileService {
   String? openedPath;
+  bool missingRecent = false;
 
   @override
   Future<String?> openDocument() async => _source;
@@ -33,6 +35,7 @@ class _RecentFileService implements WorkbenchRecentDocumentFileService {
   @override
   Future<WorkbenchDocumentFile?> openDocumentAtPath(String path) async {
     openedPath = path;
+    if (missingRecent) return null;
     return WorkbenchDocumentFile(
       source: _source,
       path: path,
@@ -109,4 +112,58 @@ void main() {
     expect(service.openedPath, '/documents/recent.relgeo');
     expect(find.textContaining('Recent document'), findsOneWidget);
   });
+
+  testWidgets(
+    'missing Recent file is removed without discarding dirty source',
+    (tester) async {
+      final encoded = jsonEncode(
+        const WorkbenchRecentDocument(
+          path: '/documents/recent.relgeo',
+          name: 'recent.relgeo',
+        ).toJson(),
+      );
+      SharedPreferences.setMockInitialValues({
+        WorkbenchRecentDocumentsStore.storageKey: <String>[encoded],
+      });
+      var confirmCount = 0;
+      final service = _RecentFileService()..missingRecent = true;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CADWorkbenchPage(
+            initialDsl: _source,
+            fileService: service,
+            onConfirmDiscardChanges: () async {
+              confirmCount++;
+              return false;
+            },
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final editor = tester.widget<WorkbenchEditorFeature>(
+        find.byType(WorkbenchEditorFeature),
+      );
+      editor.contract.controller.text = '$_source\n# keep this edit';
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('File'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('Recent'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('recent.relgeo'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(confirmCount, 0);
+      expect(service.openedPath, '/documents/recent.relgeo');
+      expect(editor.contract.controller.text, contains('# keep this edit'));
+
+      await tester.tap(find.text('File'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('Recent'));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('No recent documents'), findsOneWidget);
+    },
+  );
 }

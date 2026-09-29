@@ -13,11 +13,17 @@ class DockDividerLocation {
     required this.splitPath,
     required this.axis,
     required this.dividerIndex,
+    this.availablePixels = 0,
   });
 
   final List<int> splitPath;
   final DockAxis axis;
   final int dividerIndex;
+
+  /// Resizable child extent for this split, excluding its dividers.
+  /// Nested splits measure this locally instead of borrowing the workbench
+  /// root's dimensions.
+  final double availablePixels;
 }
 
 /// Builds the visual divider between two children of a [DockSplitNode].
@@ -116,16 +122,20 @@ class DockLayoutRenderer extends StatelessWidget {
         final dividerCount = split.children.length - 1;
         final usableExtent = extent - dividerCount;
         if (usableExtent <= 0) return content;
-        final ratios = _safeRatios(split.ratios, split.children.length);
-        final totalRatio = ratios.fold<double>(0, (sum, ratio) => sum + ratio);
+        final flexes = _safeRatios(
+          split.ratios,
+          split.children.length,
+        ).map(_flexFor).toList();
+        final totalFlex = flexes.fold<int>(0, (sum, flex) => sum + flex);
         var offset = 0.0;
         final handles = <Widget>[];
         for (var index = 0; index < split.children.length - 1; index++) {
-          offset += usableExtent * ratios[index] / totalRatio;
+          offset += usableExtent * flexes[index] / totalFlex;
           final location = DockDividerLocation(
             splitPath: List.unmodifiable(path),
             axis: split.axis,
             dividerIndex: index,
+            availablePixels: usableExtent,
           );
           handles.add(
             _DockDividerHandle(
@@ -144,7 +154,7 @@ class DockLayoutRenderer extends StatelessWidget {
         offset = 0;
         final positioned = <Widget>[];
         for (var index = 0; index < split.children.length - 1; index++) {
-          offset += usableExtent * ratios[index] / totalRatio;
+          offset += usableExtent * flexes[index] / totalFlex;
           final handle = handles[handleIndex++];
           positioned.add(
             split.axis == DockAxis.horizontal

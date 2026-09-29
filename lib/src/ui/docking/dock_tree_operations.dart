@@ -39,6 +39,35 @@ class DockTreeOperations {
     return normalize(result);
   }
 
+  /// Moves a panel to a new dock zone without leaving its previous node in
+  /// the tree. This also repairs duplicate instances of the moved panel by
+  /// removing every old occurrence before inserting exactly one new leaf.
+  static DockNode move({
+    required DockNode root,
+    required WorkbenchPanelId panel,
+    required WorkbenchPanelId target,
+    required DockZone zone,
+    DockAxis centerAxis = DockAxis.vertical,
+  }) {
+    if (panel == target) {
+      throw ArgumentError.value(
+        target,
+        'target',
+        'A panel cannot dock to itself',
+      );
+    }
+    final rootWithoutPanel = _panelsOf(root).contains(panel)
+        ? remove(root: root, panel: panel)
+        : root;
+    return insert(
+      root: rootWithoutPanel,
+      panel: panel,
+      target: target,
+      zone: zone,
+      centerAxis: centerAxis,
+    );
+  }
+
   /// Resizes two adjacent children in a split without changing tree shape.
   ///
   /// [splitPath] identifies the split by child indexes from the root. A

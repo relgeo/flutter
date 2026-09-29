@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,6 +67,9 @@ class _FakeFileService implements WorkbenchDocumentFileService {
   int openCount = 0;
   int saveCount = 0;
   bool? lastSaveAs;
+  bool cancelOpen = false;
+  Object? openError;
+  Object? saveError;
   String? lastCurrentPath;
   String? lastCurrentName;
 
@@ -77,6 +82,8 @@ class _FakeFileService implements WorkbenchDocumentFileService {
   @override
   Future<WorkbenchDocumentFile?> openDocumentWithIdentity() async {
     openCount++;
+    if (openError case final error?) throw error;
+    if (cancelOpen) return null;
     return const WorkbenchDocumentFile(
       source: _sheetDsl,
       path: '/documents/example.relgeo',
@@ -100,6 +107,7 @@ class _FakeFileService implements WorkbenchDocumentFileService {
     String? currentName,
   }) async {
     saveCount++;
+    if (saveError case final error?) throw error;
     lastSaveAs = saveAs;
     lastCurrentPath = currentPath;
     lastCurrentName = currentName;
@@ -348,6 +356,123 @@ void main() {
     expect(service.lastCurrentName, 'example.relgeo');
   });
 
+  testWidgets('cancelling Open does not prompt to discard dirty source', (
+    WidgetTester tester,
+  ) async {
+    var confirmCount = 0;
+    final service = _FakeFileService()..cancelOpen = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          fileService: service,
+          onConfirmDiscardChanges: () async {
+            confirmCount++;
+            return false;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# keep this edit';
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open document…'));
+    await tester.pumpAndSettle();
+
+    expect(service.openCount, 1);
+    expect(confirmCount, 0);
+    expect(find.text('Discard unsaved changes?'), findsNothing);
+    expect(editor.text, contains('# keep this edit'));
+  });
+
+  testWidgets('navbar tracks document identity and unsaved state', (
+    WidgetTester tester,
+  ) async {
+    final service = _FakeFileService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(initialDsl: _sheetDsl, fileService: service),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Untitled'), findsOneWidget);
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# unsaved visible state';
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Unsaved changes'), findsOneWidget);
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save document'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('new.relgeo'), findsOneWidget);
+    expect(find.byTooltip('Unsaved changes'), findsNothing);
+  });
+
+  testWidgets('failed Open preserves dirty source and reports the error', (
+    WidgetTester tester,
+  ) async {
+    var confirmCount = 0;
+    final service = _FakeFileService()
+      ..openError = const FileSystemException('permission denied');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          fileService: service,
+          onConfirmDiscardChanges: () async {
+            confirmCount++;
+            return true;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# keep after failed open';
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open document…'));
+    await tester.pumpAndSettle();
+
+    expect(confirmCount, 0);
+    expect(editor.text, contains('# keep after failed open'));
+    expect(find.textContaining('Open document failed'), findsOneWidget);
+  });
+
+  testWidgets('failed Save leaves the document dirty and reports the error', (
+    WidgetTester tester,
+  ) async {
+    final service = _FakeFileService()
+      ..saveError = const FileSystemException('disk is full');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(initialDsl: _sheetDsl, fileService: service),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# keep dirty after failed save';
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save document'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Unsaved changes'), findsOneWidget);
+    expect(find.textContaining('Save document failed'), findsOneWidget);
+  });
+
   testWidgets('file service enables a guarded local new document fallback', (
     WidgetTester tester,
   ) async {
@@ -411,6 +536,13 @@ void main() {
     expect(confirmCount, 2);
     expect(find.textContaining('# New RelGeo document'), findsOneWidget);
     expect(find.textContaining('# unsaved local document'), findsNothing);
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    final undo = tester.widget<MenuItemButton>(
+      find.widgetWithText(MenuItemButton, 'Undo'),
+    );
+    expect(undo.onPressed, isNull);
   });
 
   testWidgets(
@@ -709,7 +841,7 @@ void main() {
           'version: 0.5\nobjects:\n  broken:\n    type: definitely-not-a-relgeo-object';
       controller.notifyListeners();
       tester.binding.scheduleFrame();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 181));
       await tester.pumpAndSettle();
 
       expect(find.text('ERROR'), findsAtLeastNWidgets(1));

@@ -123,6 +123,10 @@ class EditorPanel extends StatelessWidget {
                       ),
                       child: CodeEditor(
                         controller: controller,
+                        // Let the docked editor receive focus only after the
+                        // user selects it. Restored panels may be reparented
+                        // during startup, while their render element is inactive.
+                        autofocus: false,
                         wordWrap: true,
                         style: CodeEditorStyle(
                           fontSize: 12.5,

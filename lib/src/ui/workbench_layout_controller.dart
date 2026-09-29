@@ -133,11 +133,19 @@ class WorkbenchLayoutController extends ChangeNotifier {
         (placement == WorkbenchPanelPlacement.floating ||
             placement == WorkbenchPanelPlacement.overlay) &&
         _dockedRootPanels.contains(id)) {
-      try {
-        _dockedRoot = DockTreeOperations.remove(root: _dockedRoot!, panel: id);
-      } on Object {
-        // The compatibility layout below remains authoritative if the tree
-        // was already missing this panel.
+      final root = _dockedRoot!;
+      if (root is DockPanelNode && root.panelId == id) {
+        // Removing the final leaf produces an empty dock tree. Switch back to
+        // the placement projection so the panel can still return exactly once.
+        _dockedRoot = null;
+        _usesDockTree = false;
+      } else {
+        try {
+          _dockedRoot = DockTreeOperations.remove(root: root, panel: id);
+        } on Object {
+          // The compatibility layout below remains authoritative if the tree
+          // was already missing this panel.
+        }
       }
     }
     if (_usesDockTree &&
@@ -283,7 +291,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
     if (!preview.isValid || preview.sourcePanel != id) return;
     final root = _dockedRoot ?? DockLayoutAdapter.fromPlacementLayout(_layout);
     if (root == null) return;
-    final nextRoot = DockTreeOperations.insert(
+    final nextRoot = DockTreeOperations.move(
       root: root,
       panel: id,
       target: preview.targetPanel,
@@ -422,11 +430,28 @@ class WorkbenchLayoutController extends ChangeNotifier {
   }
 
   void restore(WorkbenchLayoutModel layout, {DockNode? dockedRoot}) {
-    _dockedRoot = dockedRoot;
+    _dockedRoot = dockedRoot != null &&
+            DockTreeOperations.isValid(dockedRoot) &&
+            _dockTreeMatchesLayout(dockedRoot, layout)
+        ? dockedRoot
+        : null;
     _usesDockTree = _dockedRoot != null;
     _layout = layout;
     _dropPreview = null;
     notifyListeners();
+  }
+
+  bool _dockTreeMatchesLayout(DockNode root, WorkbenchLayoutModel layout) {
+    final treePanels = switch (root) {
+      DockPanelNode panel => panel.panels,
+      DockSplitNode split => split.panels,
+      _ => const <WorkbenchPanelId>{},
+    };
+    return !treePanels.any((id) {
+      final placement = layout.panels[id]?.placement;
+      return placement == WorkbenchPanelPlacement.floating ||
+          placement == WorkbenchPanelPlacement.overlay;
+    });
   }
 
   void reset() {
