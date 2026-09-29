@@ -396,7 +396,10 @@ validasi interaksi splitter dan scrolling pada shell compact masih terpisah.
 - [x] setiap preset menghasilkan tree deterministik, valid, dan tidak
   menggandakan panel;
 - [ ] command/context menu sinkron dengan state tree;
-- [ ] pure model, widget, golden, dan native smoke test tersedia;
+- [x] pure model, widget, dan golden regression test tersedia untuk tree,
+  resize bounds, drop preview, serta layout standard/nested/compact;
+- [ ] native smoke test manual tersedia dan dijalankan untuk pointer/touch/
+  keyboard; automated/widget coverage tidak menggantikan verifikasi native;
 - [ ] tidak ada regression terhadap editor, preview, inspector, export SVG,
   theme, canvas appearance, atau lifecycle dokumen.
 
@@ -453,3 +456,4 @@ native smoke test.
 | 2026-09-29 | Tahap 2 parsial — Per-feature maximum splitter constraints | Resize kini turut menghitung maximum extent subtree secara rekursif dan membatasi kedua sisi secara terpisah; nested split paralel menjumlahkan batas, sedangkan cabang ortogonal memakai batas terketat. Tes maximum asymmetric/nested dan integrasi controller lulus; full suite lulus 284 test dan analyzer bersih. Golden tree standard/nested/compact masih menunggu. |
 | 2026-09-29 | Tahap 2 — Dock renderer goldens | Menambahkan golden standard horizontal, nested horizontal/vertical, dan compact-vertical pada renderer tree; hasil divisual-inspeksi dan test khusus lulus. Full suite setelah penambahan snapshot masih perlu dijalankan. Goldens ini tidak mengklaim profile tree sudah menjadi renderer default atau menguji interaksi splitter di shell compact. |
 | 2026-09-29 | Tahap 2/6 parsial — Compact recursive shell test | Shell compact kini dites dengan tree recursive aktif pada viewport 420×780; renderer tetap berada di canvas minimum yang dapat discroll horizontal tanpa overflow dan setiap panel tetap tersedia. Regression composition shell + tree goldens (20 test) dan analyzer lulus. Profile tree belum menjadi baseline aktif sampai parity layout/persistence tervalidasi. |
+| 2026-09-29 | Quality gate refresh — full suite and release | Seluruh 288 test lulus, `flutter analyze` bersih, build web berhasil, dan build macOS Release berhasil dengan executable universal `x86_64 + arm64`. Ini menutup verifikasi otomatis terbaru untuk pure tree operations, renderer/widget, visual goldens, compact scrolling, splitter min/max, dan drop-preview regressions. Tidak menutup smoke test pointer/touch/keyboard pada macOS, native restart setelah interaksi tree, atau Ubuntu/Windows 11. |
