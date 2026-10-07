@@ -22,9 +22,9 @@ enum WorkbenchPanelId {
 /// part of the user's layout preference.
 enum WorkbenchPanelAvailability { available, unavailable }
 
-enum WorkbenchPanelVisibility { visible, hidden, collapsed }
+enum WorkbenchPanelVisibility { visible, hidden }
 
-enum WorkbenchPanelPlacement { left, center, right, bottom, floating, overlay }
+enum WorkbenchPanelPlacement { left, center, right, bottom, floating }
 
 extension WorkbenchPanelVisibilityStorage on WorkbenchPanelVisibility {
   String get storageKey => name;
@@ -210,6 +210,9 @@ class WorkbenchPanelLayout {
 extension WorkbenchPanelVisibilityExtension on WorkbenchPanelVisibility {
   static WorkbenchPanelVisibility? fromStorageKey(Object? value) {
     if (value is! String) return null;
+    // Older local layouts used a collapsed state. Panel lifecycle is now
+    // strictly visible/hidden, so restore the obsolete state as hidden.
+    if (value == 'collapsed') return WorkbenchPanelVisibility.hidden;
     for (final visibility in WorkbenchPanelVisibility.values) {
       if (visibility.name == value) return visibility;
     }
@@ -220,6 +223,9 @@ extension WorkbenchPanelVisibilityExtension on WorkbenchPanelVisibility {
 extension WorkbenchPanelPlacementExtension on WorkbenchPanelPlacement {
   static WorkbenchPanelPlacement? fromStorageKey(Object? value) {
     if (value is! String) return null;
+    // Overlay placement was removed; retain the panel as a normal floating
+    // panel when restoring an older local layout.
+    if (value == 'overlay') return WorkbenchPanelPlacement.floating;
     for (final placement in WorkbenchPanelPlacement.values) {
       if (placement.name == value) return placement;
     }

@@ -21,7 +21,7 @@ void main() {
           panels: {
             ...WorkbenchLayoutModel.standard().panels,
             WorkbenchPanelId.inspector: const WorkbenchPanelLayout(
-              visibility: WorkbenchPanelVisibility.collapsed,
+              visibility: WorkbenchPanelVisibility.hidden,
               placement: WorkbenchPanelPlacement.floating,
               bounds: WorkbenchPanelBounds(
                 width: 480,
@@ -60,6 +60,29 @@ void main() {
       }),
       standard,
     );
+  });
+
+  test('legacy overlay and collapsed states restore as float and hidden', () {
+    final legacy = WorkbenchLayoutModel.standard().toJson();
+    final panels = legacy['panels'] as Map<String, Object>;
+    final inspector = Map<String, Object>.from(panels['inspector']! as Map);
+    inspector['visibility'] = 'collapsed';
+    inspector['placement'] = 'overlay';
+    panels['inspector'] = inspector;
+
+    final restored = WorkbenchLayoutModel.fromJson(legacy);
+    expect(
+      restored.panels[WorkbenchPanelId.inspector]!.visibility,
+      WorkbenchPanelVisibility.hidden,
+    );
+    expect(
+      restored.panels[WorkbenchPanelId.inspector]!.placement,
+      WorkbenchPanelPlacement.floating,
+    );
+    final serializedPanels = restored.toJson()['panels'] as Map<String, Object>;
+    final serializedInspector = serializedPanels['inspector'] as Map;
+    expect(serializedInspector['visibility'], 'hidden');
+    expect(serializedInspector['placement'], 'floating');
   });
 
   test('document-derived availability stays outside serialized layout', () {

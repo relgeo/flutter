@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../ui/keyboard_activatable.dart';
+import '../../ui/workbench_panel_interaction.dart';
 import '../../ui/workbench_visual_profile.dart';
 
 /// Standalone parameters panel.
@@ -18,7 +19,7 @@ class ParametersPanel extends StatelessWidget {
     required this.onParamChanged,
     required this.onParamReset,
     this.visualProfile = WorkbenchVisualProfile.cad,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
@@ -28,11 +29,13 @@ class ParametersPanel extends StatelessWidget {
   final void Function(String name, double value) onParamChanged;
   final VoidCallback onParamReset;
   final WorkbenchVisualProfile visualProfile;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
+    final interaction = WorkbenchPanelInteractionScope.maybeOf(context);
+    final isFloating = interaction?.isFloating ?? false;
     return Container(
       constraints: const BoxConstraints(minHeight: 120),
       decoration: BoxDecoration(
@@ -47,93 +50,95 @@ class ParametersPanel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Row(
-              children: [
-                Icon(Icons.tune, color: visualProfile.accentColor, size: 13),
-                const SizedBox(width: 6),
-                Text(
-                  'PARAMETERS (${paramValues.length})',
-                  style: TextStyle(
-                    fontFamily: 'Courier',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                    letterSpacing: 0.6,
-                    color: visualProfile.mutedColor,
+            child: WorkbenchPanelTitleBar(
+              child: Row(
+                children: [
+                  Icon(Icons.tune, color: visualProfile.accentColor, size: 13),
+                  const SizedBox(width: 6),
+                  Text(
+                    'PARAMETERS (${paramValues.length})',
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                      letterSpacing: 0.6,
+                      color: visualProfile.mutedColor,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                if (paramOverrides.isNotEmpty)
-                  Semantics(
-                    button: true,
-                    label: 'Reset parameter overrides',
-                    hint: 'Restore default parameter values',
-                    onTap: onParamReset,
-                    child: WorkbenchKeyboardActivatable(
-                      onActivate: onParamReset,
-                      focusColor: visualProfile.accentColor,
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          onTap: onParamReset,
-                          borderRadius: BorderRadius.circular(4),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.refresh, size: 12),
-                                SizedBox(width: 4),
-                                Text(
-                                  'RESET',
-                                  style: TextStyle(
-                                    fontFamily: 'Courier',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 9,
+                  const Spacer(),
+                  if (paramOverrides.isNotEmpty)
+                    Semantics(
+                      button: true,
+                      label: 'Reset parameter overrides',
+                      hint: 'Restore default parameter values',
+                      onTap: onParamReset,
+                      child: WorkbenchKeyboardActivatable(
+                        onActivate: onParamReset,
+                        focusColor: visualProfile.accentColor,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: InkWell(
+                            onTap: onParamReset,
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.refresh, size: 12),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'RESET',
+                                    style: TextStyle(
+                                      fontFamily: 'Courier',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 9,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (onFloat != null) ...[
-                  const SizedBox(width: 6),
-                  IconButton(
-                    key: const Key('float-parameters-panel'),
-                    tooltip: 'Float Parameters',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
+                  if (onFloat != null && !isFloating) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      key: const Key('float-parameters-panel'),
+                      tooltip: 'Float Parameters',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      color: visualProfile.mutedColor,
+                      onPressed: onFloat,
                     ),
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    color: visualProfile.mutedColor,
-                    onPressed: onFloat,
-                  ),
-                ],
-                if (onCollapse != null) ...[
-                  const SizedBox(width: 6),
-                  IconButton(
-                    key: const Key('collapse-parameters-panel'),
-                    tooltip: 'Collapse Parameters',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
+                  ],
+                  if (onClose != null) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      key: const Key('close-parameters-panel'),
+                      tooltip: 'Close Parameters panel',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.close, size: 16),
+                      color: visualProfile.mutedColor,
+                      onPressed: onClose,
                     ),
-                    icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                    color: visualProfile.mutedColor,
-                    onPressed: onCollapse,
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           Flexible(

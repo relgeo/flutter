@@ -5,6 +5,7 @@ import '../../ui/workbench_commands.dart';
 import '../../ui/workbench_icon_button.dart';
 import '../../ui/workbench_preferences.dart';
 import '../../ui/workbench_visual_profile.dart';
+import 'workbench_preview_target.dart';
 
 class WorkbenchViewportToolbar extends StatelessWidget {
   const WorkbenchViewportToolbar({
@@ -22,9 +23,9 @@ class WorkbenchViewportToolbar extends StatelessWidget {
     required this.documentProfileNames,
     required this.activeProfile,
     required this.onProfileChanged,
-    required this.sheetIds,
-    required this.selectedSheetId,
-    required this.onSheetChanged,
+    required this.previewTargets,
+    required this.selectedPreviewTarget,
+    required this.onPreviewTargetChanged,
     required this.onZoomIn,
     required this.onZoomOut,
     required this.onFitViewport,
@@ -44,9 +45,9 @@ class WorkbenchViewportToolbar extends StatelessWidget {
   final List<String> documentProfileNames;
   final String? activeProfile;
   final ValueChanged<String?> onProfileChanged;
-  final List<String> sheetIds;
-  final String? selectedSheetId;
-  final ValueChanged<String?> onSheetChanged;
+  final List<WorkbenchPreviewTarget> previewTargets;
+  final WorkbenchPreviewTarget selectedPreviewTarget;
+  final ValueChanged<WorkbenchPreviewTarget> onPreviewTargetChanged;
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
   final VoidCallback onFitViewport;
@@ -54,7 +55,9 @@ class WorkbenchViewportToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final nextTheme = isDark
         ? RelGeoThemePreference.light
         : RelGeoThemePreference.dark;
@@ -74,11 +77,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.blur_circular,
-                color: visualProfile.accentColor,
-                size: 14,
-              ),
+              Icon(Icons.blur_circular, color: colorScheme.primary, size: 14),
               const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +90,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                       letterSpacing: 0.5,
-                      color: visualProfile.accentColor,
+                      color: colorScheme.primary,
                     ),
                   ),
                   Text(
@@ -99,7 +98,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Courier',
                       fontSize: 9,
-                      color: visualProfile.mutedColor,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
@@ -107,9 +106,9 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Courier',
                       fontSize: 9,
-                      color: selectedSheetId != null
-                          ? const Color(0xFF10B981)
-                          : visualProfile.mutedColor,
+                      color: selectedPreviewTarget.sheetId != null
+                          ? colorScheme.tertiary
+                          : colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -124,10 +123,10 @@ class WorkbenchViewportToolbar extends StatelessWidget {
             semanticsLabel: 'Canvas appearance',
             semanticsValue: visualProfile.label,
             semanticsHint: 'Choose a canvas appearance preset',
-            backgroundColor: visualProfile.overlayBackgroundColor,
-            borderColor: visualProfile.borderColor,
-            mutedColor: visualProfile.mutedColor,
-            accentColor: visualProfile.accentColor,
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            borderColor: colorScheme.outlineVariant,
+            mutedColor: colorScheme.onSurfaceVariant,
+            accentColor: colorScheme.primary,
             onChanged: (value) {
               if (value != null) onWorkbenchProfileChanged?.call(value);
             },
@@ -141,108 +140,115 @@ class WorkbenchViewportToolbar extends StatelessWidget {
                 )
                 .toList(),
           ),
-          Semantics(
-            key: const Key('theme-mode-semantics'),
-            label: 'Theme mode',
-            value: themePreference == null
-                ? '${isDark ? 'Dark' : 'Light'} (System)'
-                : themePreference!.label,
-            hint:
-                'Toggle between Light and Dark. Use View, Appearance to follow system appearance.',
-            button: true,
-            onTap: toggleTheme,
-            child: IconButton(
-              key: const Key('theme-mode-selector'),
-              tooltip: 'Switch to ${nextTheme.label} mode',
-              visualDensity: VisualDensity.compact,
-              onPressed: toggleTheme,
-              icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
-              color: visualProfile.accentColor,
-            ),
+        Semantics(
+          key: const Key('theme-mode-semantics'),
+          label: 'Theme mode',
+          value: themePreference == null
+              ? '${isDark ? 'Dark' : 'Light'} (System)'
+              : themePreference!.label,
+          hint:
+              'Toggle between Light and Dark. Use View, Appearance to follow system appearance.',
+          button: true,
+          onTap: toggleTheme,
+          child: IconButton(
+            key: const Key('theme-mode-selector'),
+            tooltip: 'Switch to ${nextTheme.label} mode',
+            visualDensity: VisualDensity.compact,
+            onPressed: toggleTheme,
+            icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+            color: colorScheme.primary,
           ),
-          if (themePreference != null)
-            IconButton(
-              key: const Key('theme-mode-reset'),
-              tooltip: 'Follow system appearance',
-              icon: const Icon(Icons.settings_backup_restore, size: 15),
-              color: visualProfile.mutedColor,
-              onPressed: commandRegistry
-                  .find(WorkbenchCommandId.followSystemTheme)
-                  ?.invoke,
-            ),
-          if (documentProfileNames.isNotEmpty)
-            WorkbenchDropdownField<String?>(
-              value: activeProfile,
-              semanticsLabel: 'Document profile',
-              semanticsValue: activeProfile ?? 'Default',
-              semanticsHint: 'Choose a document profile',
-              backgroundColor: visualProfile.overlayBackgroundColor,
-              borderColor: visualProfile.borderColor,
-              mutedColor: visualProfile.mutedColor,
-              accentColor: visualProfile.accentColor,
-              hint: const Text(
-                'Select Profile',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 11,
-                  fontFamily: 'Courier',
-                ),
+        ),
+        if (themePreference != null)
+          IconButton(
+            key: const Key('theme-mode-reset'),
+            tooltip: 'Follow system appearance',
+            icon: const Icon(Icons.settings_backup_restore, size: 15),
+            color: colorScheme.onSurfaceVariant,
+            onPressed: commandRegistry
+                .find(WorkbenchCommandId.followSystemTheme)
+                ?.invoke,
+          ),
+        if (documentProfileNames.isNotEmpty)
+          WorkbenchDropdownField<String?>(
+            value: activeProfile,
+            semanticsLabel: 'Document profile',
+            semanticsValue: activeProfile ?? 'Default',
+            semanticsHint: 'Choose a document profile',
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            borderColor: colorScheme.outlineVariant,
+            mutedColor: colorScheme.onSurfaceVariant,
+            accentColor: colorScheme.primary,
+            hint: Text(
+              'Select Profile',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontFamily: 'Courier',
               ),
-              onChanged: onProfileChanged,
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Default'),
-                ),
-                ...documentProfileNames.map(
-                  (name) =>
-                      DropdownMenuItem<String?>(value: name, child: Text(name)),
-                ),
-              ],
             ),
-          if (showPreviewTools && sheetIds.isNotEmpty)
-            WorkbenchDropdownField<String?>(
-              buttonKey: const Key('sheet-selector'),
-              value: selectedSheetId,
-              semanticsLabel: 'Surface',
-              semanticsValue: selectedSheetId ?? 'Model Preview',
-              semanticsHint: 'Choose model preview or a sheet view',
-              backgroundColor: visualProfile.overlayBackgroundColor,
-              borderColor: visualProfile.borderColor,
-              mutedColor: visualProfile.mutedColor,
-              accentColor: visualProfile.accentColor,
-              hint: const Text(
-                'Surface',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 11,
-                  fontFamily: 'Courier',
-                ),
+            onChanged: onProfileChanged,
+            items: [
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Default'),
               ),
-              onChanged: onSheetChanged,
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  key: Key('sheet-option-model-preview'),
-                  child: Text('Model Preview'),
-                ),
-                ...sheetIds.map(
-                  (id) => DropdownMenuItem<String?>(
-                    value: id,
-                    key: Key('sheet-option-$id'),
-                    child: Text('Sheet/View: $id'),
+              ...documentProfileNames.map(
+                (name) =>
+                    DropdownMenuItem<String?>(value: name, child: Text(name)),
+              ),
+            ],
+          ),
+        if (showPreviewTools && previewTargets.length > 1)
+          WorkbenchDropdownField<WorkbenchPreviewTarget>(
+            buttonKey: const Key('preview-target-selector'),
+            value: selectedPreviewTarget,
+            semanticsLabel: 'Preview target',
+            semanticsValue: selectedPreviewTarget.label,
+            semanticsHint:
+                'Choose model geometry or a sheet/view. Component previews may be added later.',
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            borderColor: colorScheme.outlineVariant,
+            mutedColor: colorScheme.onSurfaceVariant,
+            accentColor: colorScheme.primary,
+            hint: Text(
+              'Preview target',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontFamily: 'Courier',
+              ),
+            ),
+            onChanged: (target) {
+              if (target != null) onPreviewTargetChanged(target);
+            },
+            items: [
+              const DropdownMenuItem<WorkbenchPreviewTarget>(
+                value: WorkbenchPreviewTarget.model(),
+                key: Key('preview-target-model'),
+                child: Text('Model'),
+              ),
+              ...previewTargets
+                  .where(
+                    (target) => target.kind == WorkbenchPreviewTargetKind.sheet,
+                  )
+                  .map(
+                    (target) => DropdownMenuItem<WorkbenchPreviewTarget>(
+                      value: target,
+                      key: Key('preview-target-sheet-${target.id}'),
+                      child: Text(target.label),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          WorkbenchIconButton(
-            Icons.restart_alt,
-            'Reset Workbench Preferences',
-            commandRegistry.find(WorkbenchCommandId.resetPreferences)?.invoke ??
-                () {},
-            color: visualProfile.mutedColor,
-            buttonKey: const Key('reset-workbench-preferences'),
+            ],
           ),
+        WorkbenchIconButton(
+          Icons.restart_alt,
+          'Reset Workbench Preferences',
+          commandRegistry.find(WorkbenchCommandId.resetPreferences)?.invoke ??
+              () {},
+          color: colorScheme.onSurfaceVariant,
+          buttonKey: const Key('reset-workbench-preferences'),
+        ),
         if (showPreviewTools)
           WorkbenchIconButton(
             Icons.zoom_in,
@@ -262,7 +268,7 @@ class WorkbenchViewportToolbar extends StatelessWidget {
             'Fit',
             commandRegistry.find(WorkbenchCommandId.fitViewport)?.invoke ??
                 onFitViewport,
-            color: const Color(0xFF00FFCC),
+            color: colorScheme.primary,
           ),
         if (showPreviewTools)
           WorkbenchIconButton(

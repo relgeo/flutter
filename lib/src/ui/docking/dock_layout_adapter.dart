@@ -26,7 +26,11 @@ class DockLayoutAdapter {
           continue;
         }
         sidePanels.add(DockPanelNode(panel));
-        sideRatios.add(layout.splitRatios[placement.storageKey] ?? 1.0);
+        // The placement renderer historically assigns an unspecified panel
+        // one third of the split weight (not a full weight). Keep that
+        // fallback when projecting to a recursive tree so presets with a
+        // hidden/omitted edge panel retain their intended proportions.
+        sideRatios.add(layout.splitRatios[placement.storageKey] ?? 1 / 3);
       }
     }
 

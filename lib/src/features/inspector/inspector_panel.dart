@@ -6,6 +6,7 @@ import '../../ui/relgeo_theme_extension.dart';
 import '../../ui/workbench_visual_profile.dart';
 import '../../ui/workbench_motion.dart';
 import '../../ui/keyboard_activatable.dart';
+import '../../ui/workbench_panel_interaction.dart';
 
 // ─────────────────────────────────────────────
 // Inspector Panel — Tab Objects / Values / Errors / BOM
@@ -19,7 +20,7 @@ class InspectorPanel extends StatefulWidget {
   final String targetUnit;
   final WorkbenchVisualProfile visualProfile;
   final RelGeoThemeExtension? themeTokens;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   const InspectorPanel({
@@ -30,7 +31,7 @@ class InspectorPanel extends StatefulWidget {
     required this.targetUnit,
     this.visualProfile = WorkbenchVisualProfile.cad,
     this.themeTokens,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
@@ -56,6 +57,7 @@ class _InspectorPanelState extends State<InspectorPanel>
       _visualProfile.toolbarBackgroundColor.withValues(alpha: 0.9);
   Color get _borderColor => _visualProfile.borderColor;
   Color get _mutedColor => _visualProfile.mutedColor;
+  Color get _textColor => Theme.of(context).colorScheme.onSurface;
   Color get _brandColor => _visualProfile.accentColor;
   Color get _brandSoftColor => _visualProfile.accentSoftColor;
 
@@ -148,11 +150,11 @@ class _InspectorPanelState extends State<InspectorPanel>
                                   child: Text(
                                     id,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'Courier',
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: _textColor,
                                     ),
                                   ),
                                 ),
@@ -435,11 +437,11 @@ class _InspectorPanelState extends State<InspectorPanel>
               children: [
                 Text(
                   entry.key,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Courier',
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: _textColor,
                   ),
                 ),
                 Text(
@@ -647,8 +649,8 @@ class _InspectorPanelState extends State<InspectorPanel>
                       ),
                       Text(
                         stat.$2,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: _textColor,
                           fontFamily: 'Courier',
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -789,8 +791,8 @@ class _InspectorPanelState extends State<InspectorPanel>
                     ),
                     Text(
                       '${totalCutLength.toStringAsFixed(1)} $unit',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: _textColor,
                         fontFamily: 'Courier',
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -814,8 +816,8 @@ class _InspectorPanelState extends State<InspectorPanel>
                     ),
                     Text(
                       '${totalArea.toStringAsFixed(1)} $unit²',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: _textColor,
                         fontFamily: 'Courier',
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -908,8 +910,8 @@ class _InspectorPanelState extends State<InspectorPanel>
                         flex: 4,
                         child: Text(
                           entry.key,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: _textColor,
                             fontFamily: 'Courier',
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -1051,104 +1053,111 @@ class _InspectorPanelState extends State<InspectorPanel>
               builder: (context, constraints) {
                 final compactHeader = constraints.maxWidth < 280;
 
-                return Row(
-                  children: [
-                    Icon(
-                      Icons.analytics_outlined,
-                      color: _brandColor,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'INSPECTOR',
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        letterSpacing: 0.8,
+                final interaction = WorkbenchPanelInteractionScope.maybeOf(
+                  context,
+                );
+                final isFloating = interaction?.isFloating ?? false;
+
+                return WorkbenchPanelTitleBar(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.analytics_outlined,
                         color: _brandColor,
+                        size: 16,
                       ),
-                    ),
-                    const Spacer(),
-                    if (!compactHeader && hasError)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _errorSoftColor,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: _errorColor.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Text(
-                          'ERROR',
-                          style: TextStyle(
-                            fontFamily: 'Courier',
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: _errorColor,
-                          ),
-                        ),
-                      )
-                    else if (!compactHeader && widget.scene != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _readyColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: _readyColor.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Text(
-                          'OK',
-                          style: TextStyle(
-                            fontFamily: 'Courier',
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: _readyColor,
-                          ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'INSPECTOR',
+                        style: TextStyle(
+                          fontFamily: 'Courier',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 0.8,
+                          color: _brandColor,
                         ),
                       ),
-                    if (widget.onFloat != null) ...[
-                      const SizedBox(width: 6),
-                      IconButton(
-                        key: const Key('float-inspector-panel'),
-                        tooltip: 'Float Inspector',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 24,
-                          minHeight: 28,
+                      const Spacer(),
+                      if (!compactHeader && hasError)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _errorSoftColor,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: _errorColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            'ERROR',
+                            style: TextStyle(
+                              fontFamily: 'Courier',
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: _errorColor,
+                            ),
+                          ),
+                        )
+                      else if (!compactHeader && widget.scene != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _readyColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: _readyColor.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                              fontFamily: 'Courier',
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: _readyColor,
+                            ),
+                          ),
                         ),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        color: _mutedColor,
-                        onPressed: widget.onFloat,
-                      ),
+                      if (widget.onFloat != null && !isFloating) ...[
+                        const SizedBox(width: 6),
+                        IconButton(
+                          key: const Key('float-inspector-panel'),
+                          tooltip: 'Float Inspector',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 24,
+                            minHeight: 28,
+                          ),
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          color: _mutedColor,
+                          onPressed: widget.onFloat,
+                        ),
+                      ],
+                      if (widget.onClose != null) ...[
+                        const SizedBox(width: 6),
+                        IconButton(
+                          key: const Key('close-inspector-panel'),
+                          tooltip: 'Close Inspector panel',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 24,
+                            minHeight: 28,
+                          ),
+                          icon: const Icon(Icons.close, size: 16),
+                          color: _mutedColor,
+                          onPressed: widget.onClose,
+                        ),
+                      ],
                     ],
-                    if (widget.onCollapse != null) ...[
-                      const SizedBox(width: 6),
-                      IconButton(
-                        key: const Key('collapse-inspector-panel'),
-                        tooltip: 'Collapse Inspector',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 24,
-                          minHeight: 28,
-                        ),
-                        icon: const Icon(Icons.keyboard_arrow_right, size: 18),
-                        color: _mutedColor,
-                        onPressed: widget.onCollapse,
-                      ),
-                    ],
-                  ],
+                  ),
                 );
               },
             ),

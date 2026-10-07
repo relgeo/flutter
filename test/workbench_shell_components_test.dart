@@ -6,30 +6,18 @@ import 'package:relgeo_flutter/src/features/preview/workbench_overlay_toolbar.da
 import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
 
 void main() {
-  testWidgets('workbench navbar preserves status and export contract', (
-    WidgetTester tester,
-  ) async {
-    var exported = false;
+  testWidgets(
+    'workbench navbar preserves status without preview export action',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: WorkbenchNavbar(hasError: false))),
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorkbenchNavbar(
-            hasError: false,
-            exportButtonLabel: 'Export SVG',
-            onExport: () => exported = true,
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('RelGeo'), findsOneWidget);
-    expect(find.text('COMPILED OK'), findsOneWidget);
-    expect(find.byKey(const Key('export-svg-button')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('export-svg-button')));
-    expect(exported, isTrue);
-  });
+      expect(find.text('RelGeo'), findsOneWidget);
+      expect(find.text('COMPILED OK'), findsOneWidget);
+      expect(find.byKey(const Key('export-svg-button')), findsNothing);
+    },
+  );
 
   testWidgets('overlay toolbar preserves semantic toggle contract', (
     WidgetTester tester,

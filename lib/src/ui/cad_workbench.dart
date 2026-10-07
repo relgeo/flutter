@@ -15,6 +15,7 @@ import 'workbench_document_controller.dart';
 import 'workbench_editor_controller.dart';
 import 'workbench_document_session.dart';
 import '../features/workbench_feature_surfaces.dart';
+import '../features/preview/workbench_preview_target.dart';
 import 'workbench_navbar.dart';
 import 'workbench_commands.dart';
 import 'workbench_context_menu.dart';
@@ -829,14 +830,9 @@ objects:
       ? 'Sheet/view physical preview route'
       : 'Scene model preview route';
 
-  String get _exportButtonLabel =>
-      _selectedSheetId != null ? 'SVG SHEET' : 'SVG MODEL';
-
   // ─────────────────────────────────────────────
   // SVG Export
   // ─────────────────────────────────────────────
-
-  Future<void> _exportSVG() => _exportSVGTarget(_selectedSheetId);
 
   Future<void> _exportModelSVG() => _exportSVGTarget(null);
 
@@ -910,10 +906,10 @@ objects:
           child: SingleChildScrollView(
             child: SelectableText(
               code,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Courier',
                 fontSize: 11,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -936,6 +932,9 @@ objects:
   Widget build(BuildContext context) {
     final hasError = _yamlError != null || _compilerError != null;
     final commandRegistry = _buildCommandRegistry();
+    final chromeProfile = _workbenchProfile.withChromeTheme(
+      Theme.of(context).colorScheme,
+    );
 
     final shell = WorkbenchCompositionShell(
       menuBar: WorkbenchPlatformMenuBar.usesNativeMenu
@@ -956,10 +955,9 @@ objects:
         child: WorkbenchEditorFeature(
           contract: WorkbenchEditorContract(
             controller: _editorController.editingController,
-            visualProfile: _workbenchProfile,
+            visualProfile: chromeProfile,
           ),
-          onCollapse: () =>
-              _layoutController.toggleCollapsed(WorkbenchPanelId.editor),
+          onClose: () => _layoutController.closePanel(WorkbenchPanelId.editor),
           onFloat: () => _layoutController.setPlacement(
             WorkbenchPanelId.editor,
             WorkbenchPanelPlacement.floating,
@@ -984,11 +982,10 @@ objects:
                     _documentController.clearParamOverrides();
                     _compileDSL(_editorController.text);
                   },
-                  visualProfile: _workbenchProfile,
+                  visualProfile: chromeProfile,
                 ),
-                onCollapse: () => _layoutController.toggleCollapsed(
-                  WorkbenchPanelId.parameters,
-                ),
+                onClose: () =>
+                    _layoutController.closePanel(WorkbenchPanelId.parameters),
                 onFloat: () => _layoutController.setPlacement(
                   WorkbenchPanelId.parameters,
                   WorkbenchPanelPlacement.floating,
@@ -1008,11 +1005,11 @@ objects:
             yamlError: _yamlError,
             compilerError: _compilerError,
             targetUnit: _targetUnit.name,
-            visualProfile: _workbenchProfile,
+            visualProfile: chromeProfile,
             themeTokens: Theme.of(context).extension<RelGeoThemeExtension>(),
           ),
-          onCollapse: () =>
-              _layoutController.toggleCollapsed(WorkbenchPanelId.inspector),
+          onClose: () =>
+              _layoutController.closePanel(WorkbenchPanelId.inspector),
           onFloat: () => _layoutController.setPlacement(
             WorkbenchPanelId.inspector,
             WorkbenchPanelPlacement.floating,
@@ -1162,18 +1159,6 @@ objects:
         shortcut: const SingleActivator(LogicalKeyboardKey.keyQ, control: true),
         shortcutActivator: const SingleActivator(
           LogicalKeyboardKey.keyQ,
-          control: true,
-        ),
-      ),
-      WorkbenchCommand(
-        id: WorkbenchCommandId.exportSvg,
-        menu: 'Toolbar',
-        label: _exportButtonLabel,
-        enabled: _scene != null,
-        onInvoke: _exportSVG,
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyE, control: true),
-        shortcutActivator: const SingleActivator(
-          LogicalKeyboardKey.keyE,
           control: true,
         ),
       ),
@@ -1455,31 +1440,6 @@ objects:
         label: 'Float Parameters',
         enabled: parametersAvailable,
       ),
-      placementCommand(
-        id: WorkbenchCommandId.overlayEditor,
-        panel: WorkbenchPanelId.editor,
-        placement: WorkbenchPanelPlacement.overlay,
-        label: 'Overlay Code editor',
-      ),
-      placementCommand(
-        id: WorkbenchCommandId.overlayPreview,
-        panel: WorkbenchPanelId.preview,
-        placement: WorkbenchPanelPlacement.overlay,
-        label: 'Overlay Preview',
-      ),
-      placementCommand(
-        id: WorkbenchCommandId.overlayInspector,
-        panel: WorkbenchPanelId.inspector,
-        placement: WorkbenchPanelPlacement.overlay,
-        label: 'Overlay Inspector',
-      ),
-      placementCommand(
-        id: WorkbenchCommandId.overlayParameters,
-        panel: WorkbenchPanelId.parameters,
-        placement: WorkbenchPanelPlacement.overlay,
-        label: 'Overlay Parameters',
-        enabled: parametersAvailable,
-      ),
     ];
   }
 
@@ -1490,8 +1450,6 @@ objects:
       animation: _documentSession,
       builder: (context, _) => WorkbenchNavbar(
         hasError: hasError,
-        exportButtonLabel: _exportButtonLabel,
-        onExport: _exportSVG,
         documentName: _documentName ?? 'Untitled',
         documentPath: _documentPath,
         documentDirty: _documentSession.isDirty,
@@ -1505,7 +1463,6 @@ objects:
                 WorkbenchPanelVisibility.visible,
           ),
         ),
-        commandRegistry: commandRegistry,
       ),
     );
   }
@@ -1518,9 +1475,13 @@ objects:
       builder: (context, _) => WorkbenchCommandContextMenu(
         registry: commandRegistry,
         child: WorkbenchPreviewFeature(
-          overlayToolbar: _buildOverlayToolbar(),
+          overlayToolbar: _buildOverlayToolbar(
+            _workbenchProfile.withChromeTheme(Theme.of(context).colorScheme),
+          ),
           panel: WorkbenchViewportPanel(
-            visualProfile: _workbenchProfile,
+            visualProfile: _workbenchProfile.withChromeTheme(
+              Theme.of(context).colorScheme,
+            ),
             viewportController: _viewportController.transformationController,
             scene: _scene,
             displayBounds: _displayBounds,
@@ -1538,9 +1499,10 @@ objects:
                 ? _activeSheetViewSummaryLabel
                 : null,
           ),
-          visualProfile: _workbenchProfile,
-          onCollapse: () =>
-              _layoutController.toggleCollapsed(WorkbenchPanelId.preview),
+          visualProfile: _workbenchProfile.withChromeTheme(
+            Theme.of(context).colorScheme,
+          ),
+          onClose: () => _layoutController.closePanel(WorkbenchPanelId.preview),
           onFloat: () => _layoutController.setPlacement(
             WorkbenchPanelId.preview,
             WorkbenchPanelPlacement.floating,
@@ -1569,11 +1531,14 @@ objects:
       documentProfileNames: _profiles.keys.toList(),
       activeProfile: _activeProfile,
       onProfileChanged: _applyProfile,
-      sheetIds: _scene?.sheets.keys.toList() ?? const [],
-      selectedSheetId: _selectedSheetId,
-      onSheetChanged: (value) {
+      previewTargets: [
+        const WorkbenchPreviewTarget.model(),
+        ...?_scene?.sheets.keys.map(WorkbenchPreviewTarget.sheet),
+      ],
+      selectedPreviewTarget: _documentController.previewTarget,
+      onPreviewTargetChanged: (value) {
         setState(() {
-          _selectedSheetId = value;
+          _documentController.setPreviewTarget(value);
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _fitViewport();
@@ -1586,9 +1551,9 @@ objects:
     );
   }
 
-  Widget _buildOverlayToolbar() {
+  Widget _buildOverlayToolbar(WorkbenchVisualProfile chromeProfile) {
     return WorkbenchOverlayToolbar(
-      visualProfile: _workbenchProfile,
+      visualProfile: chromeProfile,
       overlay: _overlayController.overlay,
       hiddenRoles: _overlayController.hiddenRoles,
       followProfileOverlay: _overlayController.followProfileOverlay,

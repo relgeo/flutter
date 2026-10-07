@@ -50,7 +50,7 @@ class WorkbenchLayoutProfiles {
           bounds: WorkbenchPanelBounds(minWidth: 360),
         ),
         WorkbenchPanelId.inspector: const WorkbenchPanelLayout(
-          visibility: WorkbenchPanelVisibility.collapsed,
+          visibility: WorkbenchPanelVisibility.hidden,
           placement: WorkbenchPanelPlacement.right,
           bounds: WorkbenchPanelBounds(width: 320, minWidth: 240),
         ),
@@ -76,7 +76,7 @@ class WorkbenchLayoutProfiles {
           bounds: WorkbenchPanelBounds(minWidth: 360),
         ),
         WorkbenchPanelId.inspector: const WorkbenchPanelLayout(
-          visibility: WorkbenchPanelVisibility.collapsed,
+          visibility: WorkbenchPanelVisibility.hidden,
           placement: WorkbenchPanelPlacement.right,
           bounds: WorkbenchPanelBounds(width: 320, minWidth: 240),
         ),

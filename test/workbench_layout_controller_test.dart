@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/docking/dock_layout_renderer.dart';
 import 'package:relgeo_flutter/src/ui/docking/dock_node.dart';
+import 'package:relgeo_flutter/src/ui/docking/dock_tree_operations.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_profiles.dart';
@@ -30,11 +31,16 @@ void main() {
   );
 
   test(
-    'collapse, placement, bounds, split ratio, and profile are independent operations',
+    'close, placement, bounds, split ratio, and profile are independent operations',
     () {
       final controller = WorkbenchLayoutController();
 
-      controller.toggleCollapsed(WorkbenchPanelId.preview);
+      controller.closePanel(WorkbenchPanelId.preview);
+      expect(
+        controller.panel(WorkbenchPanelId.preview).visibility,
+        WorkbenchPanelVisibility.hidden,
+      );
+      controller.togglePanel(WorkbenchPanelId.preview);
       controller.setPlacement(
         WorkbenchPanelId.preview,
         WorkbenchPanelPlacement.floating,
@@ -50,7 +56,10 @@ void main() {
       controller.setSplitRatio('left', 0.4);
       controller.setActiveProfile('custom');
 
-      expect(controller.isPanelCollapsed(WorkbenchPanelId.preview), isTrue);
+      expect(
+        controller.panel(WorkbenchPanelId.preview).visibility,
+        WorkbenchPanelVisibility.visible,
+      );
       expect(
         controller.panel(WorkbenchPanelId.preview).placement,
         WorkbenchPanelPlacement.floating,
@@ -87,6 +96,7 @@ void main() {
         controller.panel(WorkbenchPanelId.parameters).visibility,
         WorkbenchPanelVisibility.visible,
       );
+      expect(controller.dockedRoot, isNotNull);
     },
   );
 
@@ -109,7 +119,7 @@ void main() {
     controller.reset();
 
     expect(controller.layout.activeProfileId, 'standard');
-    expect(controller.dockedRoot, isNull);
+    expect(controller.dockedRoot, isNotNull);
   });
 
   test('restore rejects duplicate panel leaves instead of rendering twice', () {
@@ -178,6 +188,85 @@ void main() {
     expect(
       controller.panel(WorkbenchPanelId.editor).placement,
       WorkbenchPanelPlacement.floating,
+    );
+  });
+
+  test('docking menu placement preserves and edits the active nested tree', () {
+    final layout = WorkbenchLayoutModel.standard();
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: [
+        const DockPanelNode(WorkbenchPanelId.editor),
+        DockSplitNode(
+          axis: DockAxis.vertical,
+          children: const [
+            DockPanelNode(WorkbenchPanelId.preview),
+            DockPanelNode(WorkbenchPanelId.inspector),
+          ],
+          ratios: const [0.6, 0.4],
+        ),
+      ],
+      ratios: const [0.4, 0.6],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(layout, dockedRoot: root);
+
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.left,
+    );
+
+    expect(controller.dockedRoot, isNotNull);
+    expect(DockTreeOperations.isValid(controller.dockedRoot!), isTrue);
+    expect((controller.dockedRoot! as DockSplitNode).panels, {
+      WorkbenchPanelId.editor,
+      WorkbenchPanelId.preview,
+      WorkbenchPanelId.inspector,
+    });
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).placement,
+      WorkbenchPanelPlacement.left,
+    );
+    expect(controller.focusRequest, WorkbenchPanelId.inspector);
+  });
+
+  test('returning a floating panel by placement command inserts it once', () {
+    final standard = WorkbenchLayoutModel.standard();
+    final layout = standard.copyWith(
+      panels: {
+        ...standard.panels,
+        WorkbenchPanelId.inspector: standard.panels[WorkbenchPanelId.inspector]!
+            .copyWith(placement: WorkbenchPanelPlacement.floating),
+      },
+      floatingOrder: const [WorkbenchPanelId.inspector],
+    );
+    final root = DockSplitNode(
+      axis: DockAxis.horizontal,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.editor),
+        DockPanelNode(WorkbenchPanelId.preview),
+      ],
+      ratios: const [0.5, 0.5],
+    );
+    final controller = WorkbenchLayoutController(initialLayout: layout);
+    controller.restore(layout, dockedRoot: root);
+
+    controller.setPlacement(
+      WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.right,
+    );
+
+    final dockedRoot = controller.dockedRoot! as DockSplitNode;
+    expect(DockTreeOperations.isValid(dockedRoot), isTrue);
+    expect(dockedRoot.panels, {
+      WorkbenchPanelId.editor,
+      WorkbenchPanelId.preview,
+      WorkbenchPanelId.inspector,
+    });
+    expect(controller.layout.floatingOrder, isEmpty);
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).placement,
+      WorkbenchPanelPlacement.right,
     );
   });
 
@@ -285,7 +374,7 @@ void main() {
     );
     controller.setPlacement(
       WorkbenchPanelId.inspector,
-      WorkbenchPanelPlacement.overlay,
+      WorkbenchPanelPlacement.floating,
     );
 
     expect(controller.layout.floatingOrder, const [

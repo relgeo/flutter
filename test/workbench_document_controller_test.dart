@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/geometry/types.dart';
+import 'package:relgeo_flutter/src/features/preview/workbench_preview_target.dart';
 import 'package:relgeo_flutter/src/ui/workbench_document_controller.dart';
 
 void main() {
@@ -54,4 +55,29 @@ void main() {
 
     expect(controller.activeProfile, isNull);
   });
+
+  test(
+    'preview target identifies model, sheet, and reserved component targets',
+    () {
+      final controller = WorkbenchDocumentController();
+      addTearDown(controller.dispose);
+
+      const model = WorkbenchPreviewTarget.model();
+      controller.setPreviewTarget(model);
+      expect(controller.previewTarget, model);
+      expect(controller.selectedSheetId, isNull);
+
+      const sheet = WorkbenchPreviewTarget.sheet('sheet-a4');
+      controller.setPreviewTarget(sheet);
+      expect(controller.previewTarget, sheet);
+      expect(controller.selectedSheetId, 'sheet-a4');
+      expect(sheet.label, 'Sheet/View: sheet-a4');
+
+      const component = WorkbenchPreviewTarget.component('gear');
+      controller.setPreviewTarget(component);
+      expect(controller.previewTarget, component);
+      expect(controller.selectedSheetId, isNull);
+      expect(component.label, 'Component: gear');
+    },
+  );
 }

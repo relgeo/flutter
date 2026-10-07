@@ -22,28 +22,35 @@ class DockDropPreviewOverlay extends StatelessWidget {
       key: const ValueKey('dock-drop-preview'),
       rect: value.rect,
       child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.14),
-            border: Border.all(color: accent, width: 2),
-          ),
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(3),
-                ),
+        child: Semantics(
+          container: true,
+          liveRegion: true,
+          label: _label(value),
+          child: ExcludeSemantics(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                border: Border.all(color: accent, width: 2),
+              ),
+              child: Align(
+                alignment: Alignment.topLeft,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
-                  ),
-                  child: Text(
-                    _label(value),
-                    style: Theme.of(context).textTheme.labelSmall,
+                  padding: const EdgeInsets.all(6),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      child: Text(
+                        _label(value),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
                   ),
                 ),
               ),

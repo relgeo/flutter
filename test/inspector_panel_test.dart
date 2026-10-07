@@ -5,8 +5,64 @@ import 'package:flutter/semantics.dart' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
+import 'package:relgeo_flutter/src/ui/app_theme.dart';
+import 'package:relgeo_flutter/src/ui/relgeo_theme_extension.dart';
+import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
 
 void main() {
+  testWidgets('inspector primary labels follow light and dark app themes', (
+    WidgetTester tester,
+  ) async {
+    final profile = WorkbenchVisualProfile.cad;
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: {
+        'ellipse1': ResolvedEllipse(
+          id: 'ellipse1',
+          meta: Meta(role: 'final'),
+          cx: 50,
+          cy: 40,
+          rx: 20,
+          ry: 10,
+          rotation: 0,
+        ),
+      },
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 30, y: 30, width: 40, height: 20),
+    );
+
+    for (final theme in [
+      buildRelGeoLightTheme(profile: profile),
+      buildRelGeoDarkTheme(profile: profile),
+    ]) {
+      final themedProfile = profile.withChromeTheme(theme.colorScheme);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: SizedBox(
+              width: 420,
+              height: 720,
+              child: InspectorPanel(
+                scene: scene,
+                yamlError: null,
+                compilerError: null,
+                targetUnit: 'mm',
+                visualProfile: themedProfile,
+                themeTokens: theme.extension<RelGeoThemeExtension>(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final objectLabel = tester.widget<Text>(find.text('ellipse1'));
+      expect(objectLabel.style?.color, theme.colorScheme.onSurface);
+    }
+  });
+
   testWidgets('inspector panel shows ellipse geometry details', (
     WidgetTester tester,
   ) async {

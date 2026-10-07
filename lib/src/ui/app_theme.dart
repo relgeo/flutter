@@ -3,26 +3,29 @@ import 'package:flutter/material.dart';
 import 'relgeo_theme_extension.dart';
 import 'workbench_visual_profile.dart';
 
-const _relGeoAccent = Color(0xFF00A88F);
-const _relGeoDarkAccent = Color(0xFF33D6B8);
-
-ThemeData buildRelGeoLightTheme() {
+ThemeData buildRelGeoLightTheme({
+  WorkbenchVisualProfile profile = WorkbenchVisualProfile.cad,
+}) {
+  final brightnessProfile = profile.forBrightness(Brightness.light);
   return _buildRelGeoTheme(
     ColorScheme.fromSeed(
-      seedColor: _relGeoAccent,
+      seedColor: brightnessProfile.accentColor,
       brightness: Brightness.light,
     ),
-    WorkbenchVisualProfile.paper,
+    brightnessProfile,
   );
 }
 
-ThemeData buildRelGeoDarkTheme() {
+ThemeData buildRelGeoDarkTheme({
+  WorkbenchVisualProfile profile = WorkbenchVisualProfile.cad,
+}) {
+  final brightnessProfile = profile.forBrightness(Brightness.dark);
   return _buildRelGeoTheme(
     ColorScheme.fromSeed(
-      seedColor: _relGeoDarkAccent,
+      seedColor: brightnessProfile.accentColor,
       brightness: Brightness.dark,
     ),
-    WorkbenchVisualProfile.cad,
+    brightnessProfile,
   );
 }
 

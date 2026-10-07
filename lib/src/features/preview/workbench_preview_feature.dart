@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../ui/workbench_panel_interaction.dart';
 import '../../ui/workbench_visual_profile.dart';
 
 /// Preview feature surface.
@@ -14,7 +15,7 @@ class WorkbenchPreviewFeature extends StatelessWidget {
     required this.overlayToolbar,
     required this.panel,
     this.visualProfile = WorkbenchVisualProfile.cad,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
@@ -22,11 +23,13 @@ class WorkbenchPreviewFeature extends StatelessWidget {
   final Widget overlayToolbar;
   final Widget panel;
   final WorkbenchVisualProfile visualProfile;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   @override
   Widget build(BuildContext context) {
+    final interaction = WorkbenchPanelInteractionScope.maybeOf(context);
+    final isFloating = interaction?.isFloating ?? false;
     // Dock renderers may provide a loose cross-axis constraint to a leaf.
     // Preview must occupy the complete dock slot, just like Editor and
     // Inspector, rather than sizing itself to its controls and canvas content.
@@ -37,19 +40,17 @@ class WorkbenchPreviewFeature extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [?toolbar, overlayToolbar],
           );
-          final compact = constraints.maxHeight < 700;
           final controlsMaxHeight = (constraints.maxHeight * 0.45)
               .clamp(0.0, 240.0)
               .toDouble();
-          final Widget controlsSlot = compact
-              ? ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: controlsMaxHeight),
-                  // Keep controls non-flex: otherwise Flutter divides the
-                  // remaining height with the viewport and can leave the
-                  // unused part of this loose flex slot empty below Preview.
-                  child: SingleChildScrollView(child: controls),
-                )
-              : controls;
+          final Widget controlsSlot = ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: controlsMaxHeight),
+            // Keep controls bounded at every dock size. Recursive profiles can
+            // make Preview narrower, causing the role chips to wrap vertically;
+            // an internal scroll area prevents those controls from consuming
+            // the viewport's remaining height.
+            child: SingleChildScrollView(child: controls),
+          );
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,54 +61,56 @@ class WorkbenchPreviewFeature extends StatelessWidget {
                   vertical: 6,
                 ),
                 color: visualProfile.overlayBackgroundColor,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.visibility_outlined,
-                      color: visualProfile.accentColor,
-                      size: 15,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'PREVIEW',
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        letterSpacing: 0.8,
+                child: WorkbenchPanelTitleBar(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.visibility_outlined,
                         color: visualProfile.accentColor,
+                        size: 15,
                       ),
-                    ),
-                    const Spacer(),
-                    if (onFloat != null)
-                      IconButton(
-                        key: const Key('float-preview-panel'),
-                        tooltip: 'Float Preview',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
+                      const SizedBox(width: 8),
+                      Text(
+                        'PREVIEW',
+                        style: TextStyle(
+                          fontFamily: 'Courier',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          letterSpacing: 0.8,
+                          color: visualProfile.accentColor,
                         ),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        color: visualProfile.mutedColor,
-                        onPressed: onFloat,
                       ),
-                    if (onCollapse != null)
-                      IconButton(
-                        key: const Key('collapse-preview-panel'),
-                        tooltip: 'Collapse Preview',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
+                      const Spacer(),
+                      if (onFloat != null && !isFloating)
+                        IconButton(
+                          key: const Key('float-preview-panel'),
+                          tooltip: 'Float Preview',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          color: visualProfile.mutedColor,
+                          onPressed: onFloat,
                         ),
-                        icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-                        color: visualProfile.mutedColor,
-                        onPressed: onCollapse,
-                      ),
-                  ],
+                      if (onClose != null)
+                        IconButton(
+                          key: const Key('close-preview-panel'),
+                          tooltip: 'Close Preview panel',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                          icon: const Icon(Icons.close, size: 16),
+                          color: visualProfile.mutedColor,
+                          onPressed: onClose,
+                        ),
+                    ],
+                  ),
                 ),
               ),
               Divider(height: 1, color: visualProfile.borderColor),

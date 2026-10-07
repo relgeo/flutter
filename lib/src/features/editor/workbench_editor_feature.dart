@@ -11,12 +11,12 @@ class WorkbenchEditorFeature extends StatelessWidget {
   const WorkbenchEditorFeature({
     super.key,
     required this.contract,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
   final WorkbenchEditorContract contract;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   @override
@@ -24,7 +24,7 @@ class WorkbenchEditorFeature extends StatelessWidget {
     return EditorPanel(
       controller: contract.controller,
       visualProfile: contract.visualProfile,
-      onCollapse: onCollapse,
+      onClose: onClose,
       onFloat: onFloat,
     );
   }

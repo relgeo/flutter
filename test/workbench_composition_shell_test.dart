@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_composition_shell.dart';
+import 'package:relgeo_flutter/src/ui/docking/dock_layout_adapter.dart';
 import 'package:relgeo_flutter/src/ui/docking/dock_node.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_controller.dart';
 import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
+import 'package:relgeo_flutter/src/ui/workbench_panel_interaction.dart';
 
 void main() {
   testWidgets('renders the injected navbar and three feature surfaces', (
@@ -113,6 +115,29 @@ void main() {
     expect(find.text('editor'), findsOneWidget);
     expect(find.text('preview'), findsOneWidget);
     expect(find.text('inspector'), findsOneWidget);
+
+    final divider = find.byKey(
+      const ValueKey('dock-divider-handle-horizontal--0'),
+    );
+    expect(divider, findsOneWidget);
+    await tester.drag(divider, const Offset(24, 0));
+    await tester.pump();
+    final resizedRoot = controller.dockedRoot! as DockSplitNode;
+    expect(resizedRoot.ratios.first, greaterThan(0.32));
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(-300, 0),
+    );
+    await tester.pumpAndSettle();
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(scrollable.position.pixels, greaterThan(0));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('interactive shell honors panel visibility and splitter drags', (
@@ -185,11 +210,11 @@ void main() {
     expect(controller.layout.splitRatios['center'], greaterThan(0.43));
   });
 
-  testWidgets('interactive shell keeps a collapsed panel as a labeled rail', (
+  testWidgets('interactive shell hides and restores a closed panel', (
     tester,
   ) async {
     final controller = WorkbenchLayoutController();
-    controller.toggleCollapsed(WorkbenchPanelId.inspector);
+    controller.closePanel(WorkbenchPanelId.inspector);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -204,7 +229,11 @@ void main() {
     );
 
     expect(find.text('inspector'), findsNothing);
-    expect(find.text('INSPECTOR'), findsOneWidget);
+    expect(find.text('INSPECTOR'), findsNothing);
+
+    controller.togglePanel(WorkbenchPanelId.inspector);
+    await tester.pump();
+    expect(find.text('inspector'), findsOneWidget);
   });
 
   testWidgets('parameters are an optional standalone bottom surface', (
@@ -333,7 +362,7 @@ void main() {
     );
 
     expect(
-      find.bySemanticsLabel('Resize floating workbench panel'),
+      find.byKey(const Key('resize-floating-workbench-panel')),
       findsOneWidget,
     );
     expect(find.text('inspector'), findsOneWidget);
@@ -344,36 +373,17 @@ void main() {
       44,
     );
 
-    controller.toggleCollapsed(WorkbenchPanelId.inspector);
-    await tester.pump();
-    expect(find.text('INSPECTOR'), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('floating-panel-inspector'))),
-      const Size(280, 44),
+    final floatingPanel = find.byKey(
+      const ValueKey('floating-panel-inspector'),
     );
-    expect(
-      find.bySemanticsLabel('Resize floating workbench panel'),
-      findsNothing,
-    );
-
-    controller.toggleCollapsed(WorkbenchPanelId.inspector);
-    controller.setPlacement(
-      WorkbenchPanelId.inspector,
-      WorkbenchPanelPlacement.overlay,
-    );
-    await tester.pump();
-    expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
-    await tester.tap(find.byTooltip('Close inspector overlay'));
-    await tester.pump();
-    expect(find.text('inspector'), findsNothing);
-
-    controller.setPanelVisibility(
-      WorkbenchPanelId.inspector,
-      WorkbenchPanelVisibility.visible,
-    );
+    expect(tester.widget<Material>(floatingPanel).elevation, 16);
     await tester.pump();
     await tester.tap(find.text('inspector'));
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.text('inspector'), findsOneWidget);
+
+    controller.closePanel(WorkbenchPanelId.inspector);
     await tester.pump();
     expect(find.text('inspector'), findsNothing);
   });
@@ -467,23 +477,141 @@ void main() {
           layoutController: controller,
           editor: const Text('editor'),
           viewport: const Text('viewport'),
-          inspector: const Text('inspector'),
+          inspector: const WorkbenchPanelTitleBar(
+            child: SizedBox(
+              height: 40,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('inspector'),
+              ),
+            ),
+          ),
         ),
       ),
     );
 
-    final handle = find.bySemanticsLabel('Move inspector panel');
-    final gesture = await tester.startGesture(tester.getCenter(handle));
+    final titleBar = find.byKey(
+      const Key('floating-panel-titlebar-drag-region'),
+    );
+    expect(titleBar, findsOneWidget);
+    final gesture = await tester.startGesture(tester.getCenter(titleBar));
     await gesture.moveBy(const Offset(-30, 0));
     await gesture.moveBy(const Offset(-30, 0));
     await tester.pump();
 
     expect(find.byKey(const ValueKey('dock-drop-preview')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dock-drop-preview')), findsNothing);
+    expect(
+      controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.left,
+      24,
+    );
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).visibility,
+      WorkbenchPanelVisibility.visible,
+    );
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).placement,
+      WorkbenchPanelPlacement.floating,
+    );
     await gesture.up();
+    await tester.pump();
+
+    final redrag = await tester.startGesture(tester.getCenter(titleBar));
+    await redrag.moveBy(const Offset(-30, 0));
+    await redrag.moveBy(const Offset(-30, 0));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dock-drop-preview')), findsOneWidget);
+    await redrag.up();
     await tester.pump();
     expect(find.byKey(const ValueKey('dock-drop-preview')), findsNothing);
     expect(controller.dockedRoot, isA<DockSplitNode>());
     expect(find.byKey(const ValueKey('dock-split-horizontal')), findsOneWidget);
+  });
+
+  testWidgets('invalid floating drop stays floating and preserves dock tree', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(2400, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final standard = WorkbenchLayoutModel.standard();
+    final controller = WorkbenchLayoutController(
+      initialLayout: standard.copyWith(
+        panels: {
+          ...standard.panels,
+          WorkbenchPanelId.editor: standard.panels[WorkbenchPanelId.editor]!
+              .copyWith(
+                bounds: const WorkbenchPanelBounds(width: 420, minWidth: 2000),
+              ),
+          WorkbenchPanelId.inspector: standard
+              .panels[WorkbenchPanelId.inspector]!
+              .copyWith(
+                placement: WorkbenchPanelPlacement.floating,
+                bounds: const WorkbenchPanelBounds(minWidth: 2000),
+              ),
+        },
+        floatingBounds: const {
+          WorkbenchPanelId.inspector: WorkbenchPanelBounds(
+            left: 24,
+            top: 24,
+            width: 280,
+            height: 220,
+          ),
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkbenchCompositionShell(
+          navbar: const SizedBox(),
+          layoutController: controller,
+          editor: const Text('editor'),
+          viewport: const Text('viewport'),
+          inspector: const WorkbenchPanelTitleBar(
+            child: SizedBox(
+              height: 40,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('inspector'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final initialRoot = DockLayoutAdapter.fromPlacementLayout(
+      controller.layout,
+    );
+    final titleBar = find.byKey(
+      const Key('floating-panel-titlebar-drag-region'),
+    );
+    final gesture = await tester.startGesture(tester.getCenter(titleBar));
+    await gesture.moveBy(const Offset(-40, 0));
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+
+    expect(controller.dropPreview, isNotNull);
+    expect(controller.dropPreview!.isValid, isFalse);
+    expect(find.byKey(const ValueKey('dock-drop-preview')), findsNothing);
+
+    await gesture.up();
+    await tester.pump();
+
+    expect(
+      controller.panel(WorkbenchPanelId.inspector).placement,
+      WorkbenchPanelPlacement.floating,
+    );
+    expect(controller.dockedRoot, isNull);
+    expect(
+      DockLayoutAdapter.fromPlacementLayout(controller.layout),
+      initialRoot,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('docking a floating panel restores focus to its docked surface', (
@@ -640,7 +768,7 @@ void main() {
       ),
     );
 
-    final handle = find.bySemanticsLabel('Resize floating workbench panel');
+    final handle = find.byKey(const Key('resize-floating-workbench-panel'));
     final handleNode = Focus.of(tester.element(handle));
     handleNode.requestFocus();
     await tester.pump();
@@ -657,11 +785,16 @@ void main() {
 
     final afterKeyboard =
         controller.layout.floatingBounds[WorkbenchPanelId.inspector]!.width!;
-    final handleSemanticsNode = tester.semantics.find(handle);
+    final semantics = tester.ensureSemantics();
+    await tester.pump();
+    final handleSemanticsNode = tester.semantics.find(
+      find.bySemanticsLabel('Resize floating workbench panel'),
+    );
     handleSemanticsNode.owner!.performAction(
       handleSemanticsNode.id,
       ui.SemanticsAction.decrease,
     );
+    semantics.dispose();
     await tester.pump();
 
     expect(
@@ -670,9 +803,7 @@ void main() {
     );
   });
 
-  testWidgets('collapsed floating panels expose a restore action', (
-    tester,
-  ) async {
+  testWidgets('floating panel remains visible after Escape', (tester) async {
     final standard = WorkbenchLayoutModel.standard();
     final controller = WorkbenchLayoutController(
       initialLayout: standard.copyWith(
@@ -680,10 +811,7 @@ void main() {
           ...standard.panels,
           WorkbenchPanelId.inspector: standard
               .panels[WorkbenchPanelId.inspector]!
-              .copyWith(
-                placement: WorkbenchPanelPlacement.floating,
-                visibility: WorkbenchPanelVisibility.collapsed,
-              ),
+              .copyWith(placement: WorkbenchPanelPlacement.floating),
         },
       ),
     );
@@ -700,7 +828,8 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('INSPECTOR'));
+    await tester.tap(find.text('inspector'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
 
     expect(

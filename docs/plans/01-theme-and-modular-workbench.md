@@ -1,12 +1,14 @@
 # Sub-Rencana 01 — Modular Workbench dan Theme System
 
-**Status:** Tahap A selesai; Tahap B selesai untuk shell deterministik; Tahap C berjalan sebagian; Tahap D berjalan sebagian; Tahap E berjalan sebagian
+**Status:** Theme foundation dan pemisahan modular utama tersedia; validasi lintas-platform/native serta beberapa boundary masih terbuka
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x  
 **Target utama:** macOS, Ubuntu/Linux, dan Windows 11
 
 > **Status snapshot — 2026-09-27:** Shell presentasional (menu bar, navbar, toolbar, overlay, viewport panel), feature surface preview/editor/inspector, controller viewport, controller overlay, boundary hasil kompilasi dokumen, boundary editor, document settings parser, composition shell, orchestration persistence aplikasi/workbench, boundary ekspor SVG native, kontrak ukuran/window host, dan fallback compact layout sudah dipisahkan/didefinisikan. Gate kode yang sudah memiliki evidence: `flutter analyze` lulus, `flutter test` lulus (**178 test**), golden light/dark lulus, `flutter build web --debug --no-wasm-dry-run` lulus, smoke test `flutter run -d macos --debug` sebelumnya berhasil tanpa overflow warning, dan direct `xcodebuild` melalui `macos/Runner.xcworkspace` berhasil membangun app macOS Debug arm64 serta Release universal (`arm64`/`x86_64`) setelah bridge native dan platform-menu adapter terbaru. Wrapper `flutter build macos` pada host ini masih gagal di discovery destination `macOS, arch=arm64` sebelum kompilasi source; fresh macOS CI tetap diperlukan sebagai evidence lintas-host. Registry command sudah dipakai oleh menu, toolbar action, dan adapter `PlatformMenuBar` macOS pada level source. Implementasi/build Linux dan Windows, packaging lintas-host, verifikasi event/shortcut menu native macOS, serta validasi runtime aksesibilitas masih terbuka.
+
+> **Pembaruan — 2026-10-07:** Dokumentasi historis di bawah tetap mencatat checkpoint lama. Status terkini: target menu/header masih menggunakan native window chrome; Flutter `analyze` bersih dan seluruh **300 test** lulus. Batch lifecycle panel menghapus collapse/Overlay dari model aktif, memetakan nilai persistence lama ke `hidden`/`floating`, dan menyatukan drag floating pada title bar. Preset layout kini diterapkan melalui recursive dock tree; golden profile/theme diperbarui dan tervalidasi. Canvas CAD/Blueprint/Paper mengikuti brightness aplikasi; audit native menemukan lalu memperbaiki beberapa teks/tombol UI yang terkunci putih. Build web berhasil. Wrapper `flutter build macos` masih gagal sebelum kompilasi karena meminta destination `arm64` yang tidak tersedia pada invocation ini; direct Xcode workspace Debug berhasil pada destination `x86_64` yang tersedia dan binary diverifikasi `x86_64`. Build Release universal berhasil pada checkpoint sebelumnya, bukan pada rerun ini. Smoke CUA memverifikasi menu native `File`/`View`, empat checkmark panel, Zoom in/Reset, pergantian profile/theme, dan resize pointer pada dua docked splitters (posisi dikembalikan). Dialog file picker OS belum dapat dipastikan terlihat/selesai melalui automation dua-monitor. Floating move/drop/resize, keyboard traversal penuh, VoiceOver, dan validasi host Linux/Windows masih terbuka. CI native Linux/Windows sudah disiapkan tetapi belum dijalankan; mesin signing tidak memiliki identitas codesigning, jadi release production tetap butuh Developer ID/notarization.
 
 ## 1. Tujuan
 
@@ -57,6 +59,20 @@ Canvas appearance yang dipakai saat ini adalah `CAD`, `Blueprint`, dan `Paper`.
 Nama `CAD` sengaja tidak memakai kata `Dark` agar tidak bertabrakan dengan
 App Theme `Light`/`Dark`; canvas appearance dan app theme tetap dua dimensi
 yang independen.
+
+**Implementasi theme/profile (2026-10-07):** pemilihan `CAD`, `Blueprint`, atau
+`Paper` tetap independen dari toggle App Theme, tetapi setiap profil kini
+memiliki palette canvas terang dan gelap. Brightness aplikasi memilih varian
+palette tersebut—termasuk background, grid, teks canvas, role colors, dan
+selection—tanpa mengganti profil atau behavior preset. Dengan demikian canvas
+ikut terasa terang/gelap secara konsisten dengan chrome aplikasi, sementara
+identitas masing-masing profil tetap terjaga. `ColorScheme` memakai aksen dari
+varian aktif; `RelGeoThemeExtension` menyediakan token efektif untuk preview.
+Navbar, toolbar viewport, editor, inspector, parameters, dan overlay controls
+tetap memakai adaptasi chrome theme yang sama. Matriks kontras untuk ketiga
+profil pada kedua brightness dan golden light/dark serta layout telah
+diperbarui. Audit visual desktop nyata dan migrasi kontrol kecil/warna hardcoded
+yang masih tersisa tetap belum selesai.
 
 `WorkbenchVisualProfile` tidak lagi menjadi pemilik ketiganya sekaligus. Jika nama tersebut tetap dipertahankan untuk kompatibilitas internal, tanggung jawabnya harus dipersempit atau dipecah menjadi model yang lebih spesifik.
 
@@ -274,8 +290,9 @@ flowchart LR
   adapter source sudah ada dan memakai registry yang sama, tetapi event menu
   native serta shortcut perlu diuji pada runtime macOS nyata/CI;
 - [x] dokumentasikan bahwa custom title bar bukan bagian dari fase awal;
-- [ ] buat keputusan baru hanya jika kebutuhan custom chrome muncul setelah
-  menu, panel, dan shortcut stabil.
+- [x] pertahankan native OS chrome sebagai keputusan saat ini; evaluasi custom
+  chrome hanya jika kebutuhan produk berubah setelah menu, panel, dan shortcut
+  stabil.
 
 **Exit gate:** seluruh command penting dapat dijalankan dari menu dan toolbar,
 menu macOS native bekerja, menu Windows/Linux tetap usable, dan title bar native
@@ -378,8 +395,10 @@ digantikan oleh golden.
 - [~] isolasi kode macOS/Linux/Windows; bridge native masing-masing runner
   sudah memiliki boundary channel tersendiri, tetapi pengujian build dan
   runtime per host belum cukup untuk menyatakan isolasi ini selesai;
-- [~] verifikasi shell pada macOS dan setidaknya Ubuntu; smoke macOS lokal
-  sudah lulus, sedangkan Ubuntu/Linux masih menunggu host yang sesuai;
+- [~] verifikasi shell pada macOS dan setidaknya Ubuntu; smoke menu, profile,
+  dan persistence macOS pernah lulus pada checkpoint native sebelumnya, tetapi
+  automation tidak dapat membaca window pada smoke terbaru. Workflow CI kini
+  menyiapkan test/build di runner Linux, namun harus dipush dan dijalankan;
 - [x] siapkan checklist Windows 11 untuk verifikasi eksternal; prosedur lintas
   desktop dan template evidence tersedia di
   [`workspace/docs/plans/10-desktop-runtime-smoke-checklist.md`](https://github.com/relgeo/workspace/blob/main/docs/plans/10-desktop-runtime-smoke-checklist.md).
@@ -397,10 +416,11 @@ digantikan oleh golden.
   traversal berurutan berbasis Tab, tetapi traversal penuh pada desktop nyata
   dan seluruh layout native belum diverifikasi;
 - [x] `flutter analyze` dan `flutter test`;
-- [~] build target macOS/Linux/Windows; direct macOS Debug/Release melalui
-  Xcode workspace sudah lulus dan web sudah lulus, tetapi wrapper Flutter
-  macOS pada host ini masih memiliki masalah discovery destination, sementara
-  build Linux dan Windows belum diverifikasi;
+- [~] build target macOS/Linux/Windows; build Flutter macOS Debug arm64 dan
+  Release universal (`arm64 + x86_64`) serta web sudah lulus pada source
+  terbaru. Workflow native matrix untuk format/analyze/test dan build Release
+  ketiga desktop target sudah ditambahkan, tetapi hasil Linux/Windows belum
+  tersedia sebelum workflow dipush dan berjalan;
 - [x] update evidence dan status pada dokumentasi Flutter.
 
 **Exit gate:** theme dan modularisasi memiliki bukti test yang dapat diulang, bukan hanya pemeriksaan visual manual.
@@ -493,7 +513,7 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap B/E — Golden visual review | Kedua baseline golden diperiksa secara visual setelah dibuat; tidak terlihat overflow, panel terpotong, atau artefak layout yang jelas pada shell, editor, preview, inspector, dan graph. Review ini tetap terbatas pada renderer test deterministik; validasi resize native dan accessibility runtime masih memerlukan host/perangkat nyata. |
 | 2026-09-27 | Koreksi kontrak theme UX | Keputusan maintainer diperjelas: kontrol utama hanya toggle `Light`/`Dark`; sebelum user memilih, mode efektif mengikuti system melalui `ThemeMode.system`. `System` bukan opsi ketiga pada selector. Aksi reset boleh menghapus override secara sekunder. Implementasi tiga nilai lama dan test terkait perlu diselaraskan sebelum Tahap A dapat ditutup kembali. |
 | 2026-09-27 | Koreksi nama canvas appearance | Preset `CAD Dark` diganti menjadi `CAD` agar tidak berbenturan secara konseptual dengan App Theme `Light`/`Dark`. Identifier profile, default preference, selector, test, dan golden baseline telah diselaraskan. |
-| 2026-09-27 | Tahap D — Window host contract (local, verification pending) | `WorkbenchWindowHost` dan `WorkbenchWindowConfiguration` ditambahkan sebagai boundary injectable; `RelGeoCADApp` meneruskan konfigurasi default/minimum ke host dan mengonfigurasi ulang bila host berubah. Contract test ditambahkan. Verifikasi `dart format`, `flutter analyze`, test target/full suite, dan `git diff --check` dari terminal VSCode belum dapat ditutup pada sesi ini karena remote terminal timeout; implementasi native macOS/Linux/Windows tetap terbuka. |
+| 2026-09-27 → 2026-10-07 | Tahap D — Window host contract | `WorkbenchWindowHost` dan `WorkbenchWindowConfiguration` menjadi boundary injectable; `RelGeoCADApp` meneruskan konfigurasi default/minimum ke host dan mengonfigurasi ulang bila host berubah. Contract test tersedia. Verifikasi lokal terbaru selesai: format bersih, analyzer bersih, seluruh 300 test lulus, build macOS Debug/Release universal dan build web berhasil. Implementasi serta runtime native Linux/Windows tetap menunggu runner/perangkat masing-masing; file picker OS dan interaksi floating juga masih memerlukan verifikasi manual yang dapat diamati. |
 | 2026-09-27 | Tahap D — Native runner audit | Runner macOS, Linux, dan Windows diperiksa. macOS masih mendefinisikan content window `800×600`, sementara Linux dan Windows membuat window awal `1280×720`; belum ada satu penerapan minimum `1024×640` lintas host. Temuan ini dicatat sebagai pekerjaan implementasi native berikutnya, bukan dianggap selesai hanya karena kontrak Dart sudah ada. |
 | 2026-09-27 | Tahap D — Native runner sizing alignment | Ukuran awal runner diselaraskan ke policy `1440×900`; minimum `1024×640` ditambahkan pada macOS XIB, GTK Linux, dan Win32 `WM_GETMINMAXINFO`. Ini adalah source-level alignment dan belum menggantikan build/runtime verification pada masing-masing OS. |
 | 2026-09-27 | Tahap D — Dart/native window bridge partial | `MethodChannelWorkbenchWindowHost` sekarang mengirim konfigurasi default/minimum melalui channel `relgeo/window`; bridge macOS memasang handler pada `MainFlutterWindow`. Missing-plugin dibuat aman untuk web/runner yang belum memiliki handler. Bridge Linux/Windows, build, dan runtime verification masih terbuka. |
@@ -517,3 +537,11 @@ Dokumen ini adalah rencana milik repository Flutter. Workspace hanya mencatat st
 | 2026-09-27 | Tahap D — Flutter wrapper retry after direct build | `/Users/agusmade/development/flutter/bin/flutter build macos --debug --no-pub` kembali berhenti sebelum kompilasi source: Xcode tidak menemukan destination `{ platform:macOS, arch:arm64 }` dan hanya mengekspos `x86_64` serta `Any Mac`. Ini mengonfirmasi blocker discovery wrapper Flutter/Xcode pada host lokal; direct workspace build tetap menjadi evidence source/native bridge yang valid. |
 | 2026-09-27 | Tahap B/E — Final analyzer dan regression suite | Analyzer Flutter absolut `/Users/agusmade/development/flutter/bin/flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos` lulus dengan `No issues found!`; full suite `/Users/agusmade/development/flutter/bin/flutter test --no-pub --reporter compact` lulus dengan **178 test**. Artifact Debug macOS tetap terverifikasi Mach-O `arm64`, dan `git diff --check` bersih. |
 | 2026-09-27 | Tahap D/E — macOS artifact UI smoke attempt | Artifact `build/macos/xcode-final/Build/Products/Debug/RelGeo.app` berhasil diluncurkan dan terdeteksi sebagai proses `RelGeo` pada host macOS. Binding accessibility terhadap jendela Flutter melalui automation timeout, sehingga event/shortcut menu native dan traversal runtime tidak dapat dinyatakan terverifikasi; source/build evidence tetap valid. |
+| 2026-09-30 | Koreksi toolbar Preview, target preview, dan theme/profile | Tombol export SVG di navbar dihapus (ekspor tetap lewat `File`); pilihan Preview dimodelkan sebagai target `Model`/`Sheet-View` dengan tipe `Component` sebagai ekstensi belum aktif; tema aplikasi Light/Dark kini memakai profil CAD/Blueprint/Paper yang sama dan mengadaptasi chrome seluruh panel, sementara canvas appearance tetap terpisah. Syntax highlighting editor memilih tema terang/gelap. Golden light/dark dan lima layout diperbarui. `flutter analyze` lulus; suite penuh lulus dengan **295 test**; `git diff --check` bersih. Audit visual runtime desktop dan validasi aksesibilitas tetap terbuka. |
+| 2026-09-30 | Tahap D/E — Xcode runtime verification retry | `flutter run -d macos --debug --no-pub` masih gagal sebelum kompilasi karena Flutter meminta destination `macOS arm64`, sedangkan invocation-nya hanya mengekspos `My Mac x86_64`. Direct build `xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Debug -sdk macosx -arch x86_64 build CODE_SIGNING_ALLOWED=NO` berhasil (`** BUILD SUCCEEDED **`) dan memakai CocoaPods workspace yang benar. Bundle hasil build terdeteksi berjalan dan screenshot pada monitor kedua mengonfirmasi shell terbaru tampil dalam dark mode, termasuk menu `File`, kontrol theme icon, layout panel, dan profil CAD. Accessibility scripting mengonfirmasi menu native `File` berisi New/Open/Save/Save as/Close/Recent/Export; eksekusi menu, perpindahan ke light mode, serta traversal keyboard runtime masih belum diuji. Ini bukti build dan smoke visual terbatas, bukan penutupan aksesibilitas/interaksi penuh. |
+| 2026-10-07 | Tahap UX panel — lifecycle/drag boundary | Panel aktif hanya visible/hidden dan docked/floating; legacy `collapsed`/`overlay` dipulihkan sebagai hidden/floating. Feature title bars menyediakan drag penuh saat floating, Float disembunyikan dari header floating, tombol Close tetap ada, elevation 16, dan Escape tidak menutup panel. `flutter analyze` bersih; full suite lulus **296 test**. Native build/runtime dan lintas-platform belum diulang pada checkpoint ini. |
+| 2026-10-07 | Tahap D — macOS Release universal terbaru | Setelah tersedianya ruang disk 18 GiB, `flutter build macos --release --no-pub` sukses pada source terbaru. Executable RelGeo dan Flutter `App.framework` terverifikasi universal (`arm64 + x86_64`) dengan `file`/`lipo`; artifact sekitar 45 MiB. Upaya UI smoke melalui automation tidak dapat membaca jendela karena timeout, sehingga interaksi native, aksesibilitas runtime, serta Linux/Windows tetap terbuka. |
+| 2026-10-07 | Canvas palette mengikuti App Theme | CAD, Blueprint, dan Paper kini masing-masing memiliki palette light/dark; toggle Light/Dark memilih background, grid, teks canvas, dan warna semantic yang sesuai tanpa mengganti profil. Test enam kombinasi memeriksa kontras teks dan elemen canvas; tujuh golden theme/layout diregenerasi dan lulus. `flutter analyze --no-pub` lulus; full suite lulus dengan **299 test**; `flutter build web --debug --no-pub --no-wasm-dry-run` dan `git diff --check` lulus. Audit visual runtime desktop serta pemeriksaan aksesibilitas tetap terbuka. |
+| 2026-10-07 | Native visual smoke — canvas theme dan splitter | Bundle Debug terbaru diperiksa langsung pada macOS: Paper Dark → Paper Light serta CAD Dark → CAD Light mengubah background dan grid canvas; geometri berwarna eksplisit dari DSL tetap dipertahankan. Vertical splitter Preview/Inspector dan horizontal splitter Parameters berhasil digeser lalu dikembalikan ke posisi awal. Theme/profile dan layout pengguna dibiarkan pada state semula (Paper + Dark/System; Parameters di dock bawah). Ini smoke interaksi terbatas, bukan bukti VoiceOver, restart, atau seluruh target platform. |
+| 2026-10-07 | Final local quality-gate rerun | `dart format --output=none --set-exit-if-changed lib test` memeriksa 140 file tanpa perubahan; `flutter analyze --no-pub` bersih; full `flutter test --no-pub --reporter compact` lulus **299 test**; `flutter build web --debug --no-pub --no-wasm-dry-run` berhasil; `git diff --check` bersih. Tidak menjalankan ulang build macOS karena source sejak artifact Debug yang dipakai smoke ini tidak berubah, selain dokumentasi. |
+| 2026-10-07 | Blueprint-Light visual audit follow-up dan gate final | Smoke native menemukan literal putih yang tidak terbaca pada Inspector saat Light. Teks utama Inspector, fallback suggestion editor, tombol toolbar tanpa warna eksplisit, dan kode pada dialog SVG kini memakai `ColorScheme.onSurface`; regresi Inspector light/dark dan default icon theme ditambahkan, golden Light terkait diperbarui. Final gate: format memeriksa 140 file tanpa perubahan, `flutter analyze --no-pub` bersih, seluruh **300 test** lulus, build web berhasil, dan `git diff --check` bersih. Wrapper `flutter build macos` kembali gagal pada discovery destination `arm64`; direct `xcodebuild` memakai workspace `macos/Runner.xcworkspace` berhasil pada destination `x86_64`, dan binary app diverifikasi `x86_64`. Theme/profile/layout native tetap Paper + Dark/System dengan Parameters di dock bawah. Verifikasi VoiceOver, native floating/drop, file picker OS, dan host Linux/Windows tetap terbuka. |

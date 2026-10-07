@@ -41,6 +41,9 @@ class WorkbenchLayoutController extends ChangeNotifier {
   /// It is transient UI state and is never persisted with the layout.
   DockDropPreview? get dropPreview => _dropPreview;
 
+  bool isFloatingPanelDragActive(WorkbenchPanelId id) =>
+      _dragSnapshots.containsKey(id);
+
   void setDropPreview(DockDropPreview? preview) {
     if (_dropPreview == preview) return;
     _dropPreview = preview;
@@ -81,10 +84,6 @@ class WorkbenchLayoutController extends ChangeNotifier {
         panel(id).visibility != WorkbenchPanelVisibility.hidden;
   }
 
-  bool isPanelCollapsed(WorkbenchPanelId id) {
-    return panel(id).visibility == WorkbenchPanelVisibility.collapsed;
-  }
-
   void setPanelVisibility(
     WorkbenchPanelId id,
     WorkbenchPanelVisibility visibility, {
@@ -110,28 +109,65 @@ class WorkbenchLayoutController extends ChangeNotifier {
     );
   }
 
-  void toggleCollapsed(WorkbenchPanelId id) {
-    final current = panel(id).visibility;
-    _updatePanel(
-      id,
-      panel(id).copyWith(
-        visibility: current == WorkbenchPanelVisibility.collapsed
-            ? WorkbenchPanelVisibility.visible
-            : WorkbenchPanelVisibility.collapsed,
-      ),
-    );
+  void closePanel(WorkbenchPanelId id) {
+    setPanelVisibility(id, WorkbenchPanelVisibility.hidden);
   }
 
   void setPlacement(WorkbenchPanelId id, WorkbenchPanelPlacement placement) {
     final nextOrder = [..._layout.floatingOrder]..remove(id);
-    if (placement == WorkbenchPanelPlacement.floating ||
-        placement == WorkbenchPanelPlacement.overlay) {
+    if (placement == WorkbenchPanelPlacement.floating) {
       nextOrder.add(id);
     }
+
+    if (_usesDockTree && _dockedRoot != null && _isDockPlacement(placement)) {
+      final root = _dockedRoot!;
+      final panels = _dockedRootPanels;
+      final target = _dockPlacementTarget(id, placement, panels);
+      if (target == null || (panels.length == 1 && panels.contains(id))) {
+        // A one-panel tree has nowhere meaningful to split against. Preserve
+        // it as-is while updating the compatibility projection below.
+        _replaceAsCustom(
+          _layout.copyWith(
+            panels: {
+              ..._layout.panels,
+              id: panel(id).copyWith(placement: placement),
+            },
+            floatingOrder: nextOrder,
+          ),
+        );
+        return;
+      }
+      try {
+        _dockedRoot = DockTreeOperations.move(
+          root: root,
+          panel: id,
+          target: target,
+          zone: _dockPlacementZone(placement),
+        );
+      } on Object {
+        // A malformed or stale tree must not be partially changed. Keep the
+        // established compatibility fallback for this exceptional case.
+        _dockedRoot = null;
+        _usesDockTree = false;
+      }
+      if (_usesDockTree) {
+        _replaceAsCustom(
+          _layout.copyWith(
+            panels: {
+              ..._layout.panels,
+              id: panel(id).copyWith(placement: placement),
+            },
+            floatingOrder: nextOrder,
+          ),
+        );
+        requestPanelFocus(id);
+        return;
+      }
+    }
+
     if (_usesDockTree &&
         _dockedRoot != null &&
-        (placement == WorkbenchPanelPlacement.floating ||
-            placement == WorkbenchPanelPlacement.overlay) &&
+        placement == WorkbenchPanelPlacement.floating &&
         _dockedRootPanels.contains(id)) {
       final root = _dockedRoot!;
       if (root is DockPanelNode && root.panelId == id) {
@@ -150,7 +186,6 @@ class WorkbenchLayoutController extends ChangeNotifier {
     }
     if (_usesDockTree &&
         placement != WorkbenchPanelPlacement.floating &&
-        placement != WorkbenchPanelPlacement.overlay &&
         !_dockedRootPanels.contains(id)) {
       _usesDockTree = false;
       _dockedRoot = null;
@@ -158,9 +193,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
     // Menu placement commands describe the compatibility layout, not an
     // arbitrary tree drop. Rebuild that authoritative representation rather
     // than leaving a stale recursive tree behind it.
-    if (_usesDockTree &&
-        placement != WorkbenchPanelPlacement.floating &&
-        placement != WorkbenchPanelPlacement.overlay) {
+    if (_usesDockTree && placement != WorkbenchPanelPlacement.floating) {
       _usesDockTree = false;
       _dockedRoot = null;
     }
@@ -181,10 +214,52 @@ class WorkbenchLayoutController extends ChangeNotifier {
     _ => const <WorkbenchPanelId>{},
   };
 
+  bool _isDockPlacement(WorkbenchPanelPlacement placement) =>
+      switch (placement) {
+        WorkbenchPanelPlacement.left ||
+        WorkbenchPanelPlacement.center ||
+        WorkbenchPanelPlacement.right ||
+        WorkbenchPanelPlacement.bottom => true,
+        WorkbenchPanelPlacement.floating => false,
+      };
+
+  WorkbenchPanelId? _dockPlacementTarget(
+    WorkbenchPanelId source,
+    WorkbenchPanelPlacement placement,
+    Set<WorkbenchPanelId> dockedPanels,
+  ) {
+    final preferred = switch (placement) {
+      WorkbenchPanelPlacement.left => WorkbenchPanelId.editor,
+      WorkbenchPanelPlacement.center => WorkbenchPanelId.preview,
+      WorkbenchPanelPlacement.right => WorkbenchPanelId.inspector,
+      WorkbenchPanelPlacement.bottom => WorkbenchPanelId.parameters,
+      WorkbenchPanelPlacement.floating => null,
+    };
+    if (preferred != null &&
+        preferred != source &&
+        dockedPanels.contains(preferred)) {
+      return preferred;
+    }
+    for (final candidate in WorkbenchPanelId.values) {
+      if (candidate != source && dockedPanels.contains(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  DockZone _dockPlacementZone(WorkbenchPanelPlacement placement) =>
+      switch (placement) {
+        WorkbenchPanelPlacement.left => DockZone.left,
+        WorkbenchPanelPlacement.center => DockZone.center,
+        WorkbenchPanelPlacement.right => DockZone.right,
+        WorkbenchPanelPlacement.bottom => DockZone.bottom,
+        WorkbenchPanelPlacement.floating => DockZone.center,
+      };
+
   void focusFloatingPanel(WorkbenchPanelId id) {
     final placement = panel(id).placement;
-    if (placement != WorkbenchPanelPlacement.floating &&
-        placement != WorkbenchPanelPlacement.overlay) {
+    if (placement != WorkbenchPanelPlacement.floating) {
       return;
     }
     final nextOrder = [..._layout.floatingOrder]
@@ -257,8 +332,7 @@ class WorkbenchLayoutController extends ChangeNotifier {
     required double canvasHeight,
   }) {
     final state = panel(id);
-    if (state.placement != WorkbenchPanelPlacement.floating &&
-        state.placement != WorkbenchPanelPlacement.overlay) {
+    if (state.placement != WorkbenchPanelPlacement.floating) {
       return;
     }
     final bounds = _layout.floatingBounds[id] ?? state.bounds;
@@ -470,9 +544,17 @@ class WorkbenchLayoutController extends ChangeNotifier {
   }
 
   void applyProfile(WorkbenchLayoutProfile profile) {
-    _usesDockTree = false;
-    _dockedRoot = null;
-    _replace(profile.layout);
+    final nextRoot = profile.dockedRoot;
+    if (_layout == profile.layout &&
+        _dockedRoot == nextRoot &&
+        _usesDockTree == (nextRoot != null)) {
+      return;
+    }
+    _layout = profile.layout;
+    _dockedRoot = nextRoot;
+    _usesDockTree = nextRoot != null;
+    _dropPreview = null;
+    notifyListeners();
   }
 
   void restore(WorkbenchLayoutModel layout, {DockNode? dockedRoot}) {
@@ -494,18 +576,12 @@ class WorkbenchLayoutController extends ChangeNotifier {
       DockSplitNode split => split.panels,
       _ => const <WorkbenchPanelId>{},
     };
-    return !treePanels.any((id) {
-      final placement = layout.panels[id]?.placement;
-      return placement == WorkbenchPanelPlacement.floating ||
-          placement == WorkbenchPanelPlacement.overlay;
-    });
+    return !treePanels.any(
+      (id) => layout.panels[id]?.placement == WorkbenchPanelPlacement.floating,
+    );
   }
 
-  void reset() {
-    _usesDockTree = false;
-    _dockedRoot = null;
-    _replace(WorkbenchLayoutModel.standard());
-  }
+  void reset() => applyProfile(WorkbenchLayoutProfiles.standard);
 
   void _updatePanel(WorkbenchPanelId id, WorkbenchPanelLayout value) {
     if (value == panel(id)) return;

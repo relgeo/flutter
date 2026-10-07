@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'workbench_layout_controller.dart';
 import 'workbench_layout_model.dart';
+import 'workbench_panel_interaction.dart';
 import 'workbench_window_policy.dart';
 import 'docking/dock_drop_preview.dart';
 import 'docking/dock_drop_preview_overlay.dart';
@@ -132,8 +133,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
 
         final activeTree = _treeForShell(controller);
         final parametersInDockTree = switch (activeTree) {
-          DockPanelNode panel =>
-            panel.panelId == WorkbenchPanelId.parameters,
+          DockPanelNode panel => panel.panelId == WorkbenchPanelId.parameters,
           DockSplitNode split => split.panels.contains(
             WorkbenchPanelId.parameters,
           ),
@@ -189,11 +189,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
         final parameterHeight = parametersInDockTree
             ? 0.0
             : _parametersSlotHeight(controller);
-        final dividerVisible =
-            parameters != null &&
-            parameterHeight > 0 &&
-            controller.panel(WorkbenchPanelId.parameters).visibility !=
-                WorkbenchPanelVisibility.collapsed;
+        final dividerVisible = parameters != null && parameterHeight > 0;
         final dockedBody = parameters == null
             ? main
             : Column(
@@ -275,9 +271,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
         state.visibility == WorkbenchPanelVisibility.hidden) {
       return 0;
     }
-    return state.visibility == WorkbenchPanelVisibility.collapsed
-        ? 44
-        : state.bounds.height ?? 220;
+    return state.bounds.height ?? 220;
   }
 
   List<Widget> _buildPanelDividerHitTargets(
@@ -287,21 +281,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
     double panelWidth,
   ) {
     if (dividerIds.isEmpty) return const [];
-    final collapsedWidth = panelIds
-        .where(
-          (id) =>
-              controller.panel(id).visibility ==
-              WorkbenchPanelVisibility.collapsed,
-        )
-        .length;
-    final expandedIds = panelIds
-        .where(
-          (id) =>
-              controller.panel(id).visibility !=
-              WorkbenchPanelVisibility.collapsed,
-        )
-        .toList();
-    final totalRatio = expandedIds.fold<double>(0, (sum, id) {
+    final totalRatio = panelIds.fold<double>(0, (sum, id) {
       return sum +
           (controller.layout.splitRatios[controller
                   .panel(id)
@@ -309,19 +289,14 @@ class WorkbenchCompositionShell extends StatelessWidget {
                   .storageKey] ??
               1 / 3);
     });
-    final availableWidth =
-        panelWidth - collapsedWidth * 44 - dividerIds.length.toDouble();
+    final availableWidth = panelWidth - dividerIds.length.toDouble();
     var x = 0.0;
     final targets = <Widget>[];
     for (final id in panelIds) {
       final state = controller.panel(id);
-      if (state.visibility == WorkbenchPanelVisibility.collapsed) {
-        x += 44;
-      } else {
-        final ratio =
-            controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
-        x += availableWidth * ratio / totalRatio;
-      }
+      final ratio =
+          controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
+      x += availableWidth * ratio / totalRatio;
       if (dividerIds.contains(id)) {
         final next = panelIds[panelIds.indexOf(id) + 1];
         targets.add(
@@ -355,25 +330,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
     if (state.visibility == WorkbenchPanelVisibility.hidden) {
       return const SizedBox.shrink();
     }
-    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
-      return SizedBox(
-        height: 44,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => controller.toggleCollapsed(WorkbenchPanelId.parameters),
-          child: Semantics(
-            label: 'parameters panel collapsed',
-            button: true,
-            onTap: () =>
-                controller.toggleCollapsed(WorkbenchPanelId.parameters),
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Center(child: Text('PARAMETERS')),
-            ),
-          ),
-        ),
-      );
-    }
     return SizedBox(height: state.bounds.height ?? 220, child: parameters);
   }
 
@@ -389,10 +345,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
           (id) =>
               controller.panel(id).visibility !=
                   WorkbenchPanelVisibility.hidden &&
-              (controller.panel(id).placement ==
-                      WorkbenchPanelPlacement.floating ||
-                  controller.panel(id).placement ==
-                      WorkbenchPanelPlacement.overlay),
+              controller.panel(id).placement ==
+                  WorkbenchPanelPlacement.floating,
         )
         .toList();
     final order = controller.layout.floatingOrder;
@@ -418,9 +372,8 @@ class WorkbenchCompositionShell extends StatelessWidget {
   ) {
     final state = controller.panel(id);
     final bounds = controller.layout.floatingBounds[id] ?? state.bounds;
-    final isCollapsed = state.visibility == WorkbenchPanelVisibility.collapsed;
     final width = bounds.width ?? 320;
-    final height = isCollapsed ? 44.0 : bounds.height ?? 260;
+    final height = bounds.height ?? 260;
     final left = (bounds.left ?? 24).clamp(
       0.0,
       (canvasWidth - width).clamp(0.0, double.infinity),
@@ -435,79 +388,47 @@ class WorkbenchCompositionShell extends StatelessWidget {
       width: width,
       height: height,
       child: Focus(
-        onFocusChange: (focused) {
-          if (focused) controller.focusFloatingPanel(id);
-        },
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.escape &&
-              state.placement == WorkbenchPanelPlacement.overlay) {
-            controller.setPanelVisibility(id, WorkbenchPanelVisibility.hidden);
-            node.unfocus();
+              controller.isFloatingPanelDragActive(id)) {
+            controller.cancelFloatingPanelDrag(id);
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;
+        },
+        onFocusChange: (focused) {
+          if (focused) controller.focusFloatingPanel(id);
         },
         child: Builder(
           builder: (focusContext) => GestureDetector(
             onTap: () {
               Focus.of(focusContext).requestFocus();
               controller.focusFloatingPanel(id);
-              if (isCollapsed) controller.toggleCollapsed(id);
             },
             child: Material(
               key: ValueKey('floating-panel-${id.name}'),
-              elevation: state.placement == WorkbenchPanelPlacement.overlay
-                  ? 8
-                  : 4,
+              elevation: 16,
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   Semantics(
+                    container: true,
                     label: '${id.name} ${state.placement.name} panel',
-                    button: isCollapsed,
-                    onTap: isCollapsed
-                        ? () => controller.toggleCollapsed(id)
-                        : null,
-                    child: isCollapsed
-                        ? ColoredBox(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: Center(child: Text(id.name.toUpperCase())),
-                          )
-                        : _panelWidget(id),
-                  ),
-                  if (!isCollapsed)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: _FloatingPanelResizeHandle(
-                        onDrag: (delta) => controller.resizeFloatingPanel(
-                          id,
-                          dx: delta.dx,
-                          dy: delta.dy,
-                          canvasWidth: canvasWidth,
-                          canvasHeight: canvasHeight,
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    top: 2,
-                    right: 42,
-                    child: _FloatingPanelDragHandle(
-                      panelId: id,
+                    child: WorkbenchPanelInteractionScope(
+                      isFloating: true,
                       onDragStart: () {
                         controller.beginFloatingPanelDrag(id);
                         Focus.of(focusContext).requestFocus();
                         controller.focusFloatingPanel(id);
                       },
-                      onDrag: (delta, globalPosition) {
+                      onDragUpdate: (details) {
+                        if (!controller.isFloatingPanelDragActive(id)) return;
                         controller.moveFloatingPanel(
                           id,
-                          dx: delta.dx,
-                          dy: delta.dy,
+                          dx: details.delta.dx,
+                          dy: details.delta.dy,
                           canvasWidth: canvasWidth,
                           canvasHeight: canvasHeight,
                         );
@@ -517,7 +438,7 @@ class WorkbenchCompositionShell extends StatelessWidget {
                             controller,
                             id,
                             pointer: renderObject.globalToLocal(
-                              globalPosition,
+                              details.globalPosition,
                             ),
                             canvasWidth: canvasWidth,
                             canvasHeight: canvasHeight,
@@ -534,27 +455,24 @@ class WorkbenchCompositionShell extends StatelessWidget {
                         controller.endFloatingPanelDrag(id);
                         controller.clearDropPreview();
                       },
-                      onDragCancel: () {
-                        controller.cancelFloatingPanelDrag(id);
-                      },
+                      onDragCancel: () =>
+                          controller.cancelFloatingPanelDrag(id),
+                      child: _panelWidget(id),
                     ),
                   ),
-                  if (!isCollapsed &&
-                      state.placement == WorkbenchPanelPlacement.overlay)
-                    Positioned(
-                      right: 2,
-                      top: 2,
-                      child: IconButton(
-                        key: ValueKey('close-overlay-${id.name}'),
-                        tooltip: 'Close ${id.name} overlay',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => controller.setPanelVisibility(
-                          id,
-                          WorkbenchPanelVisibility.hidden,
-                        ),
-                        icon: const Icon(Icons.close, size: 16),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: _FloatingPanelResizeHandle(
+                      onDrag: (delta) => controller.resizeFloatingPanel(
+                        id,
+                        dx: delta.dx,
+                        dy: delta.dy,
+                        canvasWidth: canvasWidth,
+                        canvasHeight: canvasHeight,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -621,34 +539,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
     Widget child,
   ) {
     final state = controller.panel(id);
-    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
-      return SizedBox(
-        width: 44,
-        child: Focus(
-          autofocus: controller.focusRequest == id,
-          onFocusChange: (focused) {
-            if (focused) controller.clearPanelFocusRequest(id);
-          },
-          child: Semantics(
-            label: '${id.name} panel collapsed',
-            button: true,
-            onTap: () => controller.toggleCollapsed(id),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => controller.toggleCollapsed(id),
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: RotatedBox(
-                  quarterTurns: 3,
-                  child: Center(child: Text(id.name.toUpperCase())),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
     final ratio =
         controller.layout.splitRatios[state.placement.storageKey] ?? 1 / 3;
     return Expanded(
@@ -658,9 +548,12 @@ class WorkbenchCompositionShell extends StatelessWidget {
         onFocusChange: (focused) {
           if (focused) controller.clearPanelFocusRequest(id);
         },
-        child: KeyedSubtree(
-          key: ValueKey('workbench-panel-${id.name}'),
-          child: child,
+        child: WorkbenchPanelInteractionScope(
+          isFloating: false,
+          child: KeyedSubtree(
+            key: ValueKey('workbench-panel-${id.name}'),
+            child: child,
+          ),
         ),
       ),
     );
@@ -684,46 +577,17 @@ class WorkbenchCompositionShell extends StatelessWidget {
     WorkbenchPanelId id,
     WorkbenchLayoutController controller,
   ) {
-    final state = controller.panel(id);
-    if (state.visibility == WorkbenchPanelVisibility.collapsed) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: SizedBox(
-          width: 44,
-          height: double.infinity,
-          child: Focus(
-            autofocus: controller.focusRequest == id,
-            onFocusChange: (focused) {
-              if (focused) controller.clearPanelFocusRequest(id);
-            },
-            child: Semantics(
-              label: '${id.name} panel collapsed',
-              button: true,
-              onTap: () => controller.toggleCollapsed(id),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => controller.toggleCollapsed(id),
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: RotatedBox(
-                    quarterTurns: 3,
-                    child: Center(child: Text(id.name.toUpperCase())),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
     return Focus(
       autofocus: controller.focusRequest == id,
       onFocusChange: (focused) {
         if (focused) controller.clearPanelFocusRequest(id);
       },
-      child: KeyedSubtree(
-        key: ValueKey('workbench-panel-${id.name}'),
-        child: _panelWidget(id),
+      child: WorkbenchPanelInteractionScope(
+        isFloating: false,
+        child: KeyedSubtree(
+          key: ValueKey('workbench-panel-${id.name}'),
+          child: _panelWidget(id),
+        ),
       ),
     );
   }
@@ -736,107 +600,6 @@ class WorkbenchCompositionShell extends StatelessWidget {
       _isCompact(width) && width < WorkbenchWindowPolicy.minimumWindowSize.width
       ? WorkbenchWindowPolicy.minimumWindowSize.width
       : width;
-}
-
-class _FloatingPanelDragHandle extends StatefulWidget {
-  const _FloatingPanelDragHandle({
-    required this.panelId,
-    required this.onDragStart,
-    required this.onDrag,
-    required this.onDragEnd,
-    required this.onDragCancel,
-  });
-
-  final WorkbenchPanelId panelId;
-  final VoidCallback onDragStart;
-  final void Function(Offset delta, Offset globalPosition) onDrag;
-  final VoidCallback onDragEnd;
-  final VoidCallback onDragCancel;
-
-  @override
-  State<_FloatingPanelDragHandle> createState() =>
-      _FloatingPanelDragHandleState();
-}
-
-class _FloatingPanelDragHandleState extends State<_FloatingPanelDragHandle> {
-  late final FocusNode _focusNode;
-  bool _dragging = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode(debugLabel: 'floating-panel-drag-handle');
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message:
-          'Drag to move ${widget.panelId.name} panel; drop near an edge to dock',
-      child: Semantics(
-        label: 'Move ${widget.panelId.name} panel',
-        hint: 'Drag to reposition or dock this panel',
-        button: true,
-        child: Focus(
-          focusNode: _focusNode,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent &&
-                event.logicalKey == LogicalKeyboardKey.escape &&
-                _dragging) {
-              _dragging = false;
-              widget.onDragCancel();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: MouseRegion(
-            cursor: SystemMouseCursors.move,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: (_) {
-                _focusNode.requestFocus();
-                _dragging = true;
-                widget.onDragStart();
-              },
-              onPanUpdate: (details) =>
-                  widget.onDrag(details.delta, details.globalPosition),
-              onPanEnd: (_) {
-                if (!_dragging) return;
-                _dragging = false;
-                widget.onDragEnd();
-              },
-              onPanCancel: () {
-                if (!_dragging) return;
-                _dragging = false;
-                widget.onDragCancel();
-              },
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface.withValues(alpha: 0.72),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.8),
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: const SizedBox(
-                  width: 34,
-                  height: 26,
-                  child: Icon(Icons.drag_indicator, size: 16),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _FloatingPanelResizeHandle extends StatelessWidget {
@@ -866,6 +629,7 @@ class _FloatingPanelResizeHandle extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onPanUpdate: (details) => onDrag(details.delta),
           child: Semantics(
+            key: const Key('resize-floating-workbench-panel'),
             label: 'Resize floating workbench panel',
             slider: true,
             hint: 'Increase or decrease panel size',

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/docking/dock_layout_renderer.dart';
@@ -153,5 +155,42 @@ void main() {
     expect(received?.axis, DockAxis.horizontal);
     expect(received?.dividerIndex, 0);
     expect(delta, 24);
+  });
+
+  testWidgets('exposes dock splitters as operable semantic sliders', (
+    tester,
+  ) async {
+    final deltas = <double>[];
+    final node = DockSplitNode(
+      axis: DockAxis.vertical,
+      children: const [
+        DockPanelNode(WorkbenchPanelId.preview),
+        DockPanelNode(WorkbenchPanelId.inspector),
+      ],
+      ratios: const [0.6, 0.4],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 500,
+          height: 500,
+          child: DockLayoutRenderer(
+            node: node,
+            panelBuilder: (context, panelId) => const SizedBox.expand(),
+            onDividerDrag: (_, delta) => deltas.add(delta),
+          ),
+        ),
+      ),
+    );
+
+    final divider = find.bySemanticsLabel('Resize docked panels vertically');
+    expect(divider, findsOneWidget);
+    final semanticsNode = tester.semantics.find(divider);
+    semanticsNode.owner!.performAction(
+      semanticsNode.id,
+      ui.SemanticsAction.increase,
+    );
+    expect(deltas, [16]);
   });
 }

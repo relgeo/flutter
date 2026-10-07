@@ -32,6 +32,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('dock-drop-preview')), findsOneWidget);
     expect(find.text('Dock left'), findsOneWidget);
+    expect(find.bySemanticsLabel('Dock left'), findsOneWidget);
   });
 
   testWidgets('renders no overlay for null or invalid preview', (tester) async {

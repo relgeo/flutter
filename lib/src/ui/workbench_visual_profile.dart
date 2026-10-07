@@ -54,14 +54,36 @@ class WorkbenchVisualProfile {
   final String id;
   final String label;
   final WorkbenchCanvasAppearance canvasAppearance;
+  final WorkbenchCanvasAppearance? lightCanvasAppearance;
+  final WorkbenchCanvasAppearance? darkCanvasAppearance;
   final WorkbenchBehaviorPreset behavior;
 
   const WorkbenchVisualProfile({
     required this.id,
     required this.label,
     required this.canvasAppearance,
+    this.lightCanvasAppearance,
+    this.darkCanvasAppearance,
     required this.behavior,
   });
+
+  WorkbenchCanvasAppearance appearanceFor(Brightness brightness) {
+    return switch (brightness) {
+      Brightness.light => lightCanvasAppearance ?? canvasAppearance,
+      Brightness.dark => darkCanvasAppearance ?? canvasAppearance,
+    };
+  }
+
+  WorkbenchVisualProfile forBrightness(Brightness brightness) {
+    return WorkbenchVisualProfile(
+      id: id,
+      label: label,
+      canvasAppearance: appearanceFor(brightness),
+      lightCanvasAppearance: lightCanvasAppearance,
+      darkCanvasAppearance: darkCanvasAppearance,
+      behavior: behavior,
+    );
+  }
 
   // Legacy getters keep existing callers source-compatible while migration
   // moves ownership to [canvasAppearance].
@@ -77,6 +99,30 @@ class WorkbenchVisualProfile {
   Map<String, Color> get roleColors => canvasAppearance.roleColors;
 
   Color roleColor(String role) => canvasAppearance.roleColor(role);
+
+  /// Adapts application chrome and selects the canvas palette variant for the
+  /// same brightness. The visual profile keeps its identity while its canvas,
+  /// grid, text, and semantic role colors maintain contrast in either mode.
+  WorkbenchVisualProfile withChromeTheme(ColorScheme colorScheme) {
+    final appearance = appearanceFor(colorScheme.brightness);
+    return WorkbenchVisualProfile(
+      id: id,
+      label: label,
+      canvasAppearance: WorkbenchCanvasAppearance(
+        viewportBackgroundColor: appearance.viewportBackgroundColor,
+        toolbarBackgroundColor: colorScheme.surface,
+        overlayBackgroundColor: colorScheme.surfaceContainerHighest,
+        gridMinorColor: appearance.gridMinorColor,
+        gridMajorColor: appearance.gridMajorColor,
+        accentColor: colorScheme.primary,
+        accentSoftColor: colorScheme.primary.withValues(alpha: 0.14),
+        borderColor: colorScheme.outlineVariant,
+        mutedColor: colorScheme.onSurfaceVariant,
+        roleColors: appearance.roleColors,
+      ),
+      behavior: behavior,
+    );
+  }
 
   static const cad = WorkbenchVisualProfile(
     id: 'cad',
@@ -102,6 +148,29 @@ class WorkbenchVisualProfile {
         'fold': Color(0xFF3B82F6),
         'dimension': Color(0xFF10B981),
         'annotation': Color(0xFF10B981),
+      },
+    ),
+    lightCanvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFFF1F5F4),
+      toolbarBackgroundColor: Color(0xFFE8EFED),
+      overlayBackgroundColor: Color(0xFFE5EEEB),
+      gridMinorColor: Color(0xFFD5E0DD),
+      gridMajorColor: Color(0xFFB2C4BF),
+      accentColor: Color(0xFF006B5B),
+      accentSoftColor: Color(0x1A006B5B),
+      borderColor: Color(0xFFC6D4D0),
+      mutedColor: Color(0xFF526A65),
+      roleColors: {
+        'final': Color(0xFF006B5B),
+        'construction': Color(0xFF687E79),
+        'guide': Color(0xFF435B56),
+        'centerline': Color(0xFFC62845),
+        'hidden': Color(0xFF925900),
+        'section': Color(0xFF9B3479),
+        'cut': Color(0xFF9B3479),
+        'fold': Color(0xFF285FA7),
+        'dimension': Color(0xFF087653),
+        'annotation': Color(0xFF087653),
       },
     ),
     behavior: WorkbenchBehaviorPreset(
@@ -139,6 +208,29 @@ class WorkbenchVisualProfile {
         'annotation': Color(0xFF86EFAC),
       },
     ),
+    lightCanvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFFEAF3FA),
+      toolbarBackgroundColor: Color(0xFFE0EEF8),
+      overlayBackgroundColor: Color(0xFFDFECF6),
+      gridMinorColor: Color(0xFFC9DDED),
+      gridMajorColor: Color(0xFF94B6D1),
+      accentColor: Color(0xFF145B91),
+      accentSoftColor: Color(0x1A145B91),
+      borderColor: Color(0xFFB7CDDF),
+      mutedColor: Color(0xFF4F6F89),
+      roleColors: {
+        'final': Color(0xFF17496E),
+        'construction': Color(0xFF5C7A91),
+        'guide': Color(0xFF1E5C84),
+        'centerline': Color(0xFF8B5C00),
+        'hidden': Color(0xFF8B5C00),
+        'section': Color(0xFFA33B70),
+        'cut': Color(0xFFA33B70),
+        'fold': Color(0xFF4C54A4),
+        'dimension': Color(0xFF20724D),
+        'annotation': Color(0xFF20724D),
+      },
+    ),
     behavior: WorkbenchBehaviorPreset(
       showAnchors: false,
       showLabels: true,
@@ -174,6 +266,29 @@ class WorkbenchVisualProfile {
         'annotation': Color(0xFF166534),
       },
     ),
+    darkCanvasAppearance: WorkbenchCanvasAppearance(
+      viewportBackgroundColor: Color(0xFF28251F),
+      toolbarBackgroundColor: Color(0xFF302D26),
+      overlayBackgroundColor: Color(0xFF363229),
+      gridMinorColor: Color(0xFF474238),
+      gridMajorColor: Color(0xFF655D4E),
+      accentColor: Color(0xFFF2E5D1),
+      accentSoftColor: Color(0x14F2E5D1),
+      borderColor: Color(0xFF554F43),
+      mutedColor: Color(0xFFBDB4A4),
+      roleColors: {
+        'final': Color(0xFFF4EBDD),
+        'construction': Color(0xFFAAA293),
+        'guide': Color(0xFFD4CBBB),
+        'centerline': Color(0xFFFF7B70),
+        'hidden': Color(0xFFE9A66A),
+        'section': Color(0xFFEE88B6),
+        'cut': Color(0xFFEE88B6),
+        'fold': Color(0xFF9CB9FF),
+        'dimension': Color(0xFF86D5A1),
+        'annotation': Color(0xFF86D5A1),
+      },
+    ),
     behavior: WorkbenchBehaviorPreset(
       showAnchors: false,
       showLabels: false,
@@ -206,91 +321,6 @@ class WorkbenchVisualProfile {
     return all.firstWhere(
       (profile) => profile.id == normalizeId(id),
       orElse: () => cad,
-    );
-  }
-
-  ThemeData materialTheme() {
-    final base = viewportBackgroundColor.computeLuminance() < 0.5
-        ? ThemeData.dark(useMaterial3: true)
-        : ThemeData.light(useMaterial3: true);
-
-    final colorScheme = base.colorScheme.copyWith(
-      primary: accentColor,
-      secondary: accentColor,
-      surface: toolbarBackgroundColor,
-      surfaceContainerHighest: overlayBackgroundColor,
-      outline: borderColor,
-      onSurface: Colors.white,
-      onPrimary: viewportBackgroundColor.computeLuminance() < 0.5
-          ? Colors.black
-          : Colors.white,
-    );
-
-    return base.copyWith(
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: viewportBackgroundColor,
-      dividerColor: borderColor,
-      dialogTheme: DialogThemeData(
-        backgroundColor: toolbarBackgroundColor,
-        titleTextStyle: TextStyle(
-          color: accentColor,
-          fontFamily: 'Courier',
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-        contentTextStyle: const TextStyle(
-          color: Colors.white,
-          fontFamily: 'Courier',
-          fontSize: 11,
-        ),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: toolbarBackgroundColor,
-        contentTextStyle: const TextStyle(
-          color: Colors.white,
-          fontFamily: 'Courier',
-          fontSize: 11,
-        ),
-        actionTextColor: accentColor,
-        behavior: SnackBarBehavior.floating,
-      ),
-      sliderTheme: SliderThemeData(
-        activeTrackColor: accentColor,
-        thumbColor: accentColor,
-        inactiveTrackColor: borderColor,
-        overlayColor: accentSoftColor,
-        trackHeight: 2.5,
-      ),
-      dropdownMenuTheme: DropdownMenuThemeData(
-        textStyle: TextStyle(
-          color: accentColor,
-          fontFamily: 'Courier',
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: accentColor,
-          textStyle: const TextStyle(
-            fontFamily: 'Courier',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      tabBarTheme: TabBarThemeData(
-        labelColor: accentColor,
-        unselectedLabelColor: mutedColor,
-        indicatorColor: accentColor,
-        dividerColor: borderColor,
-        labelStyle: const TextStyle(
-          fontFamily: 'Courier',
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
-          letterSpacing: 0.4,
-        ),
-      ),
-      iconTheme: IconThemeData(color: accentColor),
     );
   }
 }

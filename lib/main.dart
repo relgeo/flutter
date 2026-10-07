@@ -115,11 +115,12 @@ class _RelGeoCADAppState extends State<RelGeoCADApp> {
 
   @override
   Widget build(BuildContext context) {
+    final visualProfile = WorkbenchVisualProfile.byId(_workbenchProfileId);
     return MaterialApp(
       title: 'RelGeo',
       debugShowCheckedModeBanner: false,
-      theme: buildRelGeoLightTheme(),
-      darkTheme: buildRelGeoDarkTheme(),
+      theme: buildRelGeoLightTheme(profile: visualProfile),
+      darkTheme: buildRelGeoDarkTheme(profile: visualProfile),
       themeMode: _themePreference?.themeMode ?? ThemeMode.system,
       home: CADWorkbenchPage(
         initialDsl: widget.initialDsl,

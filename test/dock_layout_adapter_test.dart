@@ -26,29 +26,21 @@ void main() {
     },
   );
 
-  test(
-    'projection retains collapsed panels and omits hidden/floating panels',
-    () {
-      final standard = WorkbenchLayoutModel.standard();
-      final layout = standard.copyWith(
-        panels: {
-          ...standard.panels,
-          WorkbenchPanelId.editor: standard.panels[WorkbenchPanelId.editor]!
-              .copyWith(visibility: WorkbenchPanelVisibility.collapsed),
-          WorkbenchPanelId.inspector: standard
-              .panels[WorkbenchPanelId.inspector]!
-              .copyWith(visibility: WorkbenchPanelVisibility.hidden),
-          WorkbenchPanelId.preview: standard.panels[WorkbenchPanelId.preview]!
-              .copyWith(placement: WorkbenchPanelPlacement.floating),
-        },
-      );
+  test('projection omits hidden and floating panels', () {
+    final standard = WorkbenchLayoutModel.standard();
+    final layout = standard.copyWith(
+      panels: {
+        ...standard.panels,
+        WorkbenchPanelId.editor: standard.panels[WorkbenchPanelId.editor]!
+            .copyWith(visibility: WorkbenchPanelVisibility.hidden),
+        WorkbenchPanelId.inspector: standard.panels[WorkbenchPanelId.inspector]!
+            .copyWith(visibility: WorkbenchPanelVisibility.hidden),
+        WorkbenchPanelId.preview: standard.panels[WorkbenchPanelId.preview]!
+            .copyWith(placement: WorkbenchPanelPlacement.floating),
+      },
+    );
 
-      final root = DockLayoutAdapter.fromPlacementLayout(layout);
-      expect(root, isA<DockSplitNode>());
-      expect((root as DockSplitNode).panels, {
-        WorkbenchPanelId.editor,
-        WorkbenchPanelId.parameters,
-      });
-    },
-  );
+    final root = DockLayoutAdapter.fromPlacementLayout(layout);
+    expect(root, const DockPanelNode(WorkbenchPanelId.parameters));
+  });
 }

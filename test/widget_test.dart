@@ -7,6 +7,8 @@ import 'package:relgeo_flutter/main.dart';
 import 'package:relgeo_flutter/src/ui/cad_workbench.dart';
 import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
+import 'package:relgeo_flutter/src/ui/relgeo_theme_extension.dart';
+import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
 import 'package:relgeo_flutter/src/features/editor/editor_panel.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -146,16 +148,18 @@ void main() {
     expect(find.byKey(const Key('float-editor-panel')), findsOneWidget);
     expect(find.byKey(const Key('float-preview-panel')), findsOneWidget);
     expect(find.byKey(const Key('float-inspector-panel')), findsOneWidget);
-    expect(find.byKey(const Key('collapse-editor-panel')), findsOneWidget);
-    expect(find.byKey(const Key('collapse-preview-panel')), findsOneWidget);
-    expect(find.byKey(const Key('collapse-inspector-panel')), findsOneWidget);
+    expect(find.byKey(const Key('close-editor-panel')), findsOneWidget);
+    expect(find.byKey(const Key('close-preview-panel')), findsOneWidget);
+    expect(find.byKey(const Key('close-inspector-panel')), findsOneWidget);
 
     await tester.tap(find.text('Workbench'));
     await tester.pumpAndSettle();
-    expect(find.text('Overlay Inspector'), findsOneWidget);
-    await tester.tap(find.text('Overlay Inspector'));
+    expect(find.text('Overlay Inspector'), findsNothing);
+    expect(find.text('Float Inspector'), findsOneWidget);
+    await tester.tap(find.text('Float Inspector'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close inspector overlay'), findsOneWidget);
+    expect(find.byKey(const Key('float-inspector-panel')), findsNothing);
+    expect(find.byKey(const Key('close-inspector-panel')), findsOneWidget);
 
     await tester.tap(find.text('Help'));
     await tester.pumpAndSettle();
@@ -778,13 +782,7 @@ void main() {
       expect(find.text('COMPILED OK'), findsOneWidget);
       expect(find.text('MODEL PREVIEW'), findsOneWidget);
       expect(find.byKey(const Key('scene-canvas')), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('export-svg-button')),
-          matching: find.text('SVG MODEL'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('export-svg-button')), findsNothing);
 
       await tester.tap(find.text('ERRORS'));
       await tester.pumpAndSettle();
@@ -862,7 +860,7 @@ void main() {
     await tester.pumpWidget(const RelGeoCADApp(initialDsl: _sheetDsl));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('sheet-selector')), findsOneWidget);
+    expect(find.byKey(const Key('preview-target-selector')), findsOneWidget);
     expect(_scenePainter(tester).sheetId, 'sheet_a4');
     expect(find.byKey(const Key('preview-surface-badge')), findsOneWidget);
     expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
@@ -876,21 +874,17 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('VIEWS: 1 · SCALE: 1:1'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('export-svg-button')),
-        matching: find.text('SVG SHEET'),
-      ),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('export-svg-button')), findsNothing);
     expect(find.textContaining('297.0, 210.0'), findsOneWidget);
 
-    final surfaceSelector = find.byKey(const Key('sheet-selector'));
+    final surfaceSelector = find.byKey(const Key('preview-target-selector'));
     await tester.ensureVisible(surfaceSelector);
     await tester.pumpAndSettle();
     await tester.tap(surfaceSelector);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('sheet-option-sheet_a3')).last);
+    await tester.tap(
+      find.byKey(const Key('preview-target-sheet-sheet_a3')).last,
+    );
     await tester.pumpAndSettle();
 
     expect(_scenePainter(tester).sheetId, 'sheet_a3');
@@ -915,13 +909,14 @@ void main() {
       expect(_scenePainter(tester).sheetId, 'sheet_a4');
       expect(find.text('PHYSICAL PREVIEW · sheet_a4'), findsOneWidget);
 
-      final surfaceSelector = find.byKey(const Key('sheet-selector'));
+      final surfaceSelector = find.byKey(const Key('preview-target-selector'));
       await tester.ensureVisible(surfaceSelector);
       await tester.pumpAndSettle();
       await tester.tap(surfaceSelector);
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(const Key('sheet-option-model-preview')).last,
+        find.byKey(const Key('preview-target-model')).last,
+        warnIfMissed: false,
       );
       await tester.pumpAndSettle();
 
@@ -932,13 +927,7 @@ void main() {
         find.byKey(const Key('physical-view-summary-badge')),
         findsNothing,
       );
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('export-svg-button')),
-          matching: find.text('SVG MODEL'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('export-svg-button')), findsNothing);
     },
   );
 
@@ -1021,6 +1010,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_scenePainter(tester).visualProfile.id, 'blueprint');
+    expect(
+      _scenePainter(tester).visualProfile.viewportBackgroundColor,
+      WorkbenchVisualProfile.blueprint
+          .appearanceFor(Brightness.light)
+          .viewportBackgroundColor,
+    );
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(
+      materialApp.theme!
+          .extension<RelGeoThemeExtension>()!
+          .canvasBackgroundColor,
+      WorkbenchVisualProfile.blueprint
+          .appearanceFor(Brightness.light)
+          .viewportBackgroundColor,
+    );
+    expect(
+      materialApp.darkTheme!
+          .extension<RelGeoThemeExtension>()!
+          .canvasBackgroundColor,
+      WorkbenchVisualProfile.blueprint
+          .appearanceFor(Brightness.dark)
+          .viewportBackgroundColor,
+    );
     expect(_editorPanel(tester).visualProfile.id, 'blueprint');
     expect(_inspectorPanel(tester).visualProfile.id, 'blueprint');
     expect(_scenePainter(tester).overlay.showLabels, isTrue);
@@ -1256,7 +1268,7 @@ void main() {
       await tester.tap(find.text('BBox'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('collapse-preview-panel')));
+      await tester.tap(find.byKey(const Key('close-preview-panel')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('workbench-panel-preview')), findsNothing);
 
@@ -1326,6 +1338,13 @@ void main() {
         expect(
           Theme.of(tester.element(find.text('DSL EDITOR'))).brightness,
           brightness,
+        );
+        expect(
+          _scenePainter(tester).visualProfile.viewportBackgroundColor,
+          WorkbenchVisualProfile.cad
+              .appearanceFor(brightness)
+              .viewportBackgroundColor,
+          reason: 'viewport canvas should follow system $brightness mode',
         );
       }
     },

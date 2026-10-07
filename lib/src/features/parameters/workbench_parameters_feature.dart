@@ -8,12 +8,12 @@ class WorkbenchParametersFeature extends StatelessWidget {
   const WorkbenchParametersFeature({
     super.key,
     required this.contract,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
   final WorkbenchParametersContract contract;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   @override
@@ -25,7 +25,7 @@ class WorkbenchParametersFeature extends StatelessWidget {
       onParamChanged: contract.onParamChanged,
       onParamReset: contract.onParamReset,
       visualProfile: contract.visualProfile,
-      onCollapse: onCollapse,
+      onClose: onClose,
       onFloat: onFloat,
     );
   }

@@ -3,25 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 import '../../ui/keyboard_activatable.dart';
+import '../../ui/workbench_panel_interaction.dart';
 import '../../ui/workbench_visual_profile.dart';
 
 class EditorPanel extends StatelessWidget {
   final CodeLineEditingController controller;
   final WorkbenchVisualProfile visualProfile;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   const EditorPanel({
     super.key,
     required this.controller,
     this.visualProfile = WorkbenchVisualProfile.cad,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final interaction = WorkbenchPanelInteractionScope.maybeOf(context);
+    final isFloating = interaction?.isFloating ?? false;
     return Container(
       decoration: BoxDecoration(
         color: visualProfile.toolbarBackgroundColor,
@@ -36,57 +42,59 @@ class EditorPanel extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             color: visualProfile.overlayBackgroundColor,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.terminal,
-                  color: visualProfile.accentColor,
-                  size: 15,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'DSL EDITOR',
-                  style: TextStyle(
-                    fontFamily: 'Courier',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                    letterSpacing: 0.8,
+            child: WorkbenchPanelTitleBar(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.terminal,
                     color: visualProfile.accentColor,
+                    size: 15,
                   ),
-                ),
-                if (onFloat != null) ...[
-                  const Spacer(),
-                  IconButton(
-                    key: const Key('float-editor-panel'),
-                    tooltip: 'Float Code editor',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
+                  const SizedBox(width: 8),
+                  Text(
+                    'DSL EDITOR',
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      color: visualProfile.accentColor,
                     ),
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    color: visualProfile.mutedColor,
-                    onPressed: onFloat,
                   ),
-                ],
-                if (onCollapse != null) ...[
-                  if (onFloat == null) const Spacer(),
-                  IconButton(
-                    key: const Key('collapse-editor-panel'),
-                    tooltip: 'Collapse Code editor',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
+                  if (onFloat != null && !isFloating) ...[
+                    const Spacer(),
+                    IconButton(
+                      key: const Key('float-editor-panel'),
+                      tooltip: 'Float Code editor',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      color: visualProfile.mutedColor,
+                      onPressed: onFloat,
                     ),
-                    icon: const Icon(Icons.keyboard_arrow_left, size: 18),
-                    color: visualProfile.mutedColor,
-                    onPressed: onCollapse,
-                  ),
+                  ],
+                  if (onClose != null) ...[
+                    if (onFloat == null || isFloating) const Spacer(),
+                    IconButton(
+                      key: const Key('close-editor-panel'),
+                      tooltip: 'Close Code editor panel',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.close, size: 16),
+                      color: visualProfile.mutedColor,
+                      onPressed: onClose,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           Divider(height: 1, color: visualProfile.borderColor),
@@ -101,10 +109,10 @@ class EditorPanel extends StatelessWidget {
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           controller.text.toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontFamily: 'Courier',
-                            color: Colors.white,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -131,7 +139,7 @@ class EditorPanel extends StatelessWidget {
                         style: CodeEditorStyle(
                           fontSize: 12.5,
                           fontFamily: 'Courier',
-                          textColor: Colors.white,
+                          textColor: colorScheme.onSurface,
                           backgroundColor: visualProfile.toolbarBackgroundColor,
                           cursorColor: visualProfile.accentColor,
                           cursorLineColor: visualProfile.accentSoftColor,
@@ -141,7 +149,9 @@ class EditorPanel extends StatelessWidget {
                             languages: {
                               'yaml': CodeHighlightThemeMode(mode: langYaml),
                             },
-                            theme: atomOneDarkTheme,
+                            theme: isDark
+                                ? atomOneDarkTheme
+                                : atomOneLightTheme,
                           ),
                         ),
                         indicatorBuilder:
@@ -423,7 +433,9 @@ class RelGeoAutocompleteView extends StatelessWidget
                                           : FontWeight.normal,
                                       color: isSelected
                                           ? visualProfile.accentColor
-                                          : Colors.white,
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                     ),
                                   ),
                                   if (desc != null) ...[

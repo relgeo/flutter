@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/main.dart';
+import 'package:relgeo_flutter/src/ui/workbench_layout_model.dart';
+import 'package:relgeo_flutter/src/ui/workbench_layout_profiles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _goldenDsl = '''scene:
@@ -78,6 +80,21 @@ void main() {
       }
 
       expect(tester.takeException(), isNull);
+      final profile = WorkbenchLayoutProfiles.byId(entry.key)!;
+      for (final id in [
+        WorkbenchPanelId.editor,
+        WorkbenchPanelId.preview,
+        WorkbenchPanelId.inspector,
+      ]) {
+        final expectedVisibility = profile.layout.panels[id]!.visibility;
+        expect(
+          find.byKey(ValueKey('workbench-panel-${id.name}')),
+          expectedVisibility == WorkbenchPanelVisibility.visible
+              ? findsOneWidget
+              : findsNothing,
+          reason: '${entry.key} should render ${id.name} exactly as configured',
+        );
+      }
       await expectLater(
         find.byType(Scaffold),
         matchesGoldenFile('goldens/workbench_layout_${entry.key}.png'),

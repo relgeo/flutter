@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../geometry/types.dart';
+import '../features/preview/workbench_preview_target.dart';
 
 /// Owns the compiled document state consumed by workbench surfaces.
 ///
@@ -16,7 +17,7 @@ class WorkbenchDocumentController extends ChangeNotifier {
   Map<String, Map<String, dynamic>> _profiles =
       <String, Map<String, dynamic>>{};
   String? _activeProfile;
-  String? _selectedSheetId;
+  WorkbenchPreviewTarget _previewTarget = const WorkbenchPreviewTarget.model();
   LengthUnit _targetUnit = LengthUnit.mm;
 
   String? get yamlError => _yamlError;
@@ -30,7 +31,8 @@ class WorkbenchDocumentController extends ChangeNotifier {
     ),
   );
   String? get activeProfile => _activeProfile;
-  String? get selectedSheetId => _selectedSheetId;
+  WorkbenchPreviewTarget get previewTarget => _previewTarget;
+  String? get selectedSheetId => _previewTarget.sheetId;
   LengthUnit get targetUnit => _targetUnit;
 
   void beginCompile() {
@@ -99,7 +101,16 @@ class WorkbenchDocumentController extends ChangeNotifier {
   }
 
   void setSelectedSheetId(String? sheetId) {
-    _selectedSheetId = sheetId;
+    setPreviewTarget(
+      sheetId == null
+          ? const WorkbenchPreviewTarget.model()
+          : WorkbenchPreviewTarget.sheet(sheetId),
+    );
+  }
+
+  void setPreviewTarget(WorkbenchPreviewTarget target) {
+    if (_previewTarget == target) return;
+    _previewTarget = target;
     notifyListeners();
   }
 

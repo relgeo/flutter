@@ -109,11 +109,12 @@ class WorkbenchOverlayToolbar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.start,
             children: [
               _sectionLabel('ROLE FILTER'),
-              const SizedBox(width: 10),
               _behaviorSyncChip(
                 context,
                 key: const Key('role-filter-sync-toggle'),
@@ -123,24 +124,15 @@ class WorkbenchOverlayToolbar extends StatelessWidget {
                 onTap: () =>
                     onFollowProfileRoleFilterChanged(!followProfileRoleFilter),
               ),
-              const SizedBox(width: 10),
               _behaviorStatusBadge(
                 key: const Key('role-status-badge'),
                 synced: followProfileRoleFilter,
                 presetLabel: 'Preset Active',
                 customLabel: 'Locally Overridden',
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: technicalRoles
-                      .where((role) => role != 'final')
-                      .map((role) => _roleToggle(context, role))
-                      .toList(),
-                ),
-              ),
+              ...technicalRoles
+                  .where((role) => role != 'final')
+                  .map((role) => _roleToggle(context, role)),
             ],
           ),
         ],

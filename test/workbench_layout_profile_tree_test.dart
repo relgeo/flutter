@@ -13,8 +13,7 @@ void main() {
           .where(
             (entry) =>
                 entry.value.visibility != WorkbenchPanelVisibility.hidden &&
-                entry.value.placement != WorkbenchPanelPlacement.floating &&
-                entry.value.placement != WorkbenchPanelPlacement.overlay,
+                entry.value.placement != WorkbenchPanelPlacement.floating,
           )
           .map((entry) => entry.key)
           .toSet();
@@ -25,6 +24,15 @@ void main() {
       expect(_panelsIn(first), expectedPanels);
     });
   }
+
+  test('profile tree preserves compatibility split fallback weights', () {
+    final root = WorkbenchLayoutProfiles.inspect.dockedRoot as DockSplitNode;
+    final inspect = root.children.first as DockSplitNode;
+
+    expect(root.axis, DockAxis.vertical);
+    expect(inspect.axis, DockAxis.horizontal);
+    expect(inspect.ratios, [0.38, 1 / 3]);
+  });
 }
 
 Set<WorkbenchPanelId> _panelsIn(DockNode node) => switch (node) {

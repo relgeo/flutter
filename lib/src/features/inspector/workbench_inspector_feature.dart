@@ -11,12 +11,12 @@ class WorkbenchInspectorFeature extends StatelessWidget {
   const WorkbenchInspectorFeature({
     super.key,
     required this.contract,
-    this.onCollapse,
+    this.onClose,
     this.onFloat,
   });
 
   final WorkbenchInspectorContract contract;
-  final VoidCallback? onCollapse;
+  final VoidCallback? onClose;
   final VoidCallback? onFloat;
 
   @override
@@ -28,7 +28,7 @@ class WorkbenchInspectorFeature extends StatelessWidget {
       targetUnit: contract.targetUnit,
       visualProfile: contract.visualProfile,
       themeTokens: contract.themeTokens,
-      onCollapse: onCollapse,
+      onClose: onClose,
       onFloat: onFloat,
     );
   }

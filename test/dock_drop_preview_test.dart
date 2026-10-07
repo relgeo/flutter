@@ -86,6 +86,19 @@ void main() {
     );
   });
 
+  test('an unavailable panel absent from the active tree is not a target', () {
+    expect(
+      DockDropPreviewCalculator.forPointer(
+        root: root,
+        canvasSize: const Size(1000, 800),
+        pointer: const Offset(500, 300),
+        sourcePanel: WorkbenchPanelId.editor,
+        targetPanel: WorkbenchPanelId.parameters,
+      ),
+      isNull,
+    );
+  });
+
   test('marks a target invalid when the resulting split is too small', () {
     final preview = DockDropPreviewCalculator.forPointer(
       root: const DockPanelNode(WorkbenchPanelId.editor),

@@ -1,6 +1,6 @@
 # Sub-Rencana 02 — Workbench Layout dan Panel System
 
-**Status:** Tahap A, B, C, D, dan E selesai; Tahap F dan G sebagian selesai
+**Status:** Fondasi panel, file lifecycle, theme, lifecycle panel, dan recursive profile layout terimplementasi; validasi native, lintas-platform, dan packaging masih terbuka
 **Repository pemilik:** `relgeo/flutter`  
 **Pemilik keputusan:** Agus Made  
 **Compatibility line:** RelGeo DSL 0.5.x
@@ -8,6 +8,8 @@
 **Docking architecture follow-up:** Detail arsitektur recursive docking tree,
 drop preview, dan migrasi dari placement-region ke nested row/column dicatat di
 [Sub-Rencana 03 — Docking Tree, Split Layout, dan Drop Preview](./03-docking-tree-and-drop-preview.md).
+
+> **Pembaruan — 2026-10-07:** Model aktif sekarang hanya memakai `visible/hidden` dan placement non-overlay; legacy `collapsed` dimigrasikan ke hidden, legacy `overlay` dipulihkan sebagai floating. Header docked menampilkan Float + Close, header floating menyembunyikan Float dan seluruh title bar menjadi area drag kecuali tombol. Elevasi floating 16 dan Escape tidak menutup panel. Preset dan reset kini menerapkan recursive dock tree; seluruh **300 test** dan analyzer lulus. Golden profile/theme telah diperbarui setelah inspeksi visual; test compact splitter/scroll dan invalid drop juga lulus. Web build lulus. Wrapper `flutter build macos` meminta destination `arm64` yang tidak tersedia, sedangkan direct Xcode workspace Debug berhasil dengan destination `x86_64`; build Release universal yang tercatat adalah checkpoint sebelumnya. Smoke CUA memverifikasi menu native, profile/theme, serta splitter docked vertical/horizontal dan mengembalikan divider ke ukuran asal. File picker native belum dinyatakan lulus karena panel OS tidak terlihat/terkonfirmasi pada automation dua-monitor; floating drag/drop/resize, restart setelah perubahan tree, dan VoiceOver masih terbuka. Native Linux/Windows CI disiapkan tetapi belum dijalankan; Release production belum ditandatangani/notarized.
 
 ## 1. Tujuan
 
@@ -27,10 +29,14 @@ Semua panel harus dapat dikelola melalui satu model layout yang konsisten:
 - show/hide;
 - resize;
 - dock dan undock;
-- collapse/expand;
-- floating atau overlay;
+- floating;
 - preset layout;
 - autosave layout lokal.
+
+Model visibilitas panel hanya memiliki dua status: `visible` dan `hidden`.
+Panel yang disembunyikan dapat ditampilkan kembali melalui `View → Panels`.
+Menyembunyikan panel tidak mengubah dock/floating placement, bounds, atau
+urutan z-nya; saat ditampilkan kembali, panel kembali ke penempatan terakhir.
 
 Workbench juga membutuhkan menu bar sebagai command center untuk operasi file,
 layout, panel, appearance, document, shortcut, dan bantuan. Toolbar hanya
@@ -120,25 +126,65 @@ checked/toggled state. Contoh: `Save` disabled ketika tidak ada perubahan,
 `Parameters` disabled atau tidak ditawarkan ketika dokumen tidak memiliki
 parameter, dan panel visible ditandai checkmark pada `View → Panels`.
 
-Collapse dilakukan melalui icon button di pojok kanan atas header panel
-masing-masing; collapse tidak menjadi command menu terpisah.
+Header panel menyediakan tombol `Close` untuk menyembunyikan panel; tidak ada
+aksi atau status collapse. Menu `View → Panels` menjadi jalur untuk
+menampilkan kembali panel.
+
+Aturan title bar dan placement action:
+
+- panel docked menampilkan aksi `Float` dan `Close` bersama kontrol khusus
+  panel yang memang diperlukan;
+- panel floating tidak menampilkan aksi `Float` karena panel sudah berada pada
+  placement tersebut; ia menampilkan `Close` dan kontrol khusus panel yang
+  memang diperlukan;
+- seluruh area title bar floating selain tombol/aksi interaktif menjadi hit
+  area drag, sehingga tidak diperlukan tombol drag khusus;
+- drop ke area dock menampilkan preview tujuan yang jelas sebelum dilepas.
 
 SVG adalah format export, bukan aksi khusus milik Preview. Toolbar Preview tidak
 menampilkan tombol `SVG MODEL`; exporter dan filesystem boundary tetap menjadi
 service/command backend yang dapat dipanggil dari `File → Export → SVG`.
 Target export mengikuti konteks aktif, yaitu model atau sheet/view.
 
+Status implementasi 2026-09-30: tombol ekspor SVG sudah dihapus dari navbar;
+perintah ekspor model dan sheet tetap tersedia melalui menu File. Selector
+preview kini memakai target bertipe (`Model` atau `Sheet/View`) alih-alih
+menyimpan pilihan sheet sebagai state terpisah. Tipe `Component` sudah
+disediakan sebagai kontrak perluasan, tetapi belum ditawarkan di UI karena
+renderer preview komponen belum tersedia. Menambahkan component target ke menu
+baru boleh dilakukan setelah surface/render path komponen benar-benar ada.
+
 ## 3. Target capability
 
-| Panel | Show/hide | Resize | Dock/undock | Floating/overlay | Collapse |
-| --- | --- | --- | --- | --- | --- |
-| Code Editor | Ya | Ya | Ya | Ya | Ya |
-| Preview | Ya | Ya | Ya | Ya | Ya |
-| Inspector | Ya | Ya | Ya | Ya | Ya |
-| Parameters | Bersyarat | Ya | Ya | Ya | Ya |
+| Panel | Show/hide | Docked resize | Dock/undock | Floating move/resize |
+| --- | --- | --- | --- | --- |
+| Code Editor | Ya | Ya | Ya | Ya |
+| Preview | Ya | Ya | Ya | Ya |
+| Inspector | Ya | Ya | Ya | Ya |
+| Parameters | Bersyarat | Ya | Ya | Ya |
 
-Overlay panel berarti panel UI yang mengambang di atas workbench. Ini berbeda
-dari drawing overlay seperti anchor, label, dan bounding box pada Preview.
+Kontrak perilaku panel (keputusan 2026-09-30; implementasi dan regression test
+sudah tersedia, native pointer smoke tetap terpisah):
+
+- panel hanya memiliki status `visible` atau `hidden`; fitur collapse dihapus;
+- `Close` menyembunyikan panel. `View → Panels` menampilkan panel kembali dan
+  mempertahankan placement, floating bounds, serta z-order terakhir;
+- data preferensi lama dengan status `collapsed` dipulihkan sebagai `hidden`
+  tanpa mereset placement atau geometri;
+- panel docked menyediakan aksi `Float` dan `Close`;
+- panel floating tidak menampilkan aksi `Float`; hanya `Close` dan aksi lain
+  yang memang relevan untuk panel tersebut;
+- floating panel memakai elevasi visual tinggi yang konsisten untuk tampil di
+  atas panel docked;
+- seluruh title bar floating kecuali tombol/kontrol interaktif menjadi drag
+  hit area. Tidak diperlukan tombol drag khusus, dan menekan kontrol tidak
+  boleh memulai drag;
+- `Esc` tidak menutup panel floating; saat drag aktif, `Esc` hanya membatalkan
+  drag dan memulihkan posisi/z-order sebelum drag;
+- drag ke dock menampilkan preview target sebelum panel dilepas.
+
+Overlay yang tersisa di workbench hanya berarti lapisan visual/diagnostik
+(anchor, label, bounding box, atau drop preview), bukan mode placement panel.
 
 ## 4. Model layout
 
@@ -152,7 +198,7 @@ flowchart TD
   profile["Active layout profile"] --> layout
   layout --> renderer["WorkbenchLayoutRenderer"]
   renderer --> docked["Docked regions"]
-  renderer --> floating["Floating and overlay panels"]
+  renderer --> floating["Floating panels"]
   layout --> persistence["Debounced local persistence"]
   persistence --> preferences["Layout preferences"]
 ```
@@ -179,10 +225,10 @@ PanelAvailability
   available | unavailable
 
 PanelVisibility
-  visible | hidden | collapsed
+  visible | hidden
 
 PanelPlacement
-  left | center | right | bottom | floating | overlay
+  left | center | right | bottom | floating
 
 PanelBounds
   width | height | min/max constraints
@@ -209,7 +255,7 @@ Preset awal yang direkomendasikan:
 | --- | --- |
 | Standard | Editor kiri, Preview tengah, Inspector kanan, Parameters di bawah editor |
 | Writing | Editor dominan, panel pendukung diperkecil |
-| Preview | Preview dominan, Editor dan Inspector disembunyikan atau collapsed |
+| Preview | Preview dominan, Editor dan Inspector disembunyikan |
 | Inspect | Inspector dominan dengan Preview tetap terlihat |
 | Minimal | Editor dan Preview saja |
 | Custom | Layout terakhir yang disusun pengguna |
@@ -242,9 +288,9 @@ Rekomendasi behavior:
 Perubahan berikut harus disimpan lokal secara otomatis:
 
 - panel dipindah atau di-dock ulang;
-- panel ditampilkan, disembunyikan, atau di-collapse;
+- panel ditampilkan atau disembunyikan;
 - splitter digeser;
-- ukuran floating/overlay panel diubah;
+- ukuran floating panel diubah;
 - profile aktif berubah;
 - layout menjadi `Custom`.
 
@@ -275,7 +321,7 @@ preference, misalnya `workbench.layout.v1`.
   `WorkbenchLayoutController` dipasang;
 - [x] tambahkan splitter horizontal untuk tiga region utama dengan min-width
   constraint dan pembaruan split ratio;
-- [x] dukung show/hide dan collapse untuk Editor, Preview, dan Inspector;
+- [x] dukung show/hide untuk Editor, Preview, dan Inspector;
 - [x] pertahankan compact layout tanpa overflow melalui minimum workbench width
   dan horizontal scroll;
 - [x] integrasikan Parameters sebagai surface mandiri di region bawah ketika
@@ -283,9 +329,9 @@ preference, misalnya `workbench.layout.v1`.
 
 Catatan implementasi: shell masih mempertahankan jalur fixed-layout lama ketika
 controller tidak diberikan agar komponen dapat dipakai secara bertahap. Jalur
-workbench utama sekarang memasang controller sehingga visibility, collapse, dan
-splitter benar-benar aktif. Floating, overlay, dan docking ulang tetap menjadi
-ruang lingkup Tahap D.
+workbench utama sekarang memasang controller sehingga visibility dan splitter
+benar-benar aktif. Floating dan docking ulang tetap menjadi ruang lingkup
+Tahap D.
 
 ### Tahap C — Parameters panel
 
@@ -296,26 +342,25 @@ ruang lingkup Tahap D.
   state yang dipertahankan;
 - [x] pertahankan reset parameter sebagai aksi domain, bukan aksi layout.
 
-### Tahap D — Floating, overlay, dan docking
+### Tahap D — Floating dan docking
 
 - [x] dukung panel floating dengan bounds terkontrol, posisi yang dapat
   dipindahkan, dan resize handle dengan batas ukuran;
-- [x] dukung overlay panel dengan z-order tersimpan dan explicit close action;
-  panel yang disentuh/di-drag dibawa ke depan;
+- [x] hapus mode placement Overlay; seluruh panel mengambang memakai satu
+  placement Floating dengan elevasi visual tinggi;
 - [x] dukung dock kembali ke region pilihan melalui command `Workbench`;
 - [x] dukung drag-to-dock melalui zona drop kiri, tengah, kanan, dan bawah
   khusus Parameters; kebijakan zona dipusatkan di layout controller;
-- [~] divider pada recursive dock tree kini membawa ukuran ruang lokal split
-  agar resize nested tidak memakai ukuran workbench root; regression otomatis
-  untuk drag divider pada nested split masih perlu ditambahkan/dijalankan;
-- [~] perpindahan panel memakai transformasi remove-then-insert atomik dan
+- [x] divider pada recursive dock tree memakai ukuran ruang lokal split agar
+  resize nested tidak memakai ukuran workbench root; test shell compact
+  menggeser divider tree secara interaktif dan memastikan panel tetap valid;
+- [x] perpindahan panel memakai transformasi remove-then-insert atomik dan
   restore menolak dock tree invalid/duplikat serta node yang sekaligus
-  berstatus floating/overlay; keluar dari dock tree satu-node mengosongkan tree
+  berstatus floating; keluar dari dock tree satu-node mengosongkan tree
   agar panel tidak muncul lagi sebagai floating sekaligus docked. Parameters
   juga hanya dirender oleh tree atau slot bawah, tidak keduanya. Test restore
-  kini menolak duplicate leaf dan panel yang sekaligus floating; regression
-  khusus perpindahan berulang, dock satu-node, dan rendering Parameters masih
-  perlu ditambahkan/dijalankan;
+  test kini menolak duplicate leaf dan panel yang sekaligus floating, serta
+  mencakup perpindahan berulang, dock satu-node, dan render-once Parameters;
 - [x] cegah panel keluar sepenuhnya dari batas canvas saat drag/resize dan
   pertahankan batas ukuran minimum/maksimum;
 
@@ -364,14 +409,14 @@ ruang lingkup Tahap D.
 - [x] dukung disabled state berdasarkan dokumen dan panel yang tersedia;
 - [x] kelompokkan toggle panel di `View → Panels`, pindahkan appearance ke
   `View → Appearance`, dan tampilkan checkmark panel yang sedang visible;
-- [x] pindahkan collapse dari menu ke icon button pada header Editor, Preview,
-  Inspector, dan Parameters;
+- [x] ganti collapse control pada header semua panel dengan `Close` yang
+  menyembunyikan panel;
 - [x] berikan Preview caption/title bar dengan ikon, judul, serta tombol Float
-  dan Collapse yang konsisten dengan panel lain; toolbar viewport tetap berada
+  dan Close yang konsisten dengan panel lain; toolbar viewport tetap berada
   di navbar terpisah;
-- [~] Preview kini memaksa root feature mengisi slot dock dan feature-lah yang
-  membagi tinggi antara caption/kontrol dan viewport. Verifikasi visual pada
-  layout dock yang sebelumnya memperlihatkan ruang kosong masih perlu dilakukan;
+- [x] Preview mengisi slot dock; feature membagi tinggi antara caption/kontrol
+  dan viewport. Golden shell serta profile diperiksa dan diperbarui untuk
+  mengunci perilaku tersebut tanpa ruang kosong di bawah canvas;
 - [x] sediakan reset layout, reset appearance override, dan reset parameters;
   reset global workbench kini menyatukan layout, appearance override, overlay,
   dan role filter, sementara reset parameter tetap mengikuti dokumen aktif;
@@ -404,13 +449,11 @@ ruang lingkup Tahap D.
   tidak lagi dianggap sebagai file hilang. Identitas/nama dokumen dan penanda
   dirty kini tampak di navbar. `WorkbenchDocumentSession` menjadi satu-satunya
   pemilik path/nama; penggantian dokumen juga membersihkan undo history agar
-  aksi Undo tidak menyeberang ke dokumen sebelumnya. Analyzer lulus dan seluruh
-  regression filesystem/Recent serta focused widget tests untuk cancel Open,
-  status dokumen, reset undo, dan kegagalan Open/Save lulus. Full widget suite
-  masih memiliki kegagalan tema dan pemilih surface yang bukan bagian dari alur
-  filesystem; test suite keseluruhan tetap perlu direkonsiliasi dengan perubahan
-  docking/golden/UI pada working tree. File picker native macOS/Windows/Linux
-  dan perilaku izin I/O nyata masih perlu smoke test.
+  aksi Undo tidak menyeberang ke dokumen sebelumnya. Analyzer dan semua test
+  regresi filesystem lulus; gate penuh terbaru lulus **299 test**. File picker
+  dan permission I/O native macOS belum diuji end-to-end melalui dialog OS;
+  Linux/Windows akan menerima build/test CI pada native runner, tetapi interaksi
+  dialog tetap memerlukan smoke test di platform masing-masing.
 
 ### Tahap G — Accessibility dan regression
 
@@ -419,22 +462,22 @@ ruang lingkup Tahap D.
   membangun ulang surface preview, bukan seluruh workbench. Autocomplete editor
   tidak meminta focus otomatis ketika panel dock sedang dipulihkan. Pengguna
   mengonfirmasi aplikasi lokal terasa kembali ringan setelah fresh run; analyzer,
-  tes editor terarah, dan build/run macOS berhasil. Full suite tetap perlu
-  direkonsiliasi karena gate terakhir pada working tree ini melaporkan 13 test
-  gagal, terutama di area docking/layout/theme;
+  tes editor terarah, build/run macOS berhasil. Format check, analyzer, dan full
+  suite terbaru juga lulus (**299 test**), menggantikan catatan kegagalan lama
+  pada checkpoint terdahulu;
 - [~] semua panel dan splitter memiliki label semantics; surface floating,
-  collapsed, splitter, resize handle, object expand/collapse, parameter reset,
+  splitter, resize handle, object expand/collapse, parameter reset,
   dan parameter slider kini memiliki label/value/hint yang bermakna. Editor
   autocomplete suggestions kini menjadi control keyboard/semantics dengan
   label, selection state, dan activation action. Splitter dan floating resize
   handle juga mengekspos aksi semantic increase/decrease. Audit semantics
   end-to-end untuk seluruh child feature serta verifikasi VoiceOver/TalkBack
   nyata belum selesai;
-- [~] keyboard dapat berpindah, collapse, dan mengaktifkan panel; menu command,
-  shortcut, focus boundary floating/overlay, Escape, dan traversal panel-level
+- [~] keyboard dapat berpindah dan mengaktifkan panel; menu command,
+  shortcut, focus boundary floating, Escape, dan traversal panel-level
   Editor → Preview → Inspector sudah aktif, sedangkan traversal seluruh child
-  control masih tertunda; splitter dapat di-resize dengan arrow key dan rail
-  collapsed memiliki semantic activation untuk dipulihkan; splitter docked dan
+  control masih tertunda; splitter dapat di-resize dengan arrow key dan panel
+  dapat diaktifkan kembali melalui menu visibility; splitter docked dan
   floating resize handle menerima arrow key;
 - [x] focus tidak hilang saat panel dipindah; pointer activation, focus order
   floating, dan restoration ke panel docked setelah drop sudah tersedia;
@@ -444,20 +487,30 @@ ruang lingkup Tahap D.
   golden terpisah untuk Standard, Writing, Preview, Inspect, dan Minimal;
 - [~] validasi native window kini mencakup build macOS arm64 melalui Flutter
   pada terminal VSCode native-arm64, build Xcode universal melalui direct
-  `xcodebuild`, launch smoke, menu Appearance, preset Workbench Writing →
-  Standard, serta smoke `Workbench → Float Code editor → Dock Code editor left`.
-  Binary terbaru juga memverifikasi menu `View` tanpa top-level `Appearance`,
-  header Float/Collapse, dan drag handle floating yang terlihat. Restart/
-  persistence native macOS lulus untuk state tema/layout. Interaksi drag
-  pointer langsung, resize pointer native, validasi Ubuntu/Windows 11, dan
-  packaging produksi masih tertunda;
+  `xcodebuild`, dan smoke CUA terbaru pada jendela Debug. Menu `File` dan `View`
+  tampil; View → Panels menampilkan checkmark untuk keempat panel, dan Zoom in
+  serta Reset viewport terbukti menjalankan command. Smoke sebelumnya juga
+  memverifikasi Appearance, preset Writing → Standard, Float/Dock, dan restart
+  persistence tema/layout. Dialog native Open/Save As belum dapat dipastikan
+  tampil atau diselesaikan dari automation dua-monitor; drag/resize langsung,
+  restart setelah perubahan dock tree, serta VoiceOver masih tertunda. Build
+  Release terbaru lewat Flutter lulus universal `arm64 + x86_64`, tetapi
+  `security find-identity -v -p codesigning` menemukan **0 identitas**; bundle
+  ad-hoc ditolak Gatekeeper dan belum siap didistribusikan. Workflow
+  `.github/workflows/flutter-ci.yml` menyiapkan test pada native macOS/Linux/
+  Windows runner dan build Release tiga target; hasil remote belum tersedia
+  sebelum workflow dipush dan berjalan. Signing/notarization produksi
+  memerlukan identitas Apple Developer dan keputusan maintainer;
 
 ## 8. Acceptance criteria
 
-- [~] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
-  show/hide, resize, collapse, float, overlay, dan command placement sudah ada;
-  drag-to-dock dan focus restoration setelah docking sudah ada; integrasi focus
-  native window masih tertunda;
+- [x] empat panel memiliki lifecycle dan placement yang dapat dikontrol;
+  targetnya hanya visible/hidden, resize, dock/undock, dan float.
+  Close menyembunyikan tanpa mengubah placement/bounds/z-order; header floating
+  dapat di-drag selain pada kontrol interaktif. Overlay placement dihapus,
+  elevasi floating dibuat tinggi, dan Escape tidak menutup panel. Implementasi
+  migration legacy serta regression otomatis tersedia; pointer/native
+  verification masih terbuka;
 - [x] lifecycle dokumen memiliki dirty-state dan guard konfirmasi untuk
   New/Open/Close/Quit; persistence identity dan file-service Save sudah
   mengembalikan state bersih, host memiliki callback Save typed yang dapat
@@ -466,9 +519,12 @@ ruang lingkup Tahap D.
   didukung, tetapi sengaja tidak dapat memberi acknowledgement hasil;
 - [x] Parameters tidak muncul ketika dokumen tidak memiliki parameter;
 - [x] panel dapat di-resize tanpa overflow atau kehilangan konten penting;
-- [x] panel dapat di-collapse, di-dock melalui command maupun drag-to-dock,
-  di-float, dan di-overlay; transisi visual floating lanjutan masih dapat
+- [x] panel dapat di-dock melalui command maupun drag-to-dock dan di-float;
+  floating title bar menjadi drag hit area kecuali kontrol, dan
+  close/hide mempertahankan placement; transisi visual masih dapat
   dipoles tanpa mengubah kontrak placement;
+- [x] placement `Overlay` dihapus; floating panel mendapat elevasi visual
+  tinggi dan Escape hanya membatalkan drag aktif, bukan menutup panel;
 - [x] preset dapat diterapkan tanpa mengubah dokumen;
 - [x] perubahan layout dipulihkan melalui persistence reload; restart native
   macOS diverifikasi dengan preset Standard dan state system appearance;
@@ -478,15 +534,15 @@ ruang lingkup Tahap D.
   shortcut, semantics, Escape, traversal panel-level, object expand/collapse,
   dan parameter controls sudah memiliki boundary yang dapat diakses, tetapi
   traversal menyeluruh antar-child control serta verifikasi VoiceOver/TalkBack
-  nyata belum; keyboard resize splitter dan aktivasi rail collapsed serta
-  keyboard resize docked/floating sudah diuji/tersedia;
+  nyata belum; keyboard resize splitter dan keyboard resize docked/floating
+  sudah diuji/tersedia;
 - [~] analyzer, test, golden, dan web build tetap lulus; debug build macOS
   arm64 melalui Flutter pada terminal VSCode native-arm64, release build
   macOS universal melalui Flutter, build universal melalui Xcode langsung,
   launch smoke, menu Appearance, preset Workbench, dan restart/persistence
   tema/layout macOS juga lulus setelah migrasi preference. Interaksi seluruh
-  control, validasi Ubuntu/Windows 11, dan packaging/signing produksi masih
-  tertunda;
+  control, hasil test/build native Linux/Windows (workflow baru menunggu run),
+  serta signing/notarization dan installer produksi masih tertunda;
 - [~] menu bar, toolbar, shortcut, dan context menu menghasilkan efek command
   yang sama; menu bar/native menu, toolbar utama/viewport, context menu, dan
   shortcut inti memakai registry bersama serta enabled-state yang sama. Belum
@@ -500,7 +556,7 @@ ruang lingkup Tahap D.
 
 | Risiko/keputusan | Rekomendasi awal |
 | --- | --- |
-| Kompleksitas docking | Mulai dari docked splitter dan collapse, baru floating/overlay |
+| Kompleksitas docking | Mulai dari docked splitter lalu floating; jangan menambah panel Overlay atau collapse |
 | Package docking eksternal | Jangan bergantung pada package sebelum kontrak internal stabil |
 | Banyak profile | Simpan profile built-in immutable; hanya Custom yang writable |
 | Parameter berubah saat runtime | Availability mengikuti dokumen, layout pengguna tetap dipertahankan |
@@ -592,12 +648,17 @@ berpindah antara preset tanpa mengubah dokumen RelGeo atau merusak aksesibilitas
 | 2026-09-29 | Tahap G — Workbench gate refresh setelah resize contract | Setelah divider tree memiliki hit-area terpisah dan adapter placement tersedia, analyzer tetap bersih, seluruh 246 test lulus, dan `flutter build web --no-pub` berhasil. Build macOS arm64 sudah lulus pada gate sebelumnya; validasi pointer native, assistive technology nyata, Ubuntu, Windows 11, dan packaging produksi tetap terbuka. |
 | 2026-09-29 | Tahap F — Header toolbar/theme toggle | Toolbar viewport berada di navbar; tema memakai toggle ikon Light/Dark dengan Follow system sebagai reset; kontrol viewport tersembunyi saat Preview tidak tampil. Full widget test memverifikasi system default, toggle kedua mode, dan reset ke system. |
 | 2026-09-29 | Tahap F/G — Preview title bar dan dock height | Preview memiliki caption `PREVIEW` dengan aksi Float/Collapse, dan isi canvas mengisi tinggi slot dock. Golden shell/layout diperbarui setelah membandingkan perubahan dengan baseline lama; tes visual kini lulus. Drag/floating manual native masih menjadi validasi tersendiri. |
+| 2026-09-30 | Keputusan UX — Panel tanpa collapse | Lifecycle target disederhanakan menjadi `visible`/`hidden`; tombol Collapse diganti `Close`, dan `View → Panels` memulihkan panel tanpa kehilangan placement/bounds/z-order. Header docked menyediakan Float + Close; header floating menghilangkan Float dan menjadikan seluruh area selain kontrol interaktif sebagai drag hit area. Implementasi dan migrasi persistence masih terbuka. |
+| 2026-09-30 | Keputusan UX — Satu mode Floating | Mode placement panel `Overlay` dihapus; floating memakai elevasi visual tinggi, Close menjadi satu-satunya cara menutupnya, dan Escape hanya membatalkan drag aktif. Konsep drawing/diagnostic overlay tetap ada. Implementasi serta penghapusan placement lama masih terbuka. |
 | 2026-09-29 | Tahap D — Dock interaction corrections | Drop preview memakai pointer aktual; divider recursive memakai extent split lokal; move menghapus leaf lama sebelum insert; restore menolak tree duplikat atau panel yang sekaligus floating; leaf terakhir mengosongkan tree saat di-float; Parameters tidak dirender ganda. Tes repeated move, restore invariant, one-leaf transition, render-once Parameters, dan drag-preview sintetis lulus. Pointer/touch native masih tertunda. |
 | 2026-09-29 | Tahap F — Filesystem vertical slice | `FilePickerWorkbenchFileService` membedakan Save aktif dan Save As, Open/Open Recent membaca sebelum discard confirmation, menangani missing recent/error, dan menjaga dirty state bila operasi gagal. Navbar menampilkan nama/dirty marker; session memiliki identitas dokumen dan mengganti dokumen membersihkan undo history. Full widget suite kini lulus; file picker native macOS/Windows/Linux dan I/O permission nyata masih perlu diuji. |
 | 2026-09-29 | Tahap F — macOS native menu ordering correction | Menu native menempatkan menu aplikasi `RelGeo` dahulu, lalu `File`; menu dalam jendela tetap menampilkan `File` paling kiri. Adapter dan widget tests lulus; verifikasi native build/visual dicatat pada quality gate terbaru. |
 | 2026-09-29 | Tahap G — Editor/workbench responsiveness | Kompilasi DSL setelah input editor di-debounce 180 ms; navbar mendengarkan document session, preview mendengarkan transform controller, dan zoom toolbar memakai notifier khusus. `CodeEditor` tidak autofocus saat dock panel direstore; `re_editor` 0.10.0. Pengguna mengonfirmasi `flutter clean`, `pub get`, dan `flutter run -d macos` sukses serta aplikasi tidak lagi terasa berat. Full widget/global test kini lulus setelah test contract dan golden terkait diperbarui. |
 | 2026-09-29 | Quality gate — layout/filesystem/theme/docking batch | Full Flutter suite lulus 279 test; `flutter analyze` bersih; golden shell/theme dan lima preset layout diperbarui untuk layout Preview full-height; theme toggle, surface selector, repeated tree moves, restore duplicate/floating, leaf terakhir, Parameters render-once, serta pointer drag-preview memiliki regression test. Percobaan `flutter build macos --no-pub` (Release) tidak memberi progres/output selama beberapa menit dan dihentikan; executable Release tidak dihasilkan. Sebaliknya, pengguna baru saja mengonfirmasi `flutter run -d macos` membangun dan menjalankan Debug app dengan sukses. Release build masih perlu diulang terpisah. |
 | 2026-09-29 | Quality gate — feature-sized recursive splitter bounds | Full Flutter suite lulus 284 test; `flutter analyze` bersih; splitter tree meng-clamp minimum dan maksimum panel per sisi termasuk subtree nested. Percobaan Release macOS sebelumnya tetap belum terkonfirmasi; Debug `flutter run -d macos` dari pengguna sukses. Tree goldens/compact visual, native pointer smoke, serta packaging lintas platform masih terbuka. |
+| 2026-10-07 | Implementasi keputusan lifecycle panel | Enum aktif menyisakan `visible/hidden` dan placement non-overlay; persistence legacy `collapsed` menjadi hidden dan `overlay` menjadi floating. Semua feature title bar menggunakan drag area saat floating, tanpa tombol Float pada keadaan floating, dengan Close tetap tersedia. Elevasi 16 dan Escape tidak menutup. `flutter analyze` bersih dan full suite lulus 296 test; native pointer, restart, serta host Linux/Windows masih menunggu validasi nyata. |
 | 2026-09-29 | Tahap 2 — Tree renderer golden/compact follow-up | Golden standard/nested/compact-vertical kini mengunci geometri renderer; tree recursive pada shell compact 420×780 dipastikan tetap dapat discroll horizontal tanpa overflow. Golden/composition regression terarah 20 test lulus, analyzer bersih. Full suite terakhir sebelum satu test compact baru: 287 test lulus; native pointer/touch dan build Release masih tertunda. |
 | 2026-09-29 | Quality gate — full suite and release refresh | Seluruh 288 test lulus, `flutter analyze` bersih, `flutter build macos --no-pub` berhasil, dan executable Release diverifikasi universal `x86_64 + arm64` dengan `file`/`lipo`; `flutter build web --no-pub` juga berhasil. Debug run macOS pengguna sudah berhasil. Pointer/touch/keyboard native, Ubuntu, Windows 11, dan packaging/distribution final masih menjadi verifikasi tersisa. |
 | 2026-09-29 | Tahap 6 — Dock schema forward-version fallback | Decoder tree kini menerima schema v1 (payload persistence yang dipakai aplikasi) dan v2 (codec tree), serta menolak versi tak dikenal agar layout utama tetap pulih tanpa memuat tree yang tidak dipahami. Regression persistence dan codec lulus; full suite 289 test lulus dan analyzer bersih. |
+| 2026-10-07 | Quality gate terbaru — macOS Release artifact | `flutter build macos --release --no-pub` berhasil pada source terbaru; binary utama dan `App.framework` terverifikasi universal `arm64 + x86_64`. Ini menutup kompilasi Release terbaru, bukan smoke test interaksi, file picker native, restart/restore UI, atau validasi Linux/Windows yang masih terbuka. |
+| 2026-10-07 | Native pointer smoke — docked splitters | Pada bundle Debug macOS terbaru, splitter vertikal Preview/Inspector serta splitter horizontal Parameters berhasil di-drag dan ukuran area berubah sesuai arah pointer; kedua divider dikembalikan ke posisi yang terekam sebelum tes. Layout pengguna (Parameters di dock bawah), profil Paper, dan mode Dark/System dipertahankan. Floating drag/drop, floating resize, file picker OS, restart setelah operasi tree, dan assistive technology tetap belum diverifikasi. |
