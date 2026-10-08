@@ -15,7 +15,8 @@ bool ReadDoubleArgument(const flutter::EncodableMap& arguments,
     return false;
   }
 
-  const auto* number = std::get_if<double>(&entry->second);
+  const auto* number = std::get_if<double>(
+      static_cast<const flutter::EncodableValue::super*>(&entry->second));
   if (number == nullptr) {
     return false;
   }
@@ -64,7 +65,8 @@ bool FlutterWindow::OnCreate() {
         }
 
         const auto* arguments = std::get_if<flutter::EncodableMap>(
-            &call.arguments());
+            static_cast<const flutter::EncodableValue::super*>(
+                call.arguments()));
         double default_width = 0;
         double default_height = 0;
         double minimum_width = 0;
