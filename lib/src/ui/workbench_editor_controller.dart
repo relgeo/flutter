@@ -20,6 +20,15 @@ class WorkbenchEditorController {
     editingController.clearHistory();
   }
 
+  /// Replaces the active source once and preserves the editor undo history.
+  ///
+  /// Session/document guards belong to the MCP bridge; this method is only
+  /// the editor-side atomic operation used after those guards pass.
+  void applyAgentSource(String source) {
+    if (text == source) return;
+    editingController.text = source;
+  }
+
   void addListener(VoidCallback listener) =>
       editingController.addListener(listener);
 

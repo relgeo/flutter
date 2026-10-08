@@ -312,6 +312,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.3"
+  relgeo_mcp:
+    dependency: "direct main"
+    description:
+      path: "../mcp"
+      relative: true
+    source: path
+    version: "0.1.0-dev.1"
   shared_preferences:
     dependency: "direct main"
     description:
