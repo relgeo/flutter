@@ -9,7 +9,7 @@ Status posisi repo saat ini:
 3. README ini tidak mengklaim parity final absolut untuk seluruh surface
 4. surface Flutter saat ini terutama mengikuti domain technical drawing sebagai baseline parity, bukan mendefinisikan seluruh identitas RelGeo
 5. repository ini adalah workbench non-publishable; versi aplikasi Flutter tidak sama dengan versi DSL
-6. active/runtime/invalid shared-fixture dan semantic projection sudah diverifikasi secara lokal; active, runtime-diagnostic, dan candidate boolean/intersection juga lulus pada operasi, scene projection, dan SVG semantic projection ter-normalisasi tanpa parent workspace, sedangkan candidate belum active, cakupan SVG penuh, dan CI masih terbuka
+6. active/runtime/invalid shared-fixture dan semantic projection sudah diverifikasi secara lokal; fixture 15 boolean/intersection kini active untuk line intersection serta rectangle intersect/subtract berdasarkan canonical CI run 37832260326 pada root 328c869, sedangkan evaluator/unit tetap candidate dan cakupan SVG presentation penuh tetap di luar contract
 
 ---
 
