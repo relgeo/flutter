@@ -16,16 +16,21 @@ jobs:
   quality:
     name: Format, analyze, and test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          path: flutter
 
-      - name: Check out MCP sibling dependency
+      - name: Check out MCP dependency
         uses: actions/checkout@v4
         with:
           repository: relgeo/mcp
-          ref: 6fd5cb2062641b682b2c7084312ba2a36e92eac6
-          path: ../mcp
+          ref: 48821c47f211fcce29013355803aa271e63a7b47
+          path: mcp
           persist-credentials: false
 
       - name: Set up Flutter
@@ -60,16 +65,21 @@ jobs:
             runner: windows-latest
             command: windows
     runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: flutter
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          path: flutter
 
-      - name: Check out MCP sibling dependency
+      - name: Check out MCP dependency
         uses: actions/checkout@v4
         with:
           repository: relgeo/mcp
-          ref: 6fd5cb2062641b682b2c7084312ba2a36e92eac6
-          path: ../mcp
+          ref: 48821c47f211fcce29013355803aa271e63a7b47
+          path: mcp
           persist-credentials: false
 
       - name: Install Linux desktop build dependencies
