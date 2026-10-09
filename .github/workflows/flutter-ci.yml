@@ -20,6 +20,14 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Check out MCP sibling dependency
+        uses: actions/checkout@v4
+        with:
+          repository: relgeo/mcp
+          ref: 6fd5cb2062641b682b2c7084312ba2a36e92eac6
+          path: ../mcp
+          persist-credentials: false
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -55,6 +63,14 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Check out MCP sibling dependency
+        uses: actions/checkout@v4
+        with:
+          repository: relgeo/mcp
+          ref: 6fd5cb2062641b682b2c7084312ba2a36e92eac6
+          path: ../mcp
+          persist-credentials: false
 
       - name: Install Linux desktop build dependencies
         if: ${{ runner.os == 'Linux' }}
