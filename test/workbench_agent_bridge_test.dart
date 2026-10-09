@@ -5,44 +5,47 @@ import 'package:relgeo_flutter/src/ui/workbench_editor_controller.dart';
 import 'package:relgeo_mcp/relgeo_mcp.dart';
 
 void main() {
-  test('agent edit is one undoable transaction with a revision guard', () async {
-    final session = WorkbenchDocumentSession(
-      initialSource: 'scene: old\n',
-      documentId: 'doc-1',
-    );
-    final editor = WorkbenchEditorController.fromText(session.source);
-    editor.addListener(() => session.updateSource(editor.text));
-    final bridge = WorkbenchAgentBridge(session: session, editor: editor);
+  test(
+    'agent edit is one undoable transaction with a revision guard',
+    () async {
+      final session = WorkbenchDocumentSession(
+        initialSource: 'scene: old\n',
+        documentId: 'doc-1',
+      );
+      final editor = WorkbenchEditorController.fromText(session.source);
+      editor.addListener(() => session.updateSource(editor.text));
+      final bridge = WorkbenchAgentBridge(session: session, editor: editor);
 
-    final initial = await bridge.getActiveDocument();
-    final proposal = DocumentEditProposal(
-      baseDocumentId: initial.documentId,
-      baseRevision: initial.revision,
-      summary: 'Change scene name',
-      edits: const <DocumentEdit>[
-        DocumentEdit(
-          range: SourceRange(start: 7, end: 10),
-          replacement: 'new',
-        ),
-      ],
-    );
+      final initial = await bridge.getActiveDocument();
+      final proposal = DocumentEditProposal(
+        baseDocumentId: initial.documentId,
+        baseRevision: initial.revision,
+        summary: 'Change scene name',
+        edits: const <DocumentEdit>[
+          DocumentEdit(
+            range: SourceRange(start: 7, end: 10),
+            replacement: 'new',
+          ),
+        ],
+      );
 
-    final applied = await bridge.applyDocumentEdit(proposal);
-    expect(applied.status, DocumentEditStatus.applied);
-    expect(applied.newRevision, 1);
-    expect(session.source, 'scene: new\n');
-    expect(session.isDirty, isTrue);
-    expect(editor.editingController.canUndo, isTrue);
+      final applied = await bridge.applyDocumentEdit(proposal);
+      expect(applied.status, DocumentEditStatus.applied);
+      expect(applied.newRevision, 1);
+      expect(session.source, 'scene: new\n');
+      expect(session.isDirty, isTrue);
+      expect(editor.editingController.canUndo, isTrue);
 
-    editor.editingController.undo();
-    expect(editor.text, 'scene: old\n');
+      editor.editingController.undo();
+      expect(editor.text, 'scene: old\n');
 
-    final stale = await bridge.applyDocumentEdit(proposal);
-    expect(stale.status, DocumentEditStatus.stale);
+      final stale = await bridge.applyDocumentEdit(proposal);
+      expect(stale.status, DocumentEditStatus.stale);
 
-    editor.dispose();
-    session.dispose();
-  });
+      editor.dispose();
+      session.dispose();
+    },
+  );
 
   test('document replacement resets identity and revision', () {
     final session = WorkbenchDocumentSession(

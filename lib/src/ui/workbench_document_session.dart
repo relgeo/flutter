@@ -59,7 +59,8 @@ class WorkbenchDocumentSession extends ChangeNotifier {
     String? name,
     String? documentId,
   }) {
-    _documentId = documentId ??
+    _documentId =
+        documentId ??
         (path != null && path.isNotEmpty ? path : _nextUntitledDocumentId());
     _source = source;
     _savedSource = source;

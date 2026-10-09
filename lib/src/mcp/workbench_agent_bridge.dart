@@ -43,14 +43,10 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
           error == 'baseRevision is stale',
     );
     if (hasStaleGuardFailure) {
-      return DocumentEditResult.stale(
-        message: validation.join('; '),
-      );
+      return DocumentEditResult.stale(message: validation.join('; '));
     }
     if (validation.isNotEmpty) {
-      return DocumentEditResult.rejected(
-        message: validation.join('; '),
-      );
+      return DocumentEditResult.rejected(message: validation.join('; '));
     }
 
     final nextSource = proposal.applyTo(snapshot);

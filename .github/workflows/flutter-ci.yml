@@ -98,8 +98,13 @@ jobs:
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Test on native runner
+      - name: Test on native runner (macOS)
+        if: ${{ runner.os == 'macOS' }}
         run: flutter test --no-pub --reporter compact
+
+      - name: Test on native runner (Linux and Windows)
+        if: ${{ runner.os != 'macOS' }}
+        run: flutter test --no-pub --reporter compact --exclude-tags golden
 
       - name: Build desktop application
         run: flutter build ${{ matrix.command }} --release --no-pub
