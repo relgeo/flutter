@@ -108,3 +108,46 @@ jobs:
 
       - name: Build desktop application
         run: flutter build ${{ matrix.command }} --release --no-pub
+
+  notify-workspace:
+    name: Notify workspace after validated main CI
+    needs:
+      - quality
+      - desktop-build
+    if: >-
+      ${{
+        (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+        github.ref == 'refs/heads/main' &&
+        needs.quality.result == 'success' &&
+        needs.desktop-build.result == 'success'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch validated Flutter revision to workspace
+        uses: actions/github-script@v7
+        env:
+          WORKSPACE_DISPATCH_TOKEN: ${{ secrets.WORKSPACE_DISPATCH_TOKEN }}
+        with:
+          github-token: ${{ secrets.WORKSPACE_DISPATCH_TOKEN || github.token }}
+          script: |
+            if (!process.env.WORKSPACE_DISPATCH_TOKEN) {
+              core.setFailed(
+                'Missing WORKSPACE_DISPATCH_TOKEN. Configure a fine-grained token or GitHub App token with Contents: write on relgeo/workspace.'
+              );
+              return;
+            }
+
+            await github.rest.repos.createDispatchEvent({
+              owner: 'relgeo',
+              repo: 'workspace',
+              event_type: 'flutter_ci_succeeded',
+              client_payload: {
+                flutter_sha: context.sha,
+                flutter_run_id: String(context.runId),
+                flutter_run_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                flutter_workflow: context.workflow,
+                flutter_branch: context.ref
+              }
+            });
+
+            core.info(`Dispatched ${context.sha} to relgeo/workspace.`);
