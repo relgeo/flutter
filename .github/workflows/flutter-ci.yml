@@ -123,7 +123,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch validated Flutter revision to workspace
+      - name: Dispatch validated submodule revision to workspace
         uses: actions/github-script@v7
         env:
           WORKSPACE_DISPATCH_TOKEN: ${{ secrets.WORKSPACE_DISPATCH_TOKEN }}
@@ -140,13 +140,16 @@ jobs:
             await github.rest.repos.createDispatchEvent({
               owner: 'relgeo',
               repo: 'workspace',
-              event_type: 'flutter_ci_succeeded',
+              event_type: 'submodule_ci_succeeded',
               client_payload: {
-                flutter_sha: context.sha,
-                flutter_run_id: String(context.runId),
-                flutter_run_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-                flutter_workflow: context.workflow,
-                flutter_branch: context.ref
+                submodule: 'flutter',
+                repository: 'relgeo/flutter',
+                path: 'flutter',
+                sha: context.sha,
+                run_id: String(context.runId),
+                run_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                workflow: '.github/workflows/flutter-ci.yml',
+                branch: context.ref
               }
             });
 
