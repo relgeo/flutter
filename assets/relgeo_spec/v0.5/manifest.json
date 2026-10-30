@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "specVersion": "0.5",
+  "sourceDirectory": "spec/id",
+  "assetDirectory": "assets/relgeo_spec/v0.5",
+  "revision": "b96ba3b23de202227eade06614635ef6717df516",
+  "sourceUrl": "https://github.com/relgeo/spec/tree/b96ba3b23de202227eade06614635ef6717df516/id",
+  "digestAlgorithm": "sha256",
+  "digest": "sha256:22aabf087d99377a51f8807aefbe29f80278c3a928029a5ccdbe63a87ebb2096",
+  "fileCount": 34,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 5880,
+      "sha256": "66e9507f9e65081da3859ddbe2e0d72096bd10890ff5b6754378b79a5facd963"
+    },
+    {
+      "path": "appendix/27-summary.md",
+      "bytes": 1923,
+      "sha256": "146fc8a195cf77dcf17af004860ce1a297dea2cc06fc7a6e8c1419fe8013c84e"
+    },
+    {
+      "path": "appendix/README.md",
+      "bytes": 428,
+      "sha256": "cca47078e975becfb2343e2f5885e79944d85c60751572c5d4c15f8142ab4540"
+    },
+    {
+      "path": "core/01-overview.md",
+      "bytes": 2364,
+      "sha256": "765f7d56475639963ddbf2219676b7270189fbef51e83741337b256e36ce6934"
+    },
+    {
+      "path": "core/02-document-structure.md",
+      "bytes": 2982,
+      "sha256": "15b01523de8d4051b0ae517b3aad9e07ff8415131c80a00d66eb6b222837e7c4"
+    },
+    {
+      "path": "core/03-scene.md",
+      "bytes": 4107,
+      "sha256": "132029c834bdfe583ff1643fb6455797d10454bd70b773fff493e5ec9ff85f5b"
+    },
+    {
+      "path": "core/04-evaluation-order.md",
+      "bytes": 2750,
+      "sha256": "0c84adb56e3ee4eb0d297ab221bba9287ad05756772820cb9714fbcd327ecd07"
+    },
+    {
+      "path": "core/05-semantic-guarantees.md",
+      "bytes": 2628,
+      "sha256": "b6d5f45ed7bc514aa31561188ae4d80174f3bd87cba645935d6c6837431063d8"
+    },
+    {
+      "path": "core/06-error-model.md",
+      "bytes": 7142,
+      "sha256": "4bdb7d81c16eb52b849f2459561a90d5ce149e99a95c5bedad7356eb4d16bac1"
+    },
+    {
+      "path": "core/README.md",
+      "bytes": 560,
+      "sha256": "5ab48b0268d2cda90e11298ff9aee04e3592bf845b596ce77ad3d1e40b8743b9"
+    },
+    {
+      "path": "editorial-guide.md",
+      "bytes": 7464,
+      "sha256": "dd86a4e681071a3abe3758c0a3eca18d5c55ecd743e8061f37a235b57861ef1f"
+    },
+    {
+      "path": "geometry/13-object-model.md",
+      "bytes": 3540,
+      "sha256": "7fce47dd967c864d89a7bc4f9d9e11078fe7ba603a19ecafaeb1abaa157c5485"
+    },
+    {
+      "path": "geometry/14-geometry-objects.md",
+      "bytes": 18806,
+      "sha256": "1d113b6c2f2494ec76a612ad522f12e779c9bc24ea8665c0adeb26dc3f655efc"
+    },
+    {
+      "path": "geometry/15-composition-objects.md",
+      "bytes": 11448,
+      "sha256": "015e57ad225f88cb5456329b8494d83fbc4ca053e7a615c69d381a581efee6f8"
+    },
+    {
+      "path": "geometry/16-collection-objects.md",
+      "bytes": 9517,
+      "sha256": "e5f77d1df6d2a509fa2f3dddc29d483c24b7cde4ab1871399007b712c6fcc368"
+    },
+    {
+      "path": "geometry/17-placement.md",
+      "bytes": 4749,
+      "sha256": "58311b7eb8a208c36daa2999d7f78eba17b6dc642953303de154e59a7264d41a"
+    },
+    {
+      "path": "geometry/18-anchors.md",
+      "bytes": 1227,
+      "sha256": "0536f157d50ca1338c78f462f7d3cb7420a45a6bdb70d3dbde4b9204cd329e40"
+    },
+    {
+      "path": "geometry/19-collections.md",
+      "bytes": 1138,
+      "sha256": "eacdfcb49ac8a35aaf3fa10d1a115b4197c5c35a8f6d1d8d8c0ced0388af081c"
+    },
+    {
+      "path": "geometry/20-geometry-queries.md",
+      "bytes": 5985,
+      "sha256": "83af0a1902f4fd12d087571ff06becf1348d36582e9f3febcd22f35480432447"
+    },
+    {
+      "path": "geometry/21-constraints.md",
+      "bytes": 2328,
+      "sha256": "89b4dfb3a1a27090c311ae64cc89975427e82f19ebb509562a1d3ce2e07435ae"
+    },
+    {
+      "path": "geometry/README.md",
+      "bytes": 752,
+      "sha256": "a1779e578d0ca3509498600d265b2997a330ed905770eff0b8373435ef13d750"
+    },
+    {
+      "path": "presentation/22-dimension.md",
+      "bytes": 5324,
+      "sha256": "651979290d47cf79ddd66445fa9ca3269b3258870b7094f03b31f2f0c524d1a7"
+    },
+    {
+      "path": "presentation/23-annotation.md",
+      "bytes": 4194,
+      "sha256": "9dc025a706e3c54169c8a032ac5cf2e7df1e197b6bec40d95423282dda045b2c"
+    },
+    {
+      "path": "presentation/24-drawing-roles.md",
+      "bytes": 5146,
+      "sha256": "94815c6cc57dfb4edc3848a56c2b68fb76a05e0dba650139832bc493782c98c4"
+    },
+    {
+      "path": "presentation/25-views-sheets.md",
+      "bytes": 5259,
+      "sha256": "9556dce366c3a75086050f3cff479c24a76bcc15212dc35f805150ce944f9366"
+    },
+    {
+      "path": "presentation/26-metadata.md",
+      "bytes": 7481,
+      "sha256": "6163aa16608ec0e680344d360f141cabe5b56635f5e3cdbfa7027fe0bd123440"
+    },
+    {
+      "path": "presentation/README.md",
+      "bytes": 1243,
+      "sha256": "a06877a8720a12b81ccaacb94f56cc4cb9cd3441bc89513521c1371cf232e7a1"
+    },
+    {
+      "path": "syntax/07-type-system.md",
+      "bytes": 6977,
+      "sha256": "598ff77c8866fe0892c014ceba5d1697048835765c73a59e18a66e4b12eaf27a"
+    },
+    {
+      "path": "syntax/08-parameters.md",
+      "bytes": 2629,
+      "sha256": "eb35f641f20247fcc7190430a6d0f2bdf1b57ab2301375072caea24c2ad05794"
+    },
+    {
+      "path": "syntax/09-constants.md",
+      "bytes": 1316,
+      "sha256": "0015468fbd2f2e286b8061faa9f271a1fedd50382079645451d2749477e8f50e"
+    },
+    {
+      "path": "syntax/10-derived.md",
+      "bytes": 2440,
+      "sha256": "37e2329a61f63da900e66b714d3df53f762a127fa80aa8c16ce3280960ed6ee2"
+    },
+    {
+      "path": "syntax/11-profiles.md",
+      "bytes": 1363,
+      "sha256": "f9a5caf4de42ba760368a9db551c5caada37810260c551b1492a5837bfc10d8a"
+    },
+    {
+      "path": "syntax/12-expressions.md",
+      "bytes": 4833,
+      "sha256": "74895f7065d8bbeb8893af36014e5416eb81a0282755d1b933055e2c1ffe7e55"
+    },
+    {
+      "path": "syntax/README.md",
+      "bytes": 499,
+      "sha256": "01d14a7fc72a8243bd5fe55e6782d250d92c68ec337dd715234f4c97d672c4df"
+    }
+  ]
+}

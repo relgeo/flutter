@@ -70,12 +70,12 @@ jelaskan kemampuan dan batasannya.”
 
 - `relgeo_get_capabilities` melaporkan tool, resource, dan batas kemampuan
   server saat ini.
-- `relgeo_find_syntax` mencari aturan normatif yang saat ini tersedia untuk
-  primitive `rect` dari pertanyaan authoring.
-- `relgeo_get_syntax_rule` mengembalikan aturan `14.3 Rect` dari spec v0.5,
-  termasuk ukuran dan placement. Untuk pertanyaan “persegi”, MCP menjelaskan
-  bahwa memakai lebar dan tinggi sama adalah interpretasi praktis, bukan rule
-  tambahan di spec.
+- `relgeo_search_spec` mencari seluruh snapshot Markdown `spec/id/` yang
+  terbundel secara offline, dengan section ID, snippet, status normatif, dan
+  provenance revision/digest.
+- `relgeo_get_spec_section` mengambil section lengkap setelah agent memilih
+  hasil pencarian. `relgeo_find_syntax` tetap tersedia sebagai alias
+  kompatibilitas dan memakai corpus yang sama.
 - Setelah aturan spec ditemukan, `relgeo_get_examples` dapat memberi contoh
   YAML persegi atau persegi panjang sebagai ilustrasi sekunder.
 - `relgeo_get_active_document` membaca source, identitas, revisi, dan status
@@ -83,9 +83,10 @@ jelaskan kemampuan dan batasannya.”
 - Resource `relgeo://document/active` menyediakan snapshot yang sama.
 - Resource `relgeo://document/active/diagnostics` menyediakan error YAML atau
   compiler yang sedang ditampilkan workbench.
-- Server hanya baca. Pencarian normatif desktop saat ini baru mencakup rule
-  `rect`, bukan seluruh spec. Belum ada validasi terpisah, render, atau
-  perubahan dokumen melalui MCP.
+- Server hanya baca. Corpus spec dimuat dari Flutter asset bundle saat server
+  dimulai; runtime tidak membaca path `spec/` dari repository dan tidak
+  membutuhkan Node.js/npm atau koneksi remote. Belum ada validasi terpisah,
+  render, atau perubahan dokumen melalui MCP.
 - Protocol adapter desktop menegosiasikan versi MCP `2025-11-25` dan
   `2025-06-18` agar kompatibel dengan MCP client yang versinya berbeda.
 

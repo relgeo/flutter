@@ -1533,8 +1533,8 @@ objects:
                 children: [
                   Text(
                     isRunning
-                        ? 'Running locally. MCP clients can read the active document and its diagnostics.'
-                        : 'Start a temporary local endpoint to let an MCP client inspect the active document.',
+                        ? 'Running locally. MCP clients can search the bundled spec and read the active document.'
+                        : 'Start a temporary local endpoint to let an MCP client search the bundled spec and inspect the active document.',
                   ),
                   const SizedBox(height: 12),
                   const Text(

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:relgeo_mcp/relgeo_mcp.dart';
 
+import 'spec_snapshot_loader.dart';
 import 'workbench_agent_bridge.dart';
 
 /// Streamable HTTP endpoint owned by one running desktop workbench session.
@@ -35,6 +36,7 @@ class RelGeoMcpDesktopServer {
 
   static Future<RelGeoMcpDesktopServer> start({
     required WorkbenchAgentBridge bridge,
+    RelGeoSpecSnapshotLoader? specLoader,
   }) async {
     final session = McpServerSession(
       policy: const McpSecurityPolicy(enabled: true),
@@ -46,8 +48,15 @@ class RelGeoMcpDesktopServer {
             ttl: const Duration(hours: 8),
           )
           .value;
-      final resources = RelGeoMcpResourceStore(activeBridge: bridge);
+      final bundledSpec = await (specLoader ?? const RelGeoSpecSnapshotLoader())
+          .load();
+      final specIndex = bundledSpec.createIndex();
+      final resources = RelGeoMcpResourceStore(
+        activeBridge: bridge,
+        specIndex: specIndex,
+      );
       final router = RelGeoMcpJsonRpcRouter(
+        dispatcher: RelGeoMcpToolDispatcher(null, specIndex: specIndex),
         activeBridge: bridge,
         resources: resources,
       );
