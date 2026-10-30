@@ -1,3 +1,4 @@
+import '../../core/units.dart';
 import '../../geometry/types.dart';
 
 /// Parsed document settings consumed by the editor and composition root.
@@ -34,6 +35,15 @@ class WorkbenchDocumentSettings {
       }
     }
 
+    var targetUnit = currentTargetUnit;
+    final scene = document['scene'];
+    if (scene is Map && scene['unit'] != null) {
+      targetUnit = LengthUnit.values.firstWhere(
+        (unit) => unit.name == scene['unit'].toString(),
+        orElse: () => LengthUnit.mm,
+      );
+    }
+
     final paramValues = <String, double>{};
     final paramOverrides = <String, dynamic>{};
     final rawParameters = document['parameters'];
@@ -41,11 +51,14 @@ class WorkbenchDocumentSettings {
       for (final entry in rawParameters.entries) {
         final id = entry.key.toString();
         final value = entry.value;
-        final parsedValue = value is num
-            ? value.toDouble()
-            : (value is Map && value['default'] is num
-                  ? (value['default'] as num).toDouble()
-                  : double.tryParse(value.toString()) ?? 50.0);
+        final rawDefault = value is Map && value.containsKey('default')
+            ? value['default']
+            : value;
+        final normalizedDefault = normalizeUnit(rawDefault, targetUnit);
+        final parsedValue =
+            normalizedDefault is num && normalizedDefault.isFinite
+            ? normalizedDefault.toDouble()
+            : 50.0;
         paramValues[id] = parsedValue;
       }
 
@@ -54,15 +67,6 @@ class WorkbenchDocumentSettings {
             ? existingParamOverrides[id]
             : paramValues[id];
       }
-    }
-
-    var targetUnit = currentTargetUnit;
-    final scene = document['scene'];
-    if (scene is Map && scene['unit'] != null) {
-      targetUnit = LengthUnit.values.firstWhere(
-        (unit) => unit.name == scene['unit'].toString(),
-        orElse: () => LengthUnit.mm,
-      );
     }
 
     return WorkbenchDocumentSettings(

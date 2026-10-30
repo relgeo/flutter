@@ -25,6 +25,26 @@ void main() {
     expect(settings.targetUnit, LengthUnit.cm);
   });
 
+  test('parses unit-suffixed parameter defaults in the scene unit', () {
+    final settings = WorkbenchDocumentSettings.fromDocument(
+      {
+        'parameters': {
+          'liba': {'type': 'length', 'default': '88cm'},
+          'toleransi': {'type': 'length', 'default': '15mm'},
+        },
+        'scene': {'unit': 'cm'},
+      },
+      existingParamOverrides: const {},
+      currentTargetUnit: LengthUnit.mm,
+    );
+
+    expect(settings.paramValues['liba'], 88);
+    expect(settings.paramValues['toleransi'], closeTo(1.5, 1e-9));
+    expect(settings.paramOverrides['liba'], 88);
+    expect(settings.paramOverrides['toleransi'], closeTo(1.5, 1e-9));
+    expect(settings.targetUnit, LengthUnit.cm);
+  });
+
   test('profile updates only known parameters and converts numeric values', () {
     final settings = WorkbenchDocumentSettings(
       profiles: {
