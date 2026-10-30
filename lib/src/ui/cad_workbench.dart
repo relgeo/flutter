@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
+import 'package:relgeo_mcp/relgeo_mcp.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 import 'workbench_preferences.dart';
 import 'workbench_preferences_controller.dart';
@@ -29,6 +31,7 @@ import 'workbench_layout_profiles.dart';
 import 'workbench_recent_documents.dart';
 import 'workbench_scene_graph.dart';
 import 'workbench_document_recovery.dart';
+import '../mcp/mcp_server.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -137,6 +140,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   bool _showSceneGraph = false;
   Timer? _compileDebounce;
   final ValueNotifier<double> _zoomLevel = ValueNotifier<double>(1.0);
+  RelGeoMcpDesktopServer? _mcpServer;
 
   String? get _documentPath => _documentSession.path;
   String? get _documentName => _documentSession.name;
@@ -706,6 +710,8 @@ objects:
 
   @override
   void dispose() {
+    final mcpServer = _mcpServer;
+    if (mcpServer != null) unawaited(mcpServer.stop());
     _documentSession.removeListener(_onDocumentSessionChanged);
     _documentSession.dispose();
     _selectionController.removeListener(_onSelectionChanged);
@@ -1477,12 +1483,187 @@ objects:
         onInvoke: _resetWorkbenchPreferences,
       ),
       WorkbenchCommand(
+        id: WorkbenchCommandId.mcpServer,
+        menu: 'Workbench',
+        label: 'MCP Server…',
+        // A macOS native menu dispatches this callback over a platform
+        // channel. Push the modal after that menu-selection event has
+        // unwound so the dialog receives the next pointer/focus events.
+        onInvoke: _scheduleMcpServerDialog,
+      ),
+      WorkbenchCommand(
         id: WorkbenchCommandId.aboutRelGeo,
         menu: 'Help',
         label: 'About RelGeo',
         onInvoke: _showAboutDialog,
       ),
     ]);
+  }
+
+  void _scheduleMcpServerDialog() {
+    Timer.run(() {
+      if (mounted) unawaited(_showMcpServerDialog());
+    });
+  }
+
+  Future<void> _showMcpServerDialog() async {
+    var busy = false;
+    String? error;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final server = _mcpServer;
+          final isRunning = server != null;
+          final config = server == null
+              ? null
+              : const JsonEncoder.withIndent('  ').convert(<String, Object>{
+                  'url': server.endpoint,
+                  'headers': <String, String>{
+                    'Authorization': 'Bearer ${server.token}',
+                  },
+                });
+          return AlertDialog(
+            title: const Text('RelGeo MCP Server'),
+            content: SizedBox(
+              width: 520,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isRunning
+                        ? 'Running locally. MCP clients can read the active document and its diagnostics.'
+                        : 'Start a temporary local endpoint to let an MCP client inspect the active document.',
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Read-only · 127.0.0.1 · Stops with this workbench',
+                  ),
+                  if (server != null) ...[
+                    const SizedBox(height: 16),
+                    const Text('Endpoint'),
+                    SelectableText(server.endpoint),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Temporary bearer token (expires after 8 hours)',
+                    ),
+                    SelectableText(server.token),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          Clipboard.setData(ClipboardData(text: config!)),
+                      icon: const Icon(Icons.copy),
+                      label: const Text('Copy connection details'),
+                    ),
+                  ],
+                  if (error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Close'),
+              ),
+              if (isRunning)
+                OutlinedButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            busy = true;
+                            error = null;
+                          });
+                          try {
+                            await _stopMcpServer();
+                          } catch (exception) {
+                            error = exception.toString();
+                          }
+                          if (context.mounted) {
+                            setDialogState(() => busy = false);
+                          }
+                        },
+                  child: const Text('Disable'),
+                )
+              else
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            busy = true;
+                            error = null;
+                          });
+                          try {
+                            await _startMcpServer();
+                          } catch (exception) {
+                            error = exception.toString();
+                          }
+                          if (context.mounted) {
+                            setDialogState(() => busy = false);
+                          }
+                        },
+                  child: Text(busy ? 'Starting…' : 'Enable MCP'),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _startMcpServer() async {
+    if (_mcpServer != null) return;
+    final bridge = WorkbenchAgentBridge(
+      session: _documentSession,
+      editor: _editorController,
+      diagnostics: () {
+        final diagnostics = <DocumentDiagnostic>[];
+        if (_yamlError case final message?) {
+          diagnostics.add(
+            DocumentDiagnostic(
+              code: 'relgeo.yaml.parse',
+              message: message,
+              severity: DiagnosticSeverity.error,
+            ),
+          );
+        }
+        if (_compilerError case final message?) {
+          diagnostics.add(
+            DocumentDiagnostic(
+              code: 'relgeo.compile',
+              message: message,
+              severity: DiagnosticSeverity.error,
+            ),
+          );
+        }
+        return diagnostics;
+      },
+    );
+    final server = await RelGeoMcpDesktopServer.start(bridge: bridge);
+    if (!mounted) {
+      await server.stop();
+      return;
+    }
+    setState(() => _mcpServer = server);
+  }
+
+  Future<void> _stopMcpServer() async {
+    final server = _mcpServer;
+    if (server == null) return;
+    await server.stop();
+    if (mounted) setState(() => _mcpServer = null);
   }
 
   List<WorkbenchCommand> _buildPanelPlacementCommands() {

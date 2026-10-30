@@ -68,6 +68,9 @@ relgeo_flutter/
 
 ### Rencana Pengembangan
 
+Kebijakan tag, provenance, aset, dan publikasi aplikasi desktop ke GitHub
+Releases dijelaskan dalam [Kebijakan Rilis Desktop](docs/releases/desktop-release-policy.md).
+
 Rencana modularisasi workbench dan dukungan toggle `Light / Dark` dengan default
 yang mengikuti system tersedia di:
 
@@ -80,6 +83,9 @@ window/platform boundary.
 Rencana layout panel, docking, preset workbench, dan autosave tersedia di:
 
 - [Workbench Layout dan Panel System](docs/plans/02-workbench-layout-and-panel-system.md)
+
+Untuk menjalankan MCP server lokal yang terhubung ke dokumen aktif, lihat
+[panduan pengujian MCP lokal](docs/mcp-local-testing.md).
 
 ### Prerequisites
 * Flutter macOS SDK installed.

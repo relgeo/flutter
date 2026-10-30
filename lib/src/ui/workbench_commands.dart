@@ -16,6 +16,7 @@ enum WorkbenchCommandId {
   recompileDocument,
   resetDocumentParameters,
   aboutRelGeo,
+  mcpServer,
   zoomIn,
   zoomOut,
   fitViewport,
