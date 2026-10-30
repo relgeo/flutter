@@ -54,6 +54,7 @@ class CanvasPainter extends CustomPainter {
   final double zoomScale;
   final bool showConstruction;
   final String? sheetId;
+  final String? selectedObjectId;
   final Set<String> hiddenRoles;
   final WorkbenchVisualProfile visualProfile;
   final RelGeoThemeExtension? themeTokens;
@@ -66,6 +67,7 @@ class CanvasPainter extends CustomPainter {
     this.zoomScale = 1.0,
     this.showConstruction = false,
     this.sheetId,
+    this.selectedObjectId,
     Set<String>? hiddenRoles,
     WorkbenchVisualProfile? visualProfile,
     this.themeTokens,
@@ -126,6 +128,8 @@ class CanvasPainter extends CustomPainter {
     _paintObjectMap(canvas, scene.objects, scene.objects);
     canvas.restore();
 
+    _paintSelection(canvas);
+
     // ─── Constraint Violations overlay ───────
 
     if (scene.violations.isNotEmpty) {
@@ -138,6 +142,26 @@ class CanvasPainter extends CustomPainter {
         overlay.showBoundingBoxes) {
       _paintOverlay(canvas, size);
     }
+  }
+
+  void _paintSelection(Canvas canvas) {
+    final id = selectedObjectId;
+    if (id == null || !scene.objects.containsKey(id)) return;
+    final bounds = geom.calculateBoundingBox(
+      scene.objects,
+      targetIds: <String>[id],
+    );
+    final selectionPaint = Paint()
+      ..color = _canvasAccentColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5 / math.max(zoomScale, 0.01);
+    canvas.save();
+    canvas.translate(-scene.bbox.x, -scene.bbox.y);
+    canvas.drawRect(
+      Rect.fromLTWH(bounds.x, bounds.y, bounds.width, bounds.height),
+      selectionPaint,
+    );
+    canvas.restore();
   }
 
   void _paintSheet(Canvas canvas, Size size, ResolvedSheet sheet) {

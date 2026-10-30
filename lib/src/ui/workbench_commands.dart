@@ -24,6 +24,7 @@ enum WorkbenchCommandId {
   togglePreviewPanel,
   toggleInspectorPanel,
   toggleParametersPanel,
+  toggleSceneGraph,
   resetLayout,
   dockEditorLeft,
   dockPreviewCenter,

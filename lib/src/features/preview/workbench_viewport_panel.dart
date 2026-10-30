@@ -6,6 +6,8 @@ import '../../ui/relgeo_theme_extension.dart';
 import '../../ui/workbench_bounds_badge.dart';
 import '../../ui/workbench_status_badge.dart';
 import '../../ui/workbench_visual_profile.dart';
+import '../../ui/workbench_scene_graph.dart';
+import '../../ui/workbench_scene_graph_panel.dart';
 
 /// Presents the interactive workbench viewport without owning scene state.
 class WorkbenchViewportPanel extends StatelessWidget {
@@ -22,6 +24,11 @@ class WorkbenchViewportPanel extends StatelessWidget {
     required this.onViewportSizeChanged,
     required this.activeSheetPhysicalTargetLabel,
     required this.activeSheetViewSummaryLabel,
+    required this.selectedObjectId,
+    required this.onCanvasTap,
+    required this.showGraph,
+    required this.onToggleGraph,
+    required this.onSelectObject,
   });
 
   final WorkbenchVisualProfile visualProfile;
@@ -35,6 +42,11 @@ class WorkbenchViewportPanel extends StatelessWidget {
   final ValueChanged<Size> onViewportSizeChanged;
   final String? activeSheetPhysicalTargetLabel;
   final String? activeSheetViewSummaryLabel;
+  final String? selectedObjectId;
+  final ValueChanged<Offset> onCanvasTap;
+  final bool showGraph;
+  final VoidCallback onToggleGraph;
+  final ValueChanged<String> onSelectObject;
 
   @override
   Widget build(BuildContext context) {
@@ -65,23 +77,28 @@ class WorkbenchViewportPanel extends StatelessWidget {
                   minScale: 0.0001,
                   maxScale: 10000.0,
                   child: scene != null
-                      ? SizedBox(
-                          width: displayBounds!.width,
-                          height: displayBounds!.height,
-                          child: CustomPaint(
-                            key: const Key('scene-canvas'),
-                            painter: CanvasPainter(
-                              scene: scene!,
-                              backgroundColor:
-                                  visualProfile.viewportBackgroundColor,
-                              overlay: overlay,
-                              zoomScale: zoomLevel,
-                              sheetId: selectedSheetId,
-                              hiddenRoles: hiddenRoles,
-                              visualProfile: visualProfile,
-                              themeTokens: Theme.of(
-                                context,
-                              ).extension<RelGeoThemeExtension>(),
+                      ? GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (details) => onCanvasTap(details.localPosition),
+                          child: SizedBox(
+                            width: displayBounds!.width,
+                            height: displayBounds!.height,
+                            child: CustomPaint(
+                              key: const Key('scene-canvas'),
+                              painter: CanvasPainter(
+                                scene: scene!,
+                                backgroundColor:
+                                    visualProfile.viewportBackgroundColor,
+                                overlay: overlay,
+                                zoomScale: zoomLevel,
+                                sheetId: selectedSheetId,
+                                selectedObjectId: selectedObjectId,
+                                hiddenRoles: hiddenRoles,
+                                visualProfile: visualProfile,
+                                themeTokens: Theme.of(
+                                  context,
+                                ).extension<RelGeoThemeExtension>(),
+                              ),
                             ),
                           ),
                         )
@@ -92,6 +109,18 @@ class WorkbenchViewportPanel extends StatelessWidget {
                         ),
                 ),
               ),
+              if (showGraph && scene != null)
+                Positioned(
+                  top: 52,
+                  right: 12,
+                  child: WorkbenchSceneGraphPanel(
+                    graph: WorkbenchSceneGraph.fromScene(scene!),
+                    selectedObjectId: selectedObjectId,
+                    visualProfile: visualProfile,
+                    onSelectObject: onSelectObject,
+                    onClose: onToggleGraph,
+                  ),
+                ),
               if (scene != null)
                 Positioned(
                   bottom: 12,

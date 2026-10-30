@@ -28,6 +28,8 @@ class WorkbenchInspectorFeature extends StatelessWidget {
       targetUnit: contract.targetUnit,
       visualProfile: contract.visualProfile,
       themeTokens: contract.themeTokens,
+      selectedObjectId: contract.selectedObjectId,
+      onSelectObject: contract.onSelectObject,
       onClose: onClose,
       onFloat: onFloat,
     );

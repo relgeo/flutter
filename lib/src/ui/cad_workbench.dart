@@ -27,6 +27,8 @@ import 'workbench_layout_model.dart';
 import 'workbench_layout_persistence.dart';
 import 'workbench_layout_profiles.dart';
 import 'workbench_recent_documents.dart';
+import 'workbench_scene_graph.dart';
+import 'workbench_document_recovery.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
   const CADWorkbenchPage({
@@ -128,6 +130,11 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       WorkbenchLayoutPersistenceController();
   final WorkbenchRecentDocumentsStore _recentDocumentsStore =
       const WorkbenchRecentDocumentsStore();
+  final WorkbenchSelectionController _selectionController =
+      WorkbenchSelectionController();
+  final WorkbenchDocumentRecoveryStore _recoveryStore =
+      const WorkbenchDocumentRecoveryStore();
+  bool _showSceneGraph = false;
   Timer? _compileDebounce;
   final ValueNotifier<double> _zoomLevel = ValueNotifier<double>(1.0);
 
@@ -191,6 +198,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       name: document.name,
     );
     _editorController.replaceDocument(document.source);
+    unawaited(_recoveryStore.clear());
+    _selectionController.clear();
     _compileDSL(document.source);
   }
 
@@ -198,6 +207,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     if (!await _confirmDiscardChangesIfNeeded()) return;
     _documentSession.markLoaded(source: _newDocumentDSL);
     _editorController.replaceDocument(_newDocumentDSL);
+    unawaited(_recoveryStore.clear());
+    _selectionController.clear();
     _compileDSL(_newDocumentDSL);
   }
 
@@ -218,6 +229,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
             path: saved.path,
             name: saved.name,
           );
+          unawaited(_recoveryStore.clear());
           await _recordRecentDocument(saved);
         }
         return;
@@ -233,6 +245,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
           path: _documentPath,
           name: _documentName,
         );
+        unawaited(_recoveryStore.clear());
         if (_documentPath != null && _documentName != null) {
           await _recordRecentDocument(
             WorkbenchDocumentFile(
@@ -314,6 +327,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
     if (!await _confirmDiscardChangesIfNeeded()) return;
     _documentSession.reset(source: '');
     _editorController.replaceDocument('');
+    unawaited(_recoveryStore.clear());
+    _selectionController.clear();
     _compileDSL('');
   }
 
@@ -594,10 +609,12 @@ objects:
       if (mounted) setState(() {});
     });
     _layoutController.addListener(_onLayoutChanged);
+    _selectionController.addListener(_onSelectionChanged);
     _applyBehaviorPreset(_workbenchProfile);
     _loadWorkbenchPreferences(initialDsl);
     _loadLayoutPreferences();
     _loadRecentDocuments();
+    _loadRecoveryDraft();
   }
 
   Future<void> _loadWorkbenchPreferences(String initialDsl) async {
@@ -632,6 +649,45 @@ objects:
     setState(() => _recentDocuments = recent);
   }
 
+  Future<void> _loadRecoveryDraft() async {
+    final draft = await _recoveryStore.load();
+    if (!mounted || draft == null || draft.source == _documentSession.source) {
+      return;
+    }
+    final restore = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recover unsaved document?'),
+        content: Text(
+          'An interrupted draft${draft.name == null ? '' : ' (${draft.name})'} '
+          'is available.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('DISCARD'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('RESTORE'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (restore == true) {
+      _documentSession.markLoaded(
+        source: draft.source,
+        path: draft.path,
+        name: draft.name,
+      );
+      _editorController.replaceDocument(draft.source);
+      _compileDSL(draft.source);
+    } else {
+      await _recoveryStore.clear();
+    }
+  }
+
   @override
   void didUpdateWidget(covariant CADWorkbenchPage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -652,6 +708,8 @@ objects:
   void dispose() {
     _documentSession.removeListener(_onDocumentSessionChanged);
     _documentSession.dispose();
+    _selectionController.removeListener(_onSelectionChanged);
+    _selectionController.dispose();
     _layoutController.removeListener(_onLayoutChanged);
     unawaited(_layoutPersistenceController.flush());
     _layoutPersistenceController.dispose();
@@ -677,6 +735,10 @@ objects:
 
   void _onDocumentSessionChanged() {
     widget.onDocumentDirtyChanged?.call(_documentSession.isDirty);
+  }
+
+  void _onSelectionChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<bool> _confirmDiscardChangesIfNeeded() async {
@@ -717,6 +779,18 @@ objects:
 
   void _onCodeChanged() {
     _documentSession.updateSource(_editorController.text);
+    unawaited(
+      _documentSession.isDirty
+          ? _recoveryStore.save(
+              WorkbenchRecoveryDraft(
+                documentId: _documentSession.documentId,
+                source: _editorController.text,
+                path: _documentPath,
+                name: _documentName,
+              ),
+            )
+          : _recoveryStore.clear(),
+    );
     _compileDebounce?.cancel();
     _compileDebounce = Timer(const Duration(milliseconds: 180), () {
       if (mounted) _compileDSL(_editorController.text);
@@ -755,6 +829,10 @@ objects:
         _yamlError = null;
         _compilerError = null;
         _scene = scene;
+        if (_selectionController.selectedObjectId != null &&
+            !scene.objects.containsKey(_selectionController.selectedObjectId)) {
+          _selectionController.clear();
+        }
         if (scene.sheets.isEmpty) {
           _selectedSheetId = null;
         } else if (_selectedSheetId == null ||
@@ -820,6 +898,21 @@ objects:
   void _zoomOut() {
     if (_scene == null) return;
     _viewportController.zoomOut(fallbackViewportSize: _fallbackViewportSize);
+  }
+
+  void _selectObjectAt(Offset localPosition) {
+    final scene = _scene;
+    final bounds = _displayBounds;
+    if (scene == null || bounds == null) return;
+    final scenePosition = _viewportController.transformationController.toScene(
+      localPosition,
+    );
+    final objectId = _selectionController.hitTest(
+      scene,
+      (x: scenePosition.dx + bounds.x, y: scenePosition.dy + bounds.y),
+      hiddenRoles: _overlayController.hiddenRoles,
+    );
+    _selectionController.select(objectId);
   }
 
   String get _activeSurfaceLabel => _selectedSheetId != null
@@ -1007,6 +1100,8 @@ objects:
             targetUnit: _targetUnit.name,
             visualProfile: chromeProfile,
             themeTokens: Theme.of(context).extension<RelGeoThemeExtension>(),
+            selectedObjectId: _selectionController.selectedObjectId,
+            onSelectObject: _selectionController.select,
           ),
           onClose: () =>
               _layoutController.closePanel(WorkbenchPanelId.inspector),
@@ -1312,6 +1407,25 @@ objects:
         ),
       ),
       WorkbenchCommand(
+        id: WorkbenchCommandId.toggleSceneGraph,
+        menu: 'View',
+        submenuPath: const ['Panels'],
+        label: 'Dependency graph',
+        checked: _showSceneGraph,
+        enabled: _scene != null,
+        onInvoke: () => setState(() => _showSceneGraph = !_showSceneGraph),
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyG,
+          control: true,
+          shift: true,
+        ),
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyG,
+          control: true,
+          shift: true,
+        ),
+      ),
+      WorkbenchCommand(
         id: WorkbenchCommandId.resetLayout,
         menu: 'View',
         label: 'Reset layout',
@@ -1498,6 +1612,11 @@ objects:
             activeSheetViewSummaryLabel: _activeSheet != null
                 ? _activeSheetViewSummaryLabel
                 : null,
+            selectedObjectId: _selectionController.selectedObjectId,
+            onCanvasTap: _selectObjectAt,
+            showGraph: _showSceneGraph,
+            onToggleGraph: () => setState(() => _showSceneGraph = !_showSceneGraph),
+            onSelectObject: _selectionController.select,
           ),
           visualProfile: _workbenchProfile.withChromeTheme(
             Theme.of(context).colorScheme,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:relgeo_flutter/relgeo_flutter.dart';
 
 import '../../ui/relgeo_theme_extension.dart';
@@ -12,6 +13,8 @@ class WorkbenchInspectorContract {
     required this.targetUnit,
     required this.visualProfile,
     required this.themeTokens,
+    this.selectedObjectId,
+    this.onSelectObject,
   });
 
   final ResolvedScene? scene;
@@ -20,4 +23,6 @@ class WorkbenchInspectorContract {
   final String targetUnit;
   final WorkbenchVisualProfile visualProfile;
   final RelGeoThemeExtension? themeTokens;
+  final String? selectedObjectId;
+  final ValueChanged<String>? onSelectObject;
 }

@@ -22,6 +22,8 @@ class InspectorPanel extends StatefulWidget {
   final RelGeoThemeExtension? themeTokens;
   final VoidCallback? onClose;
   final VoidCallback? onFloat;
+  final String? selectedObjectId;
+  final ValueChanged<String>? onSelectObject;
 
   const InspectorPanel({
     super.key,
@@ -33,6 +35,8 @@ class InspectorPanel extends StatefulWidget {
     this.themeTokens,
     this.onClose,
     this.onFloat,
+    this.selectedObjectId,
+    this.onSelectObject,
   });
 
   @override
@@ -90,10 +94,15 @@ class _InspectorPanelState extends State<InspectorPanel>
         final id = entries[i].key;
         final obj = entries[i].value;
         final isExpanded = _expandedObjects[id] ?? false;
+        final isSelected = id == widget.selectedObjectId;
         void toggleExpanded() {
           setState(() {
             _expandedObjects[id] = !isExpanded;
           });
+        }
+        void selectObject() {
+          widget.onSelectObject?.call(id);
+          toggleExpanded();
         }
 
         return AnimatedContainer(
@@ -103,10 +112,14 @@ class _InspectorPanelState extends State<InspectorPanel>
           ),
           margin: const EdgeInsets.only(bottom: 4),
           decoration: BoxDecoration(
-            color: isExpanded ? _surfaceStrongColor : _surfaceColor,
+            color: isSelected || isExpanded
+                ? _surfaceStrongColor
+                : _surfaceColor,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isExpanded
+              color: isSelected
+                  ? _brandColor
+                  : isExpanded
                   ? _brandColor.withValues(alpha: 0.4)
                   : _borderColor,
             ),
@@ -118,18 +131,19 @@ class _InspectorPanelState extends State<InspectorPanel>
                 container: true,
                 button: true,
                 expanded: isExpanded,
+                selected: isSelected,
                 label: 'Object $id',
                 value: _typeLabel(obj),
                 hint: isExpanded
                     ? 'Collapse object details'
                     : 'Expand object details',
-                onTap: toggleExpanded,
+                onTap: selectObject,
                 child: WorkbenchKeyboardActivatable(
-                  onActivate: toggleExpanded,
+                  onActivate: selectObject,
                   focusColor: _brandColor,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(6),
-                    onTap: toggleExpanded,
+                    onTap: selectObject,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
