@@ -209,7 +209,7 @@ jobs:
             --build-name="$RELEASE_VERSION" \
             --build-number="$GITHUB_RUN_NUMBER"
           BUNDLE="build/linux/x64/release/bundle"
-          test -x "$BUNDLE/relgeo_flutter"
+          test -x "$BUNDLE/relgeo"
           test -d "$BUNDLE/data"
           test -d "$BUNDLE/lib"
           mkdir -p ../release-assets ../release-package/RelGeo
@@ -231,7 +231,7 @@ jobs:
             --build-name=$env:RELEASE_VERSION `
             --build-number=$env:GITHUB_RUN_NUMBER
           $bundle = 'build/windows/x64/runner/Release'
-          if (!(Test-Path "$bundle/relgeo_flutter.exe")) { throw 'Missing relgeo_flutter.exe' }
+          if (!(Test-Path "$bundle/relgeo.exe")) { throw 'Missing relgeo.exe' }
           if (!(Test-Path "$bundle/flutter_windows.dll")) { throw 'Missing flutter_windows.dll' }
           if (!(Test-Path "$bundle/data")) { throw 'Missing data directory' }
           New-Item -ItemType Directory -Force ../release-assets | Out-Null
@@ -317,7 +317,7 @@ jobs:
           body: |
             This draft contains native desktop builds for macOS, Ubuntu/Linux x64, and Windows x64.
 
-            **Install:** download and extract the archive for your OS. On Windows, run `relgeo_flutter.exe` from the extracted folder. On Linux, run `./relgeo_flutter` from the extracted `RelGeo/` folder. On macOS, move `RelGeo.app` to Applications if desired.
+            **Install:** download and extract the archive for your OS. On Windows, run `relgeo.exe` from the extracted folder. On Linux, run `./relgeo` from the extracted `RelGeo/` folder. On macOS, move `RelGeo.app` to Applications if desired.
 
             These initial archives are unsigned. macOS notarization and Windows code signing are not included. Linux requires GTK 3 and the system libraries used by Flutter desktop apps. Review and smoke-test each target before publishing this release.
 
