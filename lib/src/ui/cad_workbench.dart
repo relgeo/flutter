@@ -913,11 +913,10 @@ objects:
     final scenePosition = _viewportController.transformationController.toScene(
       localPosition,
     );
-    final objectId = _selectionController.hitTest(
-      scene,
-      (x: scenePosition.dx + bounds.x, y: scenePosition.dy + bounds.y),
-      hiddenRoles: _overlayController.hiddenRoles,
-    );
+    final objectId = _selectionController.hitTest(scene, (
+      x: scenePosition.dx + bounds.x,
+      y: scenePosition.dy + bounds.y,
+    ), hiddenRoles: _overlayController.hiddenRoles);
     _selectionController.select(objectId);
   }
 
@@ -1508,6 +1507,7 @@ objects:
 
   Future<void> _showMcpServerDialog() async {
     var busy = false;
+    var allowDocumentEdits = false;
     String? error;
     await showDialog<void>(
       context: context,
@@ -1533,13 +1533,34 @@ objects:
                 children: [
                   Text(
                     isRunning
-                        ? 'Running locally. MCP clients can search the bundled spec and read the active document.'
+                        ? server.permission == McpPermission.readWrite
+                              ? 'Running locally with active-document edits enabled. Changes are undoable and are not saved automatically.'
+                              : 'Running locally in read-only mode. MCP clients can search the bundled spec and inspect the active document.'
                         : 'Start a temporary local endpoint to let an MCP client search the bundled spec and inspect the active document.',
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Read-only · 127.0.0.1 · Stops with this workbench',
+                  Text(
+                    '${isRunning && server.permission == McpPermission.readWrite || !isRunning && allowDocumentEdits ? 'Read and active-document edits' : 'Read-only'} · 127.0.0.1 · Stops with this workbench',
                   ),
+                  if (!isRunning) ...[
+                    const SizedBox(height: 8),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: allowDocumentEdits,
+                      onChanged: busy
+                          ? null
+                          : (value) => setDialogState(
+                              () => allowDocumentEdits = value ?? false,
+                            ),
+                      title: const Text(
+                        'Allow MCP to edit the active document',
+                      ),
+                      subtitle: const Text(
+                        'Edits are bounded, undoable, and never saved automatically.',
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                  ],
                   if (server != null) ...[
                     const SizedBox(height: 16),
                     const Text('Endpoint'),
@@ -1606,7 +1627,9 @@ objects:
                             error = null;
                           });
                           try {
-                            await _startMcpServer();
+                            await _startMcpServer(
+                              allowDocumentEdits: allowDocumentEdits,
+                            );
                           } catch (exception) {
                             error = exception.toString();
                           }
@@ -1623,7 +1646,7 @@ objects:
     );
   }
 
-  Future<void> _startMcpServer() async {
+  Future<void> _startMcpServer({required bool allowDocumentEdits}) async {
     if (_mcpServer != null) return;
     final bridge = WorkbenchAgentBridge(
       session: _documentSession,
@@ -1651,7 +1674,12 @@ objects:
         return diagnostics;
       },
     );
-    final server = await RelGeoMcpDesktopServer.start(bridge: bridge);
+    final server = await RelGeoMcpDesktopServer.start(
+      bridge: bridge,
+      permission: allowDocumentEdits
+          ? McpPermission.readWrite
+          : McpPermission.readOnly,
+    );
     if (!mounted) {
       await server.stop();
       return;
@@ -1796,7 +1824,8 @@ objects:
             selectedObjectId: _selectionController.selectedObjectId,
             onCanvasTap: _selectObjectAt,
             showGraph: _showSceneGraph,
-            onToggleGraph: () => setState(() => _showSceneGraph = !_showSceneGraph),
+            onToggleGraph: () =>
+                setState(() => _showSceneGraph = !_showSceneGraph),
             onSelectObject: _selectionController.select,
           ),
           visualProfile: _workbenchProfile.withChromeTheme(

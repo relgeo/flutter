@@ -100,6 +100,7 @@ class _InspectorPanelState extends State<InspectorPanel>
             _expandedObjects[id] = !isExpanded;
           });
         }
+
         void selectObject() {
           widget.onSelectObject?.call(id);
           toggleExpanded();

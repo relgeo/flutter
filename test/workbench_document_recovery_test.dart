@@ -26,17 +26,20 @@ void main() {
     expect(draft?.name, 'example.relgeo');
   });
 
-  test('clearing recovery removes stale draft and empty source is ignored', () async {
-    const store = WorkbenchDocumentRecoveryStore();
-    await store.save(
-      const WorkbenchRecoveryDraft(documentId: 'doc-1', source: 'draft'),
-    );
-    await store.clear();
-    expect(await store.load(), isNull);
+  test(
+    'clearing recovery removes stale draft and empty source is ignored',
+    () async {
+      const store = WorkbenchDocumentRecoveryStore();
+      await store.save(
+        const WorkbenchRecoveryDraft(documentId: 'doc-1', source: 'draft'),
+      );
+      await store.clear();
+      expect(await store.load(), isNull);
 
-    await store.save(
-      const WorkbenchRecoveryDraft(documentId: 'doc-2', source: ''),
-    );
-    expect(await store.load(), isNull);
-  });
+      await store.save(
+        const WorkbenchRecoveryDraft(documentId: 'doc-2', source: ''),
+      );
+      expect(await store.load(), isNull);
+    },
+  );
 }

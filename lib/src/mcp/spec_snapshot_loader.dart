@@ -16,10 +16,8 @@ class RelGeoBundledSpecSnapshot {
   final SpecSnapshotMetadata snapshot;
   final List<SpecMarkdownDocument> documents;
 
-  SpecSectionIndex createIndex() => SpecSectionIndex.fromDocuments(
-    snapshot: snapshot,
-    documents: documents,
-  );
+  SpecSectionIndex createIndex() =>
+      SpecSectionIndex.fromDocuments(snapshot: snapshot, documents: documents);
 }
 
 /// Loads the pinned Markdown snapshot through [AssetBundle] only.
@@ -40,7 +38,10 @@ class RelGeoSpecSnapshotLoader {
     final root = _normaliseRoot(assetRoot);
     final manifestKey = '$root/manifest.json';
     final manifest = await _loadJson(rootBundleOr(bundle), manifestKey);
-    _require(manifest['schemaVersion'] == 1, 'Unsupported spec manifest schema');
+    _require(
+      manifest['schemaVersion'] == 1,
+      'Unsupported spec manifest schema',
+    );
     _require(
       manifest['sourceDirectory'] == 'spec/id',
       'Spec manifest sourceDirectory must be spec/id',
@@ -57,7 +58,9 @@ class RelGeoSpecSnapshotLoader {
     final fileEntries = rawFiles;
     final rawFileCount = manifest['fileCount'];
     if (rawFileCount is! int || rawFileCount != fileEntries.length) {
-      throw const FormatException('Spec manifest fileCount does not match files');
+      throw const FormatException(
+        'Spec manifest fileCount does not match files',
+      );
     }
 
     final paths = <String>{};
@@ -74,9 +77,9 @@ class RelGeoSpecSnapshotLoader {
         paths.add(validatedPath),
         'Duplicate spec manifest path: $validatedPath',
       );
-      final content = await rootBundleOr(bundle).loadString(
-        '$root/$validatedPath',
-      );
+      final content = await rootBundleOr(
+        bundle,
+      ).loadString('$root/$validatedPath');
       documents.add(
         SpecMarkdownDocument(relativePath: validatedPath, content: content),
       );
@@ -129,7 +132,9 @@ class RelGeoSpecSnapshotLoader {
   }
 
   static String _normaliseRoot(String value) {
-    final root = value.endsWith('/') ? value.substring(0, value.length - 1) : value;
+    final root = value.endsWith('/')
+        ? value.substring(0, value.length - 1)
+        : value;
     _require(
       root.startsWith('assets/relgeo_spec/') &&
           !root.contains('..') &&

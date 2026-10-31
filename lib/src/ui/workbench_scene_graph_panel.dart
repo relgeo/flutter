@@ -37,7 +37,11 @@ class WorkbenchSceneGraphPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(10, 8, 6, 6),
                 child: Row(
                   children: [
-                    Icon(Icons.account_tree, size: 15, color: visualProfile.accentColor),
+                    Icon(
+                      Icons.account_tree,
+                      size: 15,
+                      color: visualProfile.accentColor,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -89,12 +93,18 @@ class WorkbenchSceneGraphPanel extends StatelessWidget {
                               title: Text(
                                 node.id,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontFamily: 'Courier', fontSize: 11),
+                                style: const TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontSize: 11,
+                                ),
                               ),
                               subtitle: Text(
                                 '${node.type} · $dependencyLabel',
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 10, color: visualProfile.mutedColor),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: visualProfile.mutedColor,
+                                ),
                               ),
                               onTap: () => onSelectObject(node.id),
                             ),

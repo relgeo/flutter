@@ -1,12 +1,12 @@
 # Kebijakan Rilis Desktop RelGeo
 
-**Status:** kebijakan distribusi awal; workflow publikasi GitHub Release belum diimplementasikan  
+**Status:** kebijakan distribusi awal; workflow draft GitHub Release tersedia, smoke test rilis lintas OS masih perlu bukti pada target masing-masing
 **Pemilik aplikasi dan release:** `relgeo/flutter`  
 **Platform:** macOS, Ubuntu/Linux x64, Windows x64
 
 Dokumen ini menetapkan bagaimana build desktop RelGeo dikemas, diberi versi,
-diverifikasi, dan diterbitkan. Ia menjadi acuan sebelum perubahan workflow CI
-yang mengunggah aset ke GitHub Releases.
+diverifikasi, dan diterbitkan. Workflow draft release mengikuti aturan ini;
+target smoke lintas OS tetap harus ditinjau sebelum maintainer menerbitkan release.
 
 Icon aplikasi menggunakan mark global RelGeo dari
 [`relgeo.github.io/public/brand/relgeo-mark.png`](https://github.com/relgeo/relgeo.github.io/blob/main/public/brand/relgeo-mark.png).
@@ -52,8 +52,8 @@ Nama aset menyebut aplikasi, platform, arsitektur, dan versi:
 | Target | Aset awal | Isi dan batas distribusi |
 | --- | --- | --- |
 | macOS | `RelGeo-macos-<arch>-vX.Y.Z.zip` | `RelGeo.app` lengkap. Nilai `<arch>` menyatakan arsitektur yang benar-benar dibangun dan diuji (`arm64`, `x64`, atau `universal`). Jangan menyebut `universal` kecuali executable dan framework sudah diverifikasi memuat `arm64` serta `x86_64`. |
-| Ubuntu/Linux | `RelGeo-linux-x64-vX.Y.Z.tar.gz` | Folder release Flutter lengkap, termasuk executable `relgeo`, `lib/`, dan `data/`. Target awal adalah Linux x64 pada Ubuntu; distro dan library system yang diperlukan harus disebutkan di release notes. |
-| Windows | `RelGeo-windows-x64-vX.Y.Z.zip` | Folder release lengkap, termasuk `relgeo.exe`, `flutter_windows.dll`, dan `data/`. Berkas `.exe` saja bukan aset rilis yang valid. |
+| Ubuntu/Linux | `RelGeo-linux-x64-vX.Y.Z.tar.gz` | Folder `RelGeo/` lengkap, termasuk executable `relgeo_flutter`, `lib/`, dan `data/`. Target awal adalah Linux x64 pada Ubuntu; distro dan library system yang diperlukan harus disebutkan di release notes. |
+| Windows | `RelGeo-windows-x64-vX.Y.Z.zip` | Folder release lengkap, termasuk `relgeo_flutter.exe`, `flutter_windows.dll`, dan `data/`. Berkas `.exe` saja bukan aset rilis yang valid. |
 
 Aset awal adalah arsip untuk ekstrak dan jalankan. Windows belum menyediakan
 installer `.msi`, `.exe` setup, atau MSIX. macOS belum menyediakan installer
@@ -65,7 +65,8 @@ menampilkan peringatan keamanan.
 
 ## 4. Gerbang build dan publikasi
 
-Workflow rilis yang akan dibuat harus memenuhi urutan berikut:
+Workflow [`desktop-release.yml`](../../.github/workflows/desktop-release.yml)
+memenuhi urutan berikut dan hanya membuat GitHub Release sebagai draft:
 
 1. Dipicu oleh tag `desktop-v*`; release stabil tidak terbit otomatis dari
    setiap push `main`.
@@ -112,9 +113,9 @@ runtime yang bersifat rahasia.
 Release notes harus memberi langkah yang cocok dengan format aset:
 
 - **Windows:** unduh ZIP, ekstrak seluruh isinya, lalu jalankan
-  `relgeo.exe` dari folder hasil ekstrak.
+  `relgeo_flutter.exe` dari folder hasil ekstrak.
 - **Ubuntu/Linux:** unduh dan ekstrak arsip, pastikan library desktop yang
-  disebutkan tersedia, lalu jalankan `relgeo` dari bundle.
+  disebutkan tersedia, lalu jalankan `relgeo_flutter` dari folder `RelGeo/`.
 - **macOS:** unduh ZIP, ekstrak `RelGeo.app`, lalu pindahkan ke `Applications`
   bila diinginkan. Sebutkan status signing/notarization yang sebenarnya.
 

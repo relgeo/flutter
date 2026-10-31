@@ -79,7 +79,8 @@ class WorkbenchViewportPanel extends StatelessWidget {
                   child: scene != null
                       ? GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTapUp: (details) => onCanvasTap(details.localPosition),
+                          onTapUp: (details) =>
+                              onCanvasTap(details.localPosition),
                           child: SizedBox(
                             width: displayBounds!.width,
                             height: displayBounds!.height,

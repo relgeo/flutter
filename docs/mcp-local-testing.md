@@ -14,7 +14,11 @@ flutter run -d macos
 
 Untuk target lain, gunakan `flutter run -d windows` atau `flutter run -d linux`.
 
-Di aplikasi, pilih **Workbench → MCP Server…**, lalu tekan **Enable MCP**.
+Di aplikasi, pilih **Workbench → MCP Server…**. Secara default MCP memakai mode
+read-only. Jika agent perlu mengubah gambar, centang **Allow MCP to edit the
+active document**, lalu tekan **Enable MCP**. Mode ini memberi izin hanya untuk
+patch bounded pada dokumen aktif; satu pemanggilan menjadi satu transaksi yang
+bisa di-Undo, dan tidak pernah menyimpan file secara otomatis.
 Dialog menampilkan endpoint dan token. Tombol **Copy connection details** akan
 menyalin URL beserta header otorisasi dalam bentuk JSON umum. Format konfigurasi
 MCP berbeda antar-klien, jadi salin URL dan token itu ke pengaturan klien Anda.
@@ -53,18 +57,30 @@ Inspector juga dapat dibuka dalam mode web dengan menjalankan
 `npx @modelcontextprotocol/inspector`, lalu menambahkan endpoint HTTP dan
 header `Authorization: Bearer TOKEN` pada koneksi server.
 
-## Menghubungkan dari Codex Desktop
+## Menghubungkan dari ChatGPT Desktop
 
-Di Codex Desktop, tambahkan server melalui Settings → Plugins → Add → MCP
-servers → Streamable HTTP. Gunakan endpoint loopback dan bearer token dari
-dialog RelGeo. Codex Desktop berjalan pada host lokal yang sama sehingga dapat
-mengakses `127.0.0.1` secara langsung. Hosted ChatGPT plugins memerlukan HTTPS
-endpoint atau Secure MCP Tunnel; jalur itu berbeda dari Codex Desktop lokal.
+Di ChatGPT Desktop, buka **Settings → Plugins → Add → MCP servers → Streamable
+HTTP**. Isi URL dengan endpoint `http://127.0.0.1:<port>/mcp` dari dialog
+RelGeo. Pada bagian **Headers**, tambahkan key `Authorization` dan value
+`Bearer <token>` dari dialog. Biarkan **Bearer token env var** dan **Headers
+from environment variables** kosong jika memasukkan token langsung di header;
+kolom env var meminta nama variabel lingkungan yang memang harus sudah tersedia
+di lingkungan ChatGPT Desktop, bukan nilai token itu sendiri. Jangan membagikan
+token ini karena siapa pun yang memilikinya dapat memakai izin sesi MCP yang
+sedang berjalan.
 
-Setelah mengubah daftar tool, refresh koneksi/plugin agar metadata tool yang
-baru ditemukan. Mulai percakapan baru atau sebut plugin secara eksplisit,
-misalnya: “Gunakan MCP `relgeo`, panggil `relgeo_get_capabilities`, lalu
-jelaskan kemampuan dan batasannya.”
+Simpan konfigurasi, lalu refresh/reconnect server. Server harus tetap aktif di
+RelGeo Desktop selama dipakai. Setelah mengubah daftar tool atau mengganti mode
+server, refresh koneksi agar metadata tool diperbarui. Token diterbitkan ulang
+saat server diaktifkan, jadi perbarui header `Authorization` pada klien.
+Mulai percakapan baru atau sebut server secara eksplisit, misalnya: “Gunakan
+MCP `relgeo`, cari aturan persegi pada spec, lalu jelaskan syntax-nya.” Untuk
+mengubah gambar: “Gunakan MCP `relgeo` untuk membuat persegi 40 × 40 mm di
+dokumen aktif.”
+
+Panduan ini untuk ChatGPT Desktop pada komputer yang sama dengan RelGeo. Jika
+memakai layanan hosted dari komputer lain, alamat loopback tidak menunjuk ke
+komputer RelGeo; jalur itu memerlukan endpoint yang dapat dijangkau klien.
 
 ## Kemampuan saat ini
 
@@ -80,16 +96,27 @@ jelaskan kemampuan dan batasannya.”
   YAML persegi atau persegi panjang sebagai ilustrasi sekunder.
 - `relgeo_get_active_document` membaca source, identitas, revisi, dan status
   perubahan dokumen aktif.
+- `relgeo_apply_document_edit` tersedia hanya jika izin edit dipilih sebelum
+  server dijalankan. Tool ini memerlukan document ID dan revision terbaru,
+  menerima patch bounded, menolak patch stale, dan membuat satu transaksi
+  undoable.
 - Resource `relgeo://document/active` menyediakan snapshot yang sama.
 - Resource `relgeo://document/active/diagnostics` menyediakan error YAML atau
   compiler yang sedang ditampilkan workbench.
-- Server hanya baca. Corpus spec dimuat dari Flutter asset bundle saat server
-  dimulai; runtime tidak membaca path `spec/` dari repository dan tidak
-  membutuhkan Node.js/npm atau koneksi remote. Belum ada validasi terpisah,
-  render, atau perubahan dokumen melalui MCP.
+- Corpus spec dimuat dari Flutter asset bundle saat server dimulai; runtime
+  tidak membaca path `spec/` dari repository dan tidak membutuhkan
+  Node.js/npm atau koneksi remote. Validasi dan render source sebagai tool MCP
+  belum tersedia.
 - Protocol adapter desktop menegosiasikan versi MCP `2025-11-25` dan
   `2025-06-18` agar kompatibel dengan MCP client yang versinya berbeda.
 
 Token berlaku hingga delapan jam selama server berjalan dan hanya ditampilkan
 di dialog aplikasi. Tekan **Disable** untuk mencabutnya segera. Mengaktifkan
 kembali server membuat endpoint dan token baru.
+
+## Verifikasi otomatis
+
+Flutter test `test/mcp_server_io_test.dart` menjalankan server Streamable HTTP
+loopback yang nyata, mengambil daftar tool, memastikan izin read-only menolak
+patch, lalu menerapkan patch pada sesi read-write dan memeriksa Undo serta
+dirty state.

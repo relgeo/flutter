@@ -17,6 +17,7 @@ class RelGeoMcpDesktopServer {
     required HttpServer server,
     required McpServerSession session,
     required this.token,
+    required this.permission,
     required RelGeoMcpJsonRpcRouter router,
   }) : _server = server,
        _session = session,
@@ -31,11 +32,13 @@ class RelGeoMcpDesktopServer {
   bool _stopped = false;
 
   final String token;
+  final McpPermission permission;
 
   String get endpoint => 'http://127.0.0.1:${_server.port}/mcp';
 
   static Future<RelGeoMcpDesktopServer> start({
     required WorkbenchAgentBridge bridge,
+    McpPermission permission = McpPermission.readOnly,
     RelGeoSpecSnapshotLoader? specLoader,
   }) async {
     final session = McpServerSession(
@@ -43,10 +46,7 @@ class RelGeoMcpDesktopServer {
     )..start();
     try {
       final token = session
-          .issueToken(
-            permission: McpPermission.readOnly,
-            ttl: const Duration(hours: 8),
-          )
+          .issueToken(permission: permission, ttl: const Duration(hours: 8))
           .value;
       final bundledSpec = await (specLoader ?? const RelGeoSpecSnapshotLoader())
           .load();
@@ -58,6 +58,7 @@ class RelGeoMcpDesktopServer {
       final router = RelGeoMcpJsonRpcRouter(
         dispatcher: RelGeoMcpToolDispatcher(null, specIndex: specIndex),
         activeBridge: bridge,
+        allowDocumentEdits: permission == McpPermission.readWrite,
         resources: resources,
       );
       final server = await HttpServer.bind(
@@ -69,6 +70,7 @@ class RelGeoMcpDesktopServer {
         server: server,
         session: session,
         token: token,
+        permission: permission,
         router: router,
       );
       server.listen(result._handleRequest, onError: (_) {});
@@ -122,7 +124,8 @@ class RelGeoMcpDesktopServer {
       await response.close();
       return;
     }
-    if (!_authorized(request)) {
+    final authorization = _authorized(request);
+    if (authorization == null) {
       response.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer');
       response.statusCode = HttpStatus.unauthorized;
       await response.close();
@@ -161,6 +164,14 @@ class RelGeoMcpDesktopServer {
       final message = Map<String, Object?>.from(
         decoded.cast<String, Object?>(),
       );
+      if (_requiresDocumentEditPermission(message) &&
+          authorization.permission != McpPermission.readWrite) {
+        response
+          ..statusCode = HttpStatus.forbidden
+          ..write('Document editing is disabled for this MCP session.');
+        await response.close();
+        return;
+      }
       final result = await _router.handle(message);
       if (result == null) {
         response.statusCode = HttpStatus.accepted;
@@ -185,14 +196,20 @@ class RelGeoMcpDesktopServer {
     await response.close();
   }
 
-  bool _authorized(HttpRequest request) {
+  McpSessionToken? _authorized(HttpRequest request) {
     final value = request.headers.value(HttpHeaders.authorizationHeader);
-    if (value == null || !value.startsWith('Bearer ')) return false;
+    if (value == null || !value.startsWith('Bearer ')) return null;
     return _session.authorize(
-          value.substring('Bearer '.length),
-          requiredPermission: McpPermission.readOnly,
-        ) !=
-        null;
+      value.substring('Bearer '.length),
+      requiredPermission: McpPermission.readOnly,
+    );
+  }
+
+  static bool _requiresDocumentEditPermission(Map<String, Object?> message) {
+    final params = message['params'];
+    return message['method'] == 'tools/call' &&
+        params is Map &&
+        params['name'] == 'relgeo_apply_document_edit';
   }
 
   static Future<String> _readBody(HttpRequest request) async {

@@ -5,7 +5,9 @@ import 'package:relgeo_flutter/src/ui/workbench_scene_graph_panel.dart';
 import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
 
 void main() {
-  testWidgets('graph panel exposes selectable object semantics', (tester) async {
+  testWidgets('graph panel exposes selectable object semantics', (
+    tester,
+  ) async {
     final graph = const WorkbenchSceneGraph([
       WorkbenchSceneGraphNode(
         id: 'group',

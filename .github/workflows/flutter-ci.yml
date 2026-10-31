@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: relgeo/mcp
-          ref: 91316b0371b758f85dc7969bea8887376f625316
+          ref: b4561c08f7b41fd5630c76138a26ce6717ae9b33
           path: mcp
           persist-credentials: false
 
@@ -78,7 +78,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: relgeo/mcp
-          ref: 91316b0371b758f85dc7969bea8887376f625316
+          ref: b4561c08f7b41fd5630c76138a26ce6717ae9b33
           path: mcp
           persist-credentials: false
 
