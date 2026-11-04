@@ -143,6 +143,34 @@ class WorkbenchCommandRegistry {
   Iterable<WorkbenchCommand> forMenu(String menu) =>
       commands.where((command) => command.menu == menu);
 
+  /// Returns shortcut groups that would otherwise be silently overwritten by
+  /// Flutter's shortcut map. Keeping this diagnostic on the shared registry
+  /// lets tests and host adapters reject ambiguous command surfaces.
+  List<List<WorkbenchCommand>> get shortcutConflicts {
+    final groups = <List<WorkbenchCommand>>[];
+    for (final command in commands) {
+      final shortcut = command.shortcutActivator;
+      if (shortcut == null) continue;
+      List<WorkbenchCommand>? group;
+      for (final candidate in groups) {
+        if (candidate.first.shortcutActivator == shortcut) {
+          group = candidate;
+          break;
+        }
+      }
+      if (group == null) {
+        groups.add([command]);
+      } else {
+        group.add(command);
+      }
+    }
+    return List.unmodifiable(
+      groups
+          .where((group) => group.length > 1)
+          .map(List<WorkbenchCommand>.unmodifiable),
+    );
+  }
+
   WorkbenchCommand? find(WorkbenchCommandId id) {
     for (final command in commands) {
       if (command.id == id) return command;

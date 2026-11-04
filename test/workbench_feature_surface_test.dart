@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:relgeo_flutter/src/features/editor/workbench_editor_feature.dart';
 import 'package:relgeo_flutter/src/features/editor/workbench_editor_contract.dart';
+import 'package:relgeo_flutter/src/features/editor/workbench_document_settings.dart';
 import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_feature.dart';
 import 'package:relgeo_flutter/src/features/inspector/workbench_inspector_contract.dart';
 import 'package:relgeo_flutter/src/features/parameters/workbench_parameters_contract.dart';
@@ -70,6 +71,16 @@ void main() {
               contract: WorkbenchParametersContract(
                 paramValues: const {'width': 40},
                 paramOverrides: const {'width': 20.0},
+                parameterSpecs: const {
+                  'width': WorkbenchParameterSpec(
+                    id: 'width',
+                    type: 'length',
+                    label: 'Panel width',
+                    min: 10,
+                    max: 80,
+                    step: 5,
+                  ),
+                },
                 targetUnit: 'mm',
                 onParamChanged: (_, _) {},
                 onParamReset: () {},
@@ -82,7 +93,7 @@ void main() {
     );
 
     expect(find.text('PARAMETERS (1)'), findsOneWidget);
-    expect(find.text('width'), findsOneWidget);
+    expect(find.text('Panel width'), findsOneWidget);
   });
 
   testWidgets('parameters feature exposes semantic reset and slider controls', (

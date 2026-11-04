@@ -23,6 +23,35 @@ void main() {
     expect(settings.paramValues, {'width': 40, 'height': 20});
     expect(settings.paramOverrides, {'width': 55, 'height': 20});
     expect(settings.targetUnit, LengthUnit.cm);
+    expect(settings.parameterSpecs['width']?.type, 'number');
+  });
+
+  test('keeps numeric editor metadata and omits non-numeric parameters', () {
+    final settings = WorkbenchDocumentSettings.fromDocument(
+      {
+        'parameters': {
+          'width': {
+            'type': 'length',
+            'default': 40,
+            'min': 20,
+            'max': 80,
+            'step': 5,
+            'label': 'Panel width',
+          },
+          'mode': {'type': 'enum', 'default': 'wide'},
+        },
+      },
+      existingParamOverrides: const {},
+      currentTargetUnit: LengthUnit.mm,
+    );
+
+    final width = settings.parameterSpecs['width'];
+    expect(width?.displayLabel, 'Panel width');
+    expect(width?.min, 20);
+    expect(width?.max, 80);
+    expect(width?.step, 5);
+    expect(settings.paramValues, {'width': 40});
+    expect(settings.parameterSpecs.containsKey('mode'), isFalse);
   });
 
   test('parses unit-suffixed parameter defaults in the scene unit', () {

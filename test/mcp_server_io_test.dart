@@ -42,13 +42,28 @@ void main() {
 
       Future<Map<String, Object?>> post(
         RelGeoMcpDesktopServer server,
-        Map<String, Object?> message,
-      ) async {
+        Map<String, Object?> message, {
+        bool includeAuthorization = true,
+        String? protocolVersion,
+        String? origin,
+      }) async {
         final request = await client.postUrl(Uri.parse(server.endpoint));
         request.headers
           ..contentType = ContentType.json
-          ..set(HttpHeaders.acceptHeader, 'application/json, text/event-stream')
-          ..set(HttpHeaders.authorizationHeader, 'Bearer ${server.token}');
+          ..set(
+            HttpHeaders.acceptHeader,
+            'application/json, text/event-stream',
+          );
+        if (includeAuthorization) {
+          request.headers.set(
+            HttpHeaders.authorizationHeader,
+            'Bearer ${server.token}',
+          );
+        }
+        if (protocolVersion != null) {
+          request.headers.set('MCP-Protocol-Version', protocolVersion);
+        }
+        if (origin != null) request.headers.set('Origin', origin);
         request.write(jsonEncode(message));
         final response = await request.close();
         final body = await utf8.decoder.bind(response).join();
@@ -90,7 +105,26 @@ void main() {
 
       try {
         readOnlyServer = await RelGeoMcpDesktopServer.start(bridge: bridge);
+        final unauthorized = await post(readOnlyServer, <String, Object?>{
+          'jsonrpc': '2.0',
+          'id': 0,
+          'method': 'initialize',
+        }, includeAuthorization: false);
+        expect(unauthorized['httpStatus'], HttpStatus.unauthorized);
         await initialize(readOnlyServer);
+        final missingProtocol = await post(readOnlyServer, <String, Object?>{
+          'jsonrpc': '2.0',
+          'id': 0,
+          'method': 'tools/list',
+        });
+        expect(missingProtocol['httpStatus'], HttpStatus.badRequest);
+        final mismatchedOrigin = await post(
+          readOnlyServer,
+          <String, Object?>{'jsonrpc': '2.0', 'id': 0, 'method': 'tools/list'},
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+          origin: 'https://remote.invalid',
+        );
+        expect(mismatchedOrigin['httpStatus'], HttpStatus.forbidden);
         final readOnlyTools = await post(readOnlyServer, <String, Object?>{
           'jsonrpc': '2.0',
           'id': 2,

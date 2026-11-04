@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../ui/workbench_visual_profile.dart';
+import '../editor/workbench_document_settings.dart';
 
 /// Composition-facing contract for the optional document parameters panel.
 ///
@@ -14,6 +15,7 @@ class WorkbenchParametersContract {
     required this.onParamChanged,
     required this.onParamReset,
     required this.visualProfile,
+    this.parameterSpecs = const <String, WorkbenchParameterSpec>{},
   });
 
   final Map<String, double> paramValues;
@@ -22,4 +24,5 @@ class WorkbenchParametersContract {
   final void Function(String name, double value) onParamChanged;
   final VoidCallback onParamReset;
   final WorkbenchVisualProfile visualProfile;
+  final Map<String, WorkbenchParameterSpec> parameterSpecs;
 }

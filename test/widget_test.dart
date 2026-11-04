@@ -9,6 +9,7 @@ import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 import 'package:relgeo_flutter/src/ui/canvas_painter.dart';
 import 'package:relgeo_flutter/src/ui/relgeo_theme_extension.dart';
 import 'package:relgeo_flutter/src/ui/workbench_visual_profile.dart';
+import 'package:relgeo_flutter/src/geometry/types.dart';
 import 'package:relgeo_flutter/src/features/editor/editor_panel.dart';
 import 'package:relgeo_flutter/src/features/inspector/inspector_panel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,6 +64,24 @@ sheets:
       - use: front
         place:
           topLeft: [25, 25]
+''';
+
+const _parameterDsl = '''scene:
+  unit: mm
+
+parameters:
+  width:
+    type: length
+    default: 40
+    min: 20
+    max: 80
+    step: 5
+    label: Panel width
+
+objects:
+  panel:
+    type: rect
+    size: [width, 20]
 ''';
 
 class _FakeFileService implements WorkbenchDocumentFileService {
@@ -190,6 +209,34 @@ void main() {
     expect(find.text('Sheet / View'), findsOneWidget);
   });
 
+  testWidgets(
+    'parameter editing updates resolved preview and inspector values',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: CADWorkbenchPage(initialDsl: _parameterDsl)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PARAMETERS (1)'), findsOneWidget);
+      expect(find.text('Panel width'), findsOneWidget);
+      final initial =
+          _inspectorPanel(tester).scene!.objects['panel']! as ResolvedRect;
+      expect(initial.width, 40);
+
+      await tester.drag(find.byType(Slider).first, const Offset(120, 0));
+      await tester.pumpAndSettle();
+
+      final updated =
+          _inspectorPanel(tester).scene!.objects['panel']! as ResolvedRect;
+      expect(updated.width, greaterThan(40));
+      expect(_inspectorPanel(tester).scene!.values['width'], updated.width);
+    },
+  );
+
   testWidgets('file menu exposes host document lifecycle callbacks', (
     WidgetTester tester,
   ) async {
@@ -279,6 +326,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(confirmCount, 2);
     expect(closeCount, 1);
+  });
+
+  testWidgets('dirty quit asks before invoking the host quit callback', (
+    WidgetTester tester,
+  ) async {
+    var allowDiscard = false;
+    var confirmCount = 0;
+    var quitCount = 0;
+
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CADWorkbenchPage(
+          initialDsl: _sheetDsl,
+          onQuitApplication: () => quitCount++,
+          onConfirmDiscardChanges: () async {
+            confirmCount++;
+            return allowDiscard;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editorPanel(tester).controller;
+    editor.text = '${editor.text}\n# unsaved before quit';
+    await tester.pump();
+
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quit RelGeo'));
+    await tester.pumpAndSettle();
+    expect(confirmCount, 1);
+    expect(quitCount, 0);
+
+    allowDiscard = true;
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quit RelGeo'));
+    await tester.pumpAndSettle();
+    expect(confirmCount, 2);
+    expect(quitCount, 1);
   });
 
   testWidgets('edit menu reflects and invokes native editor history', (
@@ -497,6 +589,37 @@ void main() {
 
     expect(find.textContaining('# New RelGeo document'), findsOneWidget);
     expect(find.textContaining('scene:'), findsOneWidget);
+  });
+
+  testWidgets('restoring an interrupted draft consumes the recovery record', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'relgeo.workbench.recovery.documentId': 'doc-recovered',
+      'relgeo.workbench.recovery.source': _sheetDsl,
+      'relgeo.workbench.recovery.path': '/documents/recovered.relgeo',
+      'relgeo.workbench.recovery.name': 'recovered.relgeo',
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(home: CADWorkbenchPage(initialDsl: 'scene: {}')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Recover unsaved document?'), findsOneWidget);
+    await tester.tap(find.text('RESTORE'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('recovered.relgeo'), findsOneWidget);
+    expect(find.byTooltip('Unsaved changes'), findsNothing);
+    expect(
+      (await SharedPreferences.getInstance()).getString(
+        'relgeo.workbench.recovery.source',
+      ),
+      isNull,
+    );
   });
 
   testWidgets('local new document fallback respects dirty-state confirmation', (

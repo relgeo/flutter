@@ -35,6 +35,42 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
   Future<DocumentEditResult> applyDocumentEdit(
     DocumentEditProposal proposal,
   ) async {
+    return _applyDocumentEdit(proposal);
+  }
+
+  @override
+  Future<DocumentEditResult> applyDocumentEditGuarded(
+    DocumentEditProposal proposal,
+    McpCancellationToken cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    return _applyDocumentEdit(proposal, cancellation: cancellation);
+  }
+
+  @override
+  Future<DocumentEditResult> reviewDocumentEdit(
+    DocumentEditProposal proposal,
+  ) async {
+    final snapshot = await getActiveDocument();
+    final validation = proposal.validateAgainst(snapshot);
+    final stale = validation.any(
+      (error) =>
+          error == 'baseDocumentId does not identify the active document' ||
+          error == 'baseRevision is stale',
+    );
+    if (stale) {
+      return DocumentEditResult.stale(message: validation.join('; '));
+    }
+    if (validation.isNotEmpty) {
+      return DocumentEditResult.rejected(message: validation.join('; '));
+    }
+    return DocumentEditResult.review(proposal: proposal, snapshot: snapshot);
+  }
+
+  Future<DocumentEditResult> _applyDocumentEdit(
+    DocumentEditProposal proposal, {
+    McpCancellationToken? cancellation,
+  }) async {
     final snapshot = session.snapshot(diagnostics: diagnostics());
     final validation = proposal.validateAgainst(snapshot);
     final hasStaleGuardFailure = validation.any(
@@ -50,16 +86,23 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
     }
 
     final nextSource = proposal.applyTo(snapshot);
+    cancellation?.throwIfCancelled();
 
     // The setter is called exactly once. With the workbench listener attached,
     // that produces one native editor history entry and updates the session;
     // the fallback keeps this host correct in headless tests as well.
-    editor.applyAgentSource(nextSource);
-    if (session.revision == snapshot.revision) {
-      session.applySourceIfCurrent(
-        documentId: snapshot.documentId,
-        baseRevision: snapshot.revision,
-        source: nextSource,
+    try {
+      editor.applyAgentSource(nextSource);
+      if (session.revision == snapshot.revision) {
+        session.applySourceIfCurrent(
+          documentId: snapshot.documentId,
+          baseRevision: snapshot.revision,
+          source: nextSource,
+        );
+      }
+    } catch (_) {
+      return const DocumentEditResult.failed(
+        message: 'editor transaction failed before completion',
       );
     }
     if (session.documentId != snapshot.documentId ||

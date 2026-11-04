@@ -6,13 +6,13 @@
   "revision": "b96ba3b23de202227eade06614635ef6717df516",
   "sourceUrl": "https://github.com/relgeo/spec/tree/b96ba3b23de202227eade06614635ef6717df516/id",
   "digestAlgorithm": "sha256",
-  "digest": "sha256:22aabf087d99377a51f8807aefbe29f80278c3a928029a5ccdbe63a87ebb2096",
+  "digest": "sha256:25b021f107cb005e87f887abbbd250bcf2084ae6f52e2911964cd020f4f9c225",
   "fileCount": 34,
   "files": [
     {
       "path": "README.md",
-      "bytes": 5880,
-      "sha256": "66e9507f9e65081da3859ddbe2e0d72096bd10890ff5b6754378b79a5facd963"
+      "bytes": 6932,
+      "sha256": "119a66b5786f7d23b07d28d8a822a1dabaa04b3dfcc50282fa57189fb893ace4"
     },
     {
       "path": "appendix/27-summary.md",
@@ -41,18 +41,18 @@
     },
     {
       "path": "core/04-evaluation-order.md",
-      "bytes": 2750,
-      "sha256": "0c84adb56e3ee4eb0d297ab221bba9287ad05756772820cb9714fbcd327ecd07"
+      "bytes": 5050,
+      "sha256": "5163ba90362ceac7e97d212063169b1a7c7ed4a77fcb1f3f5f76120df5beb9aa"
     },
     {
       "path": "core/05-semantic-guarantees.md",
-      "bytes": 2628,
-      "sha256": "b6d5f45ed7bc514aa31561188ae4d80174f3bd87cba645935d6c6837431063d8"
+      "bytes": 8226,
+      "sha256": "21eccfd414405b44bc0243355f470859040639b65a85455675c1464ac4fd5e68"
     },
     {
       "path": "core/06-error-model.md",
-      "bytes": 7142,
-      "sha256": "4bdb7d81c16eb52b849f2459561a90d5ce149e99a95c5bedad7356eb4d16bac1"
+      "bytes": 12305,
+      "sha256": "2fb01a15b92500c3e41427ab074411d37e16bdcdae86d6417246083f3dce4f58"
     },
     {
       "path": "core/README.md",
@@ -61,8 +61,8 @@
     },
     {
       "path": "editorial-guide.md",
-      "bytes": 7464,
-      "sha256": "dd86a4e681071a3abe3758c0a3eca18d5c55ecd743e8061f37a235b57861ef1f"
+      "bytes": 8859,
+      "sha256": "a5450f60c16007fcaca605e85272b524befa627723ae75c587f23db3f1549cec"
     },
     {
       "path": "geometry/13-object-model.md",
@@ -101,8 +101,8 @@
     },
     {
       "path": "geometry/20-geometry-queries.md",
-      "bytes": 5985,
-      "sha256": "83af0a1902f4fd12d087571ff06becf1348d36582e9f3febcd22f35480432447"
+      "bytes": 10013,
+      "sha256": "4dcc6795dca25a2e4bff93d7a5a60cb934f53bd9d2f7daebae4ec02a29e64577"
     },
     {
       "path": "geometry/21-constraints.md",
@@ -116,18 +116,18 @@
     },
     {
       "path": "presentation/22-dimension.md",
-      "bytes": 5324,
-      "sha256": "651979290d47cf79ddd66445fa9ca3269b3258870b7094f03b31f2f0c524d1a7"
+      "bytes": 6543,
+      "sha256": "4ddc1c241ead58f272d98cebf9657e837c8886f1417e3ebf0adebd4c38d556c4"
     },
     {
       "path": "presentation/23-annotation.md",
-      "bytes": 4194,
-      "sha256": "9dc025a706e3c54169c8a032ac5cf2e7df1e197b6bec40d95423282dda045b2c"
+      "bytes": 5402,
+      "sha256": "424f0262ae3f3b90dde1e5e7b92d04eb26c8352ec1b4ceb276ca79400287c31c"
     },
     {
       "path": "presentation/24-drawing-roles.md",
-      "bytes": 5146,
-      "sha256": "94815c6cc57dfb4edc3848a56c2b68fb76a05e0dba650139832bc493782c98c4"
+      "bytes": 6362,
+      "sha256": "ec653328280591432da4d0a79e7171f258411da7253f3a0e3e58dc293be5b0a6"
     },
     {
       "path": "presentation/25-views-sheets.md",
@@ -136,8 +136,8 @@
     },
     {
       "path": "presentation/26-metadata.md",
-      "bytes": 7481,
-      "sha256": "6163aa16608ec0e680344d360f141cabe5b56635f5e3cdbfa7027fe0bd123440"
+      "bytes": 9115,
+      "sha256": "d1cc68dff76dff5114752757ca1b95e46973091be77af2c5a17ea5d1e890aaa5"
     },
     {
       "path": "presentation/README.md",

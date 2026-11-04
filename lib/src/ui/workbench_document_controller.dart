@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../geometry/types.dart';
 import '../features/preview/workbench_preview_target.dart';
+import '../features/editor/workbench_document_settings.dart';
 
 /// Owns the compiled document state consumed by workbench surfaces.
 ///
@@ -14,6 +15,8 @@ class WorkbenchDocumentController extends ChangeNotifier {
   ResolvedScene? _scene;
   Map<String, double> _paramValues = <String, double>{};
   Map<String, dynamic> _paramOverrides = <String, dynamic>{};
+  Map<String, WorkbenchParameterSpec> _parameterSpecs =
+      <String, WorkbenchParameterSpec>{};
   Map<String, Map<String, dynamic>> _profiles =
       <String, Map<String, dynamic>>{};
   String? _activeProfile;
@@ -25,6 +28,8 @@ class WorkbenchDocumentController extends ChangeNotifier {
   ResolvedScene? get scene => _scene;
   Map<String, double> get paramValues => Map.unmodifiable(_paramValues);
   Map<String, dynamic> get paramOverrides => Map.unmodifiable(_paramOverrides);
+  Map<String, WorkbenchParameterSpec> get parameterSpecs =>
+      Map.unmodifiable(_parameterSpecs);
   Map<String, Map<String, dynamic>> get profiles => Map.unmodifiable(
     _profiles.map(
       (key, value) => MapEntry(key, Map<String, dynamic>.unmodifiable(value)),
@@ -54,9 +59,12 @@ class WorkbenchDocumentController extends ChangeNotifier {
   void setParameters({
     required Map<String, double> values,
     required Map<String, dynamic> overrides,
+    Map<String, WorkbenchParameterSpec> specs =
+        const <String, WorkbenchParameterSpec>{},
   }) {
     _paramValues = Map<String, double>.from(values);
     _paramOverrides = Map<String, dynamic>.from(overrides);
+    _parameterSpecs = Map<String, WorkbenchParameterSpec>.from(specs);
     notifyListeners();
   }
 
@@ -66,7 +74,10 @@ class WorkbenchDocumentController extends ChangeNotifier {
   }
 
   void setParamOverride(String name, dynamic value) {
-    _paramOverrides[name] = value;
+    if (!_paramValues.containsKey(name)) return;
+    if (value is num && value.isFinite) {
+      _paramOverrides[name] = value.toDouble();
+    }
     notifyListeners();
   }
 

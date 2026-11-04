@@ -84,6 +84,7 @@ class RelGeoMcpDesktopServer {
   Future<void> stop() async {
     if (_stopped) return;
     _stopped = true;
+    _router.cancelPendingRequests();
     _session.stop();
     await _server.close(force: true);
   }
@@ -144,10 +145,11 @@ class RelGeoMcpDesktopServer {
       return;
     }
     final protocolHeader = request.headers.value('MCP-Protocol-Version');
-    if (protocolHeader != null &&
-        !RelGeoMcpJsonRpcRouter.supportedProtocolVersions.contains(
-          protocolHeader,
-        )) {
+    if ((_router.initialized && protocolHeader == null) ||
+        (protocolHeader != null &&
+            !RelGeoMcpJsonRpcRouter.supportedProtocolVersions.contains(
+              protocolHeader,
+            ))) {
       response.statusCode = HttpStatus.badRequest;
       await response.close();
       return;
@@ -164,6 +166,15 @@ class RelGeoMcpDesktopServer {
       final message = Map<String, Object?>.from(
         decoded.cast<String, Object?>(),
       );
+      if (message['id'] != null) {
+        unawaited(
+          response.done.then<void>(
+            (_) {},
+            onError: (Object _, StackTrace _) =>
+                _router.cancelRequest(message['id'], 'MCP client disconnected'),
+          ),
+        );
+      }
       if (_requiresDocumentEditPermission(message) &&
           authorization.permission != McpPermission.readWrite) {
         response

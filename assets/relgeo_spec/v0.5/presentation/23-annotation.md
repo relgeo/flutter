@@ -107,6 +107,29 @@ Catatan implementasi:
 - Mekanisme tersebut tidak mengubah semantics bahasa; ia hanya membantu renderer mencapai posisi visual yang konsisten
 - Jika fallback approximation dipakai untuk text metrics annotation, baseline yang direkomendasikan sama dengan object `text`: `width ≈ longestLineLength × fontSize × 0.6` dan `height ≈ lineCount × fontSize × lineHeight`
 
+## 23.4 Fixture Contract
+
+Fixture annotation aktif harus memeriksa:
+
+1. target-only annotation mendapat fallback placement yang stabil dan mengikuti
+   target saat target berubah;
+2. annotation dengan `place` mempertahankan posisi dan ukuran text block;
+3. annotation dengan `leader` mempertahankan endpoints semantic, sementara
+   detail accent line dan arrowhead tetap renderer-owned;
+4. multiline text mempertahankan urutan baris dan tidak mengubah geometry utama;
+5. hostile text dan font/fill metadata menjadi escaped content/attribute value,
+   bukan executable SVG markup.
+
+Fixture `v05-presentation-escaping` adalah hostile-input fixture canonical untuk
+annotation. Input `<script>alert(4)</script>` serta metadata yang diawali
+`"><script>` harus menghasilkan escaped text. Assertion wajib menolak literal
+`<script>`, `onload=`, `onerror=`, dan `foreignObject` yang berasal dari input.
+
+Semantic fixture membandingkan `id`, `kind`, target reference, leader endpoints,
+dan placement values melalui projection semantic. Ia tidak membandingkan byte
+SVG, karena renderer boleh memilih baseline, whitespace, path formatting, atau
+attribute order berbeda selama invariants semantic dan safety tetap sama.
+
 ---
 
 [← 22. Dimension Objects](22-dimension.md) &nbsp;|&nbsp; [↑ Index](README.md) &nbsp;|&nbsp; [24. Drawing Roles →](24-drawing-roles.md)

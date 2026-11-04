@@ -31,6 +31,7 @@ import 'workbench_layout_profiles.dart';
 import 'workbench_recent_documents.dart';
 import 'workbench_scene_graph.dart';
 import 'workbench_document_recovery.dart';
+import 'workbench_import_diagnostics.dart';
 import '../mcp/mcp_server.dart';
 
 class CADWorkbenchPage extends StatefulWidget {
@@ -686,6 +687,7 @@ objects:
         name: draft.name,
       );
       _editorController.replaceDocument(draft.source);
+      await _recoveryStore.clear();
       _compileDSL(draft.source);
     } else {
       await _recoveryStore.clear();
@@ -823,6 +825,11 @@ objects:
       }
       _paramValues = documentSettings.paramValues;
       _paramOverrides = documentSettings.paramOverrides;
+      _documentController.setParameters(
+        values: documentSettings.paramValues,
+        overrides: documentSettings.paramOverrides,
+        specs: documentSettings.parameterSpecs,
+      );
       _targetUnit = documentSettings.targetUnit;
 
       // ── Compile ──────────────────────────────────
@@ -1071,6 +1078,7 @@ objects:
                 contract: WorkbenchParametersContract(
                   paramValues: _paramValues,
                   paramOverrides: _paramOverrides,
+                  parameterSpecs: _documentController.parameterSpecs,
                   targetUnit: _targetUnit.name,
                   onParamChanged: (pName, value) {
                     _documentController.setParamOverride(pName, value);
@@ -1508,6 +1516,7 @@ objects:
   Future<void> _showMcpServerDialog() async {
     var busy = false;
     var allowDocumentEdits = false;
+    var showToken = false;
     String? error;
     await showDialog<void>(
       context: context,
@@ -1569,13 +1578,32 @@ objects:
                     const Text(
                       'Temporary bearer token (expires after 8 hours)',
                     ),
-                    SelectableText(server.token),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: SelectableText(
+                            showToken
+                                ? server.token
+                                : 'Token hidden; use Copy endpoint and token to configure a client.',
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: showToken ? 'Hide token' : 'Show token',
+                          onPressed: () =>
+                              setDialogState(() => showToken = !showToken),
+                          icon: Icon(
+                            showToken ? Icons.visibility_off : Icons.visibility,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: () =>
                           Clipboard.setData(ClipboardData(text: config!)),
                       icon: const Icon(Icons.copy),
-                      label: const Text('Copy connection details'),
+                      label: const Text('Copy endpoint and token'),
                     ),
                   ],
                   if (error != null) ...[
@@ -1615,7 +1643,7 @@ objects:
                             setDialogState(() => busy = false);
                           }
                         },
-                  child: const Text('Disable'),
+                  child: const Text('Stop server'),
                 )
               else
                 FilledButton(
@@ -1651,28 +1679,10 @@ objects:
     final bridge = WorkbenchAgentBridge(
       session: _documentSession,
       editor: _editorController,
-      diagnostics: () {
-        final diagnostics = <DocumentDiagnostic>[];
-        if (_yamlError case final message?) {
-          diagnostics.add(
-            DocumentDiagnostic(
-              code: 'relgeo.yaml.parse',
-              message: message,
-              severity: DiagnosticSeverity.error,
-            ),
-          );
-        }
-        if (_compilerError case final message?) {
-          diagnostics.add(
-            DocumentDiagnostic(
-              code: 'relgeo.compile',
-              message: message,
-              severity: DiagnosticSeverity.error,
-            ),
-          );
-        }
-        return diagnostics;
-      },
+      diagnostics: () => WorkbenchImportDiagnostics.fromErrors(
+        yamlError: _yamlError,
+        compilerError: _compilerError,
+      ),
     );
     final server = await RelGeoMcpDesktopServer.start(
       bridge: bridge,

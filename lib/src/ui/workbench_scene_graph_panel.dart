@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'keyboard_activatable.dart';
 import 'workbench_scene_graph.dart';
 import 'workbench_visual_profile.dart';
 
@@ -65,52 +66,61 @@ class WorkbenchSceneGraphPanel extends StatelessWidget {
                 ),
               ),
               Flexible(
-                child: graph.nodes.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text('No resolved objects'),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.only(bottom: 8),
-                        itemCount: graph.nodes.length,
-                        itemBuilder: (context, index) {
-                          final node = graph.nodes[index];
-                          final selected = node.id == selectedObjectId;
-                          final dependencyLabel = node.dependencies.isEmpty
-                              ? 'no dependencies'
-                              : 'depends on ${node.dependencies.join(', ')}';
-                          return Semantics(
-                            button: true,
-                            selected: selected,
-                            label: 'Object ${node.id}',
-                            value: '${node.type}, $dependencyLabel',
-                            onTap: () => onSelectObject(node.id),
-                            child: ListTile(
-                              dense: true,
-                              selected: selected,
-                              selectedTileColor: visualProfile.accentSoftColor,
-                              title: Text(
-                                node.id,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontFamily: 'Courier',
-                                  fontSize: 11,
+                child: FocusTraversalGroup(
+                  child: graph.nodes.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Text('No resolved objects'),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(bottom: 8),
+                          itemCount: graph.nodes.length,
+                          itemBuilder: (context, index) {
+                            final node = graph.nodes[index];
+                            final selected = node.id == selectedObjectId;
+                            final dependencyLabel = node.dependencies.isEmpty
+                                ? 'no dependencies'
+                                : 'depends on ${node.dependencies.join(', ')}';
+                            return WorkbenchKeyboardActivatable(
+                              key: Key('scene-graph-node-${node.id}'),
+                              onActivate: () => onSelectObject(node.id),
+                              focusColor: visualProfile.accentColor,
+                              autofocus: index == 0,
+                              child: Semantics(
+                                button: true,
+                                selected: selected,
+                                label: 'Object ${node.id}',
+                                value: '${node.type}, $dependencyLabel',
+                                onTap: () => onSelectObject(node.id),
+                                child: ListTile(
+                                  dense: true,
+                                  selected: selected,
+                                  selectedTileColor:
+                                      visualProfile.accentSoftColor,
+                                  title: Text(
+                                    node.id,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Courier',
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${node.type} · $dependencyLabel',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: visualProfile.mutedColor,
+                                    ),
+                                  ),
+                                  onTap: () => onSelectObject(node.id),
                                 ),
                               ),
-                              subtitle: Text(
-                                '${node.type} · $dependencyLabel',
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: visualProfile.mutedColor,
-                                ),
-                              ),
-                              onTap: () => onSelectObject(node.id),
-                            ),
-                          );
-                        },
-                      ),
+                            );
+                          },
+                        ),
+                ),
               ),
             ],
           ),

@@ -321,6 +321,35 @@ class _InspectorPanelState extends State<InspectorPanel>
             '${(startAngle * 180 / math.pi).toStringAsFixed(0)}° → ${(endAngle * 180 / math.pi).toStringAsFixed(0)}°',
           ),
         ]);
+      case ResolvedQuadratic(
+        :final x1,
+        :final y1,
+        :final cpx,
+        :final cpy,
+        :final x2,
+        :final y2,
+      ):
+        rows.addAll([
+          _DetailRow('Start', '(${fmt(x1)}, ${fmt(y1)})'),
+          _DetailRow('Control', '(${fmt(cpx)}, ${fmt(cpy)})'),
+          _DetailRow('End', '(${fmt(x2)}, ${fmt(y2)})'),
+        ]);
+      case ResolvedCubic(
+        :final x1,
+        :final y1,
+        :final cp1x,
+        :final cp1y,
+        :final cp2x,
+        :final cp2y,
+        :final x2,
+        :final y2,
+      ):
+        rows.addAll([
+          _DetailRow('Start', '(${fmt(x1)}, ${fmt(y1)})'),
+          _DetailRow('Control 1', '(${fmt(cp1x)}, ${fmt(cp1y)})'),
+          _DetailRow('Control 2', '(${fmt(cp2x)}, ${fmt(cp2y)})'),
+          _DetailRow('End', '(${fmt(x2)}, ${fmt(y2)})'),
+        ]);
       case ResolvedPath(:final segments, :final closed):
         rows.addAll([
           _DetailRow('Closed', closed ? 'YES' : 'NO'),
@@ -340,6 +369,12 @@ class _InspectorPanelState extends State<InspectorPanel>
         rows.addAll([_DetailRow('Text', text)]);
       case ResolvedAnnotation(:final text):
         rows.addAll([_DetailRow('Text', text)]);
+      case ResolvedBoolean(:final operation, :final segments, :final holes):
+        rows.addAll([
+          _DetailRow('Operation', operation.toUpperCase()),
+          _DetailRow('Segments', segments.length.toString()),
+          _DetailRow('Holes', holes.length.toString()),
+        ]);
       case ResolvedComponent(:final children):
         rows.addAll([
           _DetailRow('Type', 'Component Instance'),
@@ -348,10 +383,18 @@ class _InspectorPanelState extends State<InspectorPanel>
         if (obj.anchors.isNotEmpty) {
           rows.add(_DetailRow('Exports', obj.anchors.keys.join(', ')));
         }
+      case ResolvedClone(:final children, :final of):
+        rows.addAll([
+          _DetailRow('Clone of', of),
+          _DetailRow('Children', children.length.toString()),
+        ]);
+      case ResolvedCollection(:final children):
+        rows.addAll([
+          _DetailRow('Kind', 'COLLECTION'),
+          _DetailRow('Children', children.length.toString()),
+        ]);
       case BaseResolvedGroup(:final children):
         rows.addAll([_DetailRow('Children', children.length.toString())]);
-      default:
-        break;
     }
 
     if (rows.isEmpty) {

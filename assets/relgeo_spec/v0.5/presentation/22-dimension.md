@@ -159,6 +159,26 @@ Catatan implementasi:
 * **Arrowheads:** Kepala panah otomatis ditempatkan di kedua ujung garis ukur.
 * **Auto-Rotated Text:** Orientasi teks label otomatis disejajarkan dengan garis ukur agar selalu terbaca tegak lurus terhadap arah pembacaan.
 
+## 22.7 Fixture Contract
+
+Fixture dimension aktif harus memeriksa dua lapisan yang berbeda:
+
+| Fixture layer | Assertion minimum |
+| --- | --- |
+| Semantic output | `kind`, target references, endpoints/values (`offset`, `distance`, `angle`), identity, dan object order stabil; measurement tidak berubah hanya karena style atau wording label berubah |
+| Render output | Dimension line, extension lines, arrowheads, label placement, dan default role `dimension` hadir secara visual; detail whitespace, attribute order, dan path formatting bukan contract |
+
+Fixture `v05-presentation-escaping` adalah hostile-input fixture untuk dimension.
+Ia memakai label `<script>alert(1)</script>` dan nilai metadata yang mencoba
+memutus attribute (`"><script>...`). Expected output adalah label dan metadata
+tetap menjadi text/attribute value yang escaped; tidak boleh muncul literal
+`<script>`, node baru, atau attribute baru yang berasal dari input tersebut.
+
+Fixture semantic dimension/annotation harus tetap lulus jika renderer mengubah
+font, whitespace, path formatting, atau urutan attribute SVG. Perbandingan
+semantic memakai projection `relgeo.svg-semantic` dan tolerance yang ditetapkan
+projection, bukan byte equality SVG.
+
 ---
 
 [← 21. Constraints](../geometry/21-constraints.md) &nbsp;|&nbsp; [↑ Index](README.md) &nbsp;|&nbsp; [23. Annotation Objects →](23-annotation.md)

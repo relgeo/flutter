@@ -24,6 +24,7 @@ class WorkbenchParametersFeature extends StatelessWidget {
       targetUnit: contract.targetUnit,
       onParamChanged: contract.onParamChanged,
       onParamReset: contract.onParamReset,
+      parameterSpecs: contract.parameterSpecs,
       visualProfile: contract.visualProfile,
       onClose: onClose,
       onFloat: onFloat,

@@ -131,6 +131,10 @@ Dokumen yang mendefinisikan kontrak DSL dan wajib diikuti implementasi.
 
 Dokumen penjelas yang membantu memahami spec tanpa menambah kontrak baru.
 
+### `Informative Index`
+
+Index navigasi yang membantu menemukan chapter tanpa menambah kontrak atau vocabulary.
+
 ### `Implementation Note`
 
 Dokumen yang menjelaskan strategi runtime, renderer, atau detail implementasi tertentu.
@@ -146,6 +150,23 @@ Untuk tujuan pemeliharaan source aktif:
 1. pohon ini diperlakukan sebagai artefak mandiri
 2. konteks sejarah, audit, dan restrukturisasi boleh ada di luar pohon ini, tetapi tidak menjadi ketergantungan link dari source spec aktif
 3. source of truth aktif tetap berada di pohon ini
+
+### 5A. Klasifikasi Artefak dan Vocabulary Aktif
+
+`id/` adalah source of truth normatif untuk kontrak DSL aktif. `Normative`
+chapter mendefinisikan field, type, semantics, rules, dan compatibility behavior
+yang wajib dipatuhi implementasi. `Informative` dan `Informative Index` hanya
+menjelaskan atau menavigasi kontrak.
+
+Untuk vocabulary drift, root fields dan type headings pada chapter normatif
+adalah daftar authoritative. Compatibility alias hanya sah bila provenance dan
+canonical replacement-nya dijelaskan oleh chapter normatif yang relevan. Katalog
+checked projection workspace boleh mempermudah pemeriksaan mesin, tetapi tidak
+menggantikan isi `id/` dan tidak boleh menjadi sumber semantics baru.
+
+Tidak ada generated artifact yang menjadi source of truth dalam pohon ini.
+Parser, schema, completion, dan consumer catalog adalah projection downstream;
+perubahannya harus dapat diverifikasi kembali terhadap chapter `Normative`.
 
 ---
 

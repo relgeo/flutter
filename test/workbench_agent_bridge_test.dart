@@ -29,6 +29,10 @@ void main() {
         ],
       );
 
+      final review = await bridge.reviewDocumentEdit(proposal);
+      expect(review.status, DocumentEditStatus.review);
+      expect(session.source, 'scene: old\n');
+
       final applied = await bridge.applyDocumentEdit(proposal);
       expect(applied.status, DocumentEditStatus.applied);
       expect(applied.newRevision, 1);

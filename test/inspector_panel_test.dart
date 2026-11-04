@@ -117,6 +117,66 @@ void main() {
     expect(find.text('Perimeter'), findsOneWidget);
   });
 
+  testWidgets('inspector exposes curve and boolean geometry fields', (
+    WidgetTester tester,
+  ) async {
+    final scene = ResolvedScene(
+      unit: LengthUnit.mm,
+      objects: {
+        'curve': ResolvedQuadratic(
+          id: 'curve',
+          meta: Meta(role: 'final'),
+          x1: 0,
+          y1: 0,
+          cpx: 10,
+          cpy: 20,
+          x2: 30,
+          y2: 0,
+        ),
+        'cutout': ResolvedBoolean(
+          id: 'cutout',
+          meta: Meta(role: 'construction'),
+          operation: 'subtract',
+          segments: [LineSegment(0, 0, 10, 0)],
+          holes: const [],
+        ),
+      },
+      parameters: const {},
+      values: const {},
+      bbox: const BoundingBox(x: 0, y: 0, width: 30, height: 20),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 420,
+            height: 720,
+            child: InspectorPanel(
+              scene: scene,
+              yamlError: null,
+              compilerError: null,
+              targetUnit: 'mm',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('curve'));
+    await tester.pumpAndSettle();
+    expect(find.text('Control'), findsOneWidget);
+    expect(find.text('(10.00, 20.00)'), findsOneWidget);
+
+    await tester.tap(find.text('cutout'));
+    await tester.pumpAndSettle();
+    expect(find.text('Operation'), findsOneWidget);
+    expect(find.text('SUBTRACT'), findsOneWidget);
+    expect(find.text('Segments'), findsOneWidget);
+    expect(find.text('Holes'), findsOneWidget);
+  });
+
   testWidgets('inspector object headers expose expansion semantics', (
     WidgetTester tester,
   ) async {

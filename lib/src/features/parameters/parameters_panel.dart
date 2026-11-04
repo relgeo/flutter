@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../ui/keyboard_activatable.dart';
 import '../../ui/workbench_panel_interaction.dart';
 import '../../ui/workbench_visual_profile.dart';
+import '../editor/workbench_document_settings.dart';
 
 /// Standalone parameters panel.
 ///
@@ -18,6 +19,7 @@ class ParametersPanel extends StatelessWidget {
     required this.targetUnit,
     required this.onParamChanged,
     required this.onParamReset,
+    this.parameterSpecs = const <String, WorkbenchParameterSpec>{},
     this.visualProfile = WorkbenchVisualProfile.cad,
     this.onClose,
     this.onFloat,
@@ -28,6 +30,7 @@ class ParametersPanel extends StatelessWidget {
   final String targetUnit;
   final void Function(String name, double value) onParamChanged;
   final VoidCallback onParamReset;
+  final Map<String, WorkbenchParameterSpec> parameterSpecs;
   final WorkbenchVisualProfile visualProfile;
   final VoidCallback? onClose;
   final VoidCallback? onFloat;
@@ -146,9 +149,32 @@ class ParametersPanel extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
               child: Column(
                 children: paramValues.keys.map((pName) {
+                  final spec = parameterSpecs[pName];
                   final current =
-                      (paramOverrides[pName] ?? paramValues[pName]!) as double;
-                  final maxVal = math.max(200.0, paramValues[pName]! * 2.5);
+                      ((paramOverrides[pName] ?? paramValues[pName]!) as num)
+                          .toDouble();
+                  final minVal = spec?.min ?? 1.0;
+                  final configuredStep = spec?.step;
+                  final rangeStep = configuredStep != null && configuredStep > 0
+                      ? configuredStep
+                      : 1.0;
+                  final fallbackMax = math.max(
+                    math.max(200.0, paramValues[pName]! * 2.5),
+                    minVal + rangeStep,
+                  );
+                  final configuredMax = spec?.max;
+                  final maxVal = configuredMax != null && configuredMax > minVal
+                      ? configuredMax
+                      : fallbackMax;
+                  final calculatedDivisions = configuredStep != null &&
+                          configuredStep > 0
+                      ? ((maxVal - minVal) / configuredStep).round()
+                      : 0;
+                  final divisions = calculatedDivisions > 0
+                      ? calculatedDivisions
+                      : null;
+                  final safeCurrent = current.clamp(minVal, maxVal).toDouble();
+                  final displayLabel = spec?.displayLabel ?? pName;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Row(
@@ -156,7 +182,7 @@ class ParametersPanel extends StatelessWidget {
                         SizedBox(
                           width: 80,
                           child: Text(
-                            pName,
+                            displayLabel,
                             style: TextStyle(
                               fontFamily: 'Courier',
                               fontSize: 11,
@@ -174,14 +200,15 @@ class ParametersPanel extends StatelessWidget {
                               ),
                             ),
                             child: Semantics(
-                              label: '$pName parameter',
+                              label: '$displayLabel parameter',
                               value:
-                                  '${current.toStringAsFixed(1)} $targetUnit',
-                              hint: 'Adjust $pName',
+                                  '${safeCurrent.toStringAsFixed(1)} $targetUnit',
+                              hint: 'Adjust $displayLabel',
                               child: Slider(
-                                value: current.clamp(1.0, maxVal),
-                                min: 1.0,
+                                value: safeCurrent,
+                                min: minVal,
                                 max: maxVal,
+                                divisions: divisions,
                                 onChanged: (value) =>
                                     onParamChanged(pName, value),
                               ),
@@ -191,7 +218,7 @@ class ParametersPanel extends StatelessWidget {
                         SizedBox(
                           width: 56,
                           child: Text(
-                            '${current.toStringAsFixed(1)} $targetUnit',
+                            '${safeCurrent.toStringAsFixed(1)} $targetUnit',
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: 'Courier',

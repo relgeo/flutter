@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/geometry/types.dart';
 import 'package:relgeo_flutter/src/features/preview/workbench_preview_target.dart';
 import 'package:relgeo_flutter/src/ui/workbench_document_controller.dart';
+import 'package:relgeo_flutter/src/features/editor/workbench_document_settings.dart';
 
 void main() {
   test('document controller protects mutable maps from external mutation', () {
@@ -54,6 +55,24 @@ void main() {
     controller.setProfiles(const {});
 
     expect(controller.activeProfile, isNull);
+  });
+
+  test('parameter overrides stay numeric and ignore unknown fields', () {
+    final controller = WorkbenchDocumentController();
+    addTearDown(controller.dispose);
+
+    controller.setParameters(
+      values: const {'width': 40},
+      overrides: const {'width': 40},
+      specs: const {
+        'width': WorkbenchParameterSpec(id: 'width', type: 'length'),
+      },
+    );
+    controller.setParamOverride('width', 55);
+    controller.setParamOverride('missing', 99);
+
+    expect(controller.paramOverrides, {'width': 55.0});
+    expect(controller.parameterSpecs['width']?.type, 'length');
   });
 
   test(

@@ -5,6 +5,40 @@ import 'package:relgeo_flutter/src/ui/workbench_commands.dart';
 import 'package:relgeo_flutter/src/ui/workbench_platform_menu_bar.dart';
 
 void main() {
+  test('command registry reports ambiguous shortcut bindings', () {
+    final registry = WorkbenchCommandRegistry([
+      WorkbenchCommand(
+        id: WorkbenchCommandId.openDocument,
+        menu: 'File',
+        label: 'Open document…',
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyO,
+          control: true,
+        ),
+        onInvoke: () {},
+      ),
+      WorkbenchCommand(
+        id: WorkbenchCommandId.saveDocument,
+        menu: 'File',
+        label: 'Save document',
+        shortcutActivator: const SingleActivator(
+          LogicalKeyboardKey.keyO,
+          control: true,
+        ),
+        onInvoke: () {},
+      ),
+    ]);
+
+    expect(registry.shortcutConflicts, hasLength(1));
+    expect(
+      registry.shortcutConflicts.single.map((command) => command.id),
+      containsAll(<WorkbenchCommandId>[
+        WorkbenchCommandId.openDocument,
+        WorkbenchCommandId.saveDocument,
+      ]),
+    );
+  });
+
   testWidgets(
     'macOS reserves its app menu before File',
     (tester) async {

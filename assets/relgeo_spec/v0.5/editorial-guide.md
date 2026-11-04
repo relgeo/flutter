@@ -29,6 +29,18 @@ Gunakan panduan ini untuk:
 
 Panduan ini bukan dokumen normatif DSL.
 
+Klasifikasi yang harus dipertahankan saat melakukan editorial work:
+
+1. Chapter kontrak memakai `Status dokumen: \`Normative\``.
+2. Index, panduan, dan material penjelas memakai `Informative` atau
+   `Informative Index`.
+3. Label status adalah vocabulary editorial yang diperiksa; jangan membuat
+   label baru tanpa keputusan yang memperbarui katalog drift.
+4. Katalog machine-readable di workspace adalah checked projection. Ia boleh
+   mengunci urutan dan daftar vocabulary untuk drift detection, tetapi tidak
+   boleh memperkenalkan field, type, atau semantics yang belum ada di chapter
+   normatif.
+
 ---
 
 ## 2. Aturan Penomoran
@@ -204,6 +216,24 @@ Untuk perubahan lintas versi:
 2. evaluasi apakah delta itu sudah benar-benar diadopsi implementasi atau dinaikkan menjadi kontrak aktif
 3. serap kontrak normatifnya ke `id/`
 4. setelah diserap, source of truth tetap berada di pohon spec aktif ini
+
+### 6.1 Aturan Vocabulary dan Drift
+
+Jika perubahan menyentuh root field, scalar/structured type, alias, atau label
+status:
+
+1. ubah chapter `Normative` di `id/` terlebih dahulu;
+2. catat apakah token baru canonical, compatibility alias, atau bukan bagian
+   kontrak aktif;
+3. perbarui checked projection dan consumer projection yang dimiliki owner;
+4. jalankan `pnpm run language-spec:check` dari root workspace;
+5. jangan menyebut projection, generated output, atau completion list sebagai
+   source of truth.
+
+Saat ini tidak ada generated artifact yang authoritative. Jika generator
+ditambahkan nanti, output-nya harus menyimpan provenance ke chapter normatif dan
+tetap diuji oleh drift checker; output generated yang berbeda dari `id/` adalah
+drift, bukan perubahan semantics yang sah.
 
 ---
 

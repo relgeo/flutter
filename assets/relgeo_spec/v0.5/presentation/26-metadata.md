@@ -243,6 +243,45 @@ Catatan tooling:
 1. tooling boleh menampilkan asal field metadata, misalnya dari `metaPreset`, dari `inherit`, atau dari local override
 2. label seperti `inspectable` boleh hidup sebagai kontrak tooling ringan, tetapi tidak mengubah aturan referensi bahasa
 
+### 26.4.1 Safe Serialization Boundary
+
+Metadata adalah data, bukan template markup. Pada serializer/render SVG:
+
+1. semua text node dan attribute value harus XML-escaped untuk `&`, `<`, `>`,
+   `"`, dan `'`;
+2. metadata tidak boleh menyuntikkan element name, attribute name, event
+   handler, `<script>`, `<foreignObject>`, atau URL executable ke output;
+3. unknown metadata field boleh diabaikan, tetapi tidak boleh diteruskan sebagai
+   raw markup tanpa escaping;
+4. escaped value tetap dipertahankan sebagai data yang dapat dibaca/diff, bukan
+   disanitasi dengan menghapus seluruh isi secara diam-diam;
+5. semantic geometry, role, identity, dan placement tidak boleh berubah karena
+   escaping.
+
+Hostile-input fixture minimum memakai nilai berikut pada text dan metadata:
+
+```txt
+<script>alert(1)</script>
+"><script>alert(2)</script><text "
+"/><script>alert(3)</script><text "
+```
+
+Expected fixture assertions:
+
+- output mengandung bentuk escaped seperti `&lt;script&gt;`;
+- output tidak mengandung literal `<script>`, `onload=`, `onerror=`, atau
+  `<foreignObject>` yang berasal dari input;
+- quote input tidak menutup attribute value;
+- semantic projection tetap memuat object identity/kind/geometry/placement yang
+  sama.
+
+Byte-identical SVG bukan requirement. Consumer wajib membandingkan semantic
+projection (`relgeo.svg-semantic`, schema version dan compatibility line yang
+aktif) untuk geometry/role/placement, dan memakai hostile-input assertions
+terpisah untuk safety. Perubahan font metrics, whitespace, attribute order,
+path formatting, dan renderer-specific viewBox tidak dengan sendirinya
+merupakan semantic drift.
+
 ---
 
 ## 26.5 Semantics

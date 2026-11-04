@@ -131,6 +131,24 @@ Spec aktif `v0.5` membakukan baseline stroke width final-output berikut:
 - Aturan ini berlaku juga untuk object presentasional seperti `dimension` dan `annotation` pada jalur final-output
 - Renderer preview/editor boleh memakai strategi lain untuk keterbacaan workspace, selama final-output tetap mengikuti baseline ini
 
+## 24.8 Role and Semantic-Output Fixtures
+
+Fixture role harus memisahkan semantic contract dari render presentation:
+
+| Assertion | Contract |
+| --- | --- |
+| Role identity | `meta.role` diproyeksikan ke role/data attribute yang stabil; jika kosong, gunakan `final` |
+| Visibility/filter | `construction` dan `guide` dikeluarkan dari bounding-box calculation; view role filter hanya mengubah subset presentasi |
+| Presentation defaults | Palette, dash, stroke width, dimension, dan annotation defaults mengikuti tabel di bab ini ketika tidak dioverride |
+| Semantic replay | Object identity, kind, references, geometry, placement, dan order tetap sama; perubahan style tidak mengubah geometry |
+| SVG representation | Renderer boleh berbeda pada whitespace, attribute order, path formatting, text baseline, atau viewBox selama assertion semantic dan safety terpenuhi |
+
+Fixture `v05-presentation-escaping` juga menjadi role boundary: hostile
+`meta.role`, `meta.intent`, label, dan metadata presentation tidak boleh
+menghasilkan markup atau attribute name baru. Nilai tersebut boleh tampil sebagai
+escaped data value atau diabaikan sesuai field metadata, tetapi tidak boleh
+menjadi executable element/event handler.
+
 ---
 
 [← 23. Annotation Objects](23-annotation.md) &nbsp;|&nbsp; [↑ Index](README.md) &nbsp;|&nbsp; [25. Views and Sheets →](25-views-sheets.md)

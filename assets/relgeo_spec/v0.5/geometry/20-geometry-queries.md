@@ -394,6 +394,58 @@ collection<point>
 
 bergantung pada konteks.
 
+### 20.18.1 Bounded pair contract v0.5
+
+Kontrak aktif memakai pasangan kanonik yang simetris: urutan dua argumen tidak
+mengubah pasangan atau hasil. Pada package geometry, hasil mentah selalu
+berupa array titik yang sudah diurutkan `x` naik lalu `y` naik dan dideduplikasi
+dengan tolerance intersection. Pada konteks DSL yang mengharapkan satu `point`,
+aturan mode di bawah berlaku.
+
+| Pair kanonik | Mode yang didukung | Cardinality / ordering | Error boundary |
+| --- | --- | --- | --- |
+| `line-line` | raw, implicit single, `first`, `last`, `index`, `nearest`, `farthest` | 0 atau 1 titik; parallel/coincident menghasilkan empty | `NO_INTERSECTION`, selector errors, invalid input |
+| `circle-line`, `arc-line` | raw, semua selector | 0, 1 (tangent), atau 2 titik; urutan canonical | `NO_INTERSECTION`, selector errors, invalid input |
+| `circle-circle`, `arc-circle`, `arc-arc` | raw, semua selector | 0, 1 (tangent), atau 2 titik; arc difilter sesuai angular bounds | `NO_INTERSECTION`, selector errors, invalid input |
+| `line-path`, `line-polygon`, `line-rect` | raw, semua selector | 0..N titik dari segment target; endpoint duplicate dideduplikasi | `NO_INTERSECTION`, selector errors, invalid input |
+| `circle-path`, `circle-polygon`, `circle-rect` | raw, semua selector | 0..N titik dari segment target; canonical order | `NO_INTERSECTION`, selector errors, invalid input |
+| `arc-path`, `arc-polygon`, `arc-rect` | raw, semua selector | 0..N titik yang lolos angular bounds; canonical order | `NO_INTERSECTION`, selector errors, invalid input |
+| `path-path`, `path-polygon`, `path-rect`, `polygon-polygon`, `polygon-rect`, `rect-rect` | raw, semua selector | 0..N titik dari pasangan segment; canonical order/deduplication | `NO_INTERSECTION`, selector errors, invalid input |
+
+`path`, `polygon`, dan `rect` pada tabel terakhir adalah path-like boundary;
+`quadratic`, `cubic`, dan sebagian pasangan campuran diproses melalui sampling
+deterministik. Sampling adalah perilaku package saat ini, bukan janji error
+bound universal untuk DSL atau parity lintas host.
+
+### 20.18.2 Selector and result modes
+
+| Mode | Perilaku |
+| --- | --- |
+| raw collection | Mempertahankan seluruh titik dalam urutan canonical; mode ini adalah konteks hasil collection, bukan pilihan diam-diam untuk `point`. |
+| implicit single | Tanpa selector, satu titik dikembalikan jika cardinality tepat satu. Cardinality 0 atau >1 adalah error. |
+| `first` / `last` | Memilih titik pertama/terakhir dari urutan canonical. |
+| `index(n)` atau `{index: n}` | Memilih index zero-based; index di luar range adalah error. DSL v0.5 menerima bentuk selector index yang dipetakan core dari expression query. |
+| `nearest(point)` / `farthest(point)` | Memilih berdasarkan jarak kuadrat ke reference point; tie mempertahankan urutan canonical. |
+
+Error stabil untuk query intersection:
+
+| Kode | Kondisi |
+| --- | --- |
+| `NO_INTERSECTION` | Hasil kosong dipakai pada konteks `point` atau selector apa pun. |
+| `MULTIPLE_INTERSECTIONS` | Hasil lebih dari satu dipakai tanpa selector pada konteks `point`. |
+| `INTERSECTION_INDEX_OUT_OF_RANGE` | `index` negatif atau tidak kurang dari jumlah hasil. |
+| `INVALID_INTERSECTION_SELECTOR` | Bentuk selector tidak dikenali. |
+| `UNSUPPORTED_FEATURE` | Pair/type tidak ada di tabel supported pair, misalnya `text-circle`; tidak boleh diproyeksikan diam-diam. |
+| `INVALID_INTERSECTION_INPUT` | Koordinat/radius non-finite atau geometri degenerate, misalnya line zero-length atau circle non-positive radius. |
+
+Fixture deterministik `geometry/src/__tests__/geometry-contract.fixture.ts`
+dan test `geometry/src/__tests__/intersection.test.ts` wajib mencakup
+success-single, multiple, empty, unsupported, invalid, tangent boundary,
+implicit single, seluruh selector, dan selector/error boundary. Fixture
+workspace 15 tetap menjadi evidence consumer untuk semantics
+intersection/subtract yang sudah disetujui; fixture ini tidak mempromosikan
+`union`, `xor`, atau operand boolean/non-rectangle yang masih ditahan.
+
 ---
 
 ## 20.19 frameAt

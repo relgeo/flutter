@@ -48,6 +48,36 @@ Urutan di atas adalah urutan *kategori*. Di dalam kategori `objects`, urutan eva
 - `derived` boleh bergantung pada anchor object (evaluasi lazy setelah objects)
 - `constraints` dievaluasi **setelah** semua geometri selesai - hanya memvalidasi, tidak mengubah
 
+## 4.4 Diagnostic Phase Boundary
+
+Parsing adalah precondition sebelum langkah evaluasi `parameters` sampai
+`sheets`. Setiap kegagalan yang melewati public boundary harus dipetakan ke
+diagnostic terstruktur seperti yang didefinisikan di [6. Error Model](06-error-model.md).
+Raw `Error`, stack trace, atau string exception tidak boleh menjadi contract
+consumer.
+
+| Phase | Boundary yang menghasilkan diagnostic | Aturan urutan dan hasil |
+| --- | --- | --- |
+| `parse` | YAML decoding, root document shape, version gate, dan syntax/document envelope | Terjadi sebelum evaluation order; tidak ada resolved scene yang boleh diklaim valid |
+| `validate` | Schema, field/type/value, reference, dependency, dan pre-resolution constraint validation | Terjadi sebelum geometry resolution; strict boundary gagal dengan code/path stabil |
+| `resolve` | Expression evaluation, dependency execution, object/component resolution, dan derived values | Berjalan sesuai dependency graph; kegagalan menghentikan hasil resolve strict |
+| `runtime` | Kegagalan operasional saat membentuk hasil resolved, misalnya empty/unsupported result atau non-finite output | Tidak boleh diturunkan menjadi `UNKNOWN_ERROR` bila code runtime yang stabil tersedia |
+| `constraint` | Pemeriksaan constraint setelah seluruh geometry selesai | Tidak mengubah geometry; default v0.5 mempertahankan resolved scene dan melaporkan violation |
+
+Adapter boleh menggabungkan tahap `parse` dan `validate` dalam satu operasi
+parse/validate, tetapi field `phase` pada diagnostic tetap wajib mengikuti
+boundary yang menghasilkan kegagalan. Pengurutan multi-diagnostic mengikuti
+urutan phase di atas, lalu source range/path/code/message secara deterministic.
+
+Mode `editor` boleh menjalankan recovery lokal agar dokumen parsial tetap dapat
+ditampilkan. Recovery tidak mengubah arti mode `validate` atau `compile`, tidak
+boleh menghapus diagnostic, dan tidak boleh dipakai sebagai bukti bahwa dokumen
+compile-valid. Mode `validate` dan `compile` wajib strict untuk parse,
+validation, resolution, dan runtime failures. `compile` menghasilkan output
+hanya jika boundary strict tersebut tidak gagal; post-resolve constraint
+violation tetap mengikuti aturan `constraint` di atas dan dapat dipromosikan
+menjadi hard failure oleh consumer build/CI policy.
+
 ---
 
 [← 3. Scene](03-scene.md) &nbsp;|&nbsp; [↑ Index](README.md) &nbsp;|&nbsp; [5. Semantic Guarantees →](05-semantic-guarantees.md)

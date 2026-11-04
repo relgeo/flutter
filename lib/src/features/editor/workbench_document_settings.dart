@@ -1,6 +1,34 @@
 import '../../core/units.dart';
 import '../../geometry/types.dart';
 
+/// Numeric parameter metadata shared by the parameter editor and inspector.
+///
+/// The resolver remains authoritative for evaluation. This metadata only
+/// describes the editable UI envelope declared by the active document.
+class WorkbenchParameterSpec {
+  const WorkbenchParameterSpec({
+    required this.id,
+    required this.type,
+    this.label,
+    this.category,
+    this.description,
+    this.min,
+    this.max,
+    this.step,
+  });
+
+  final String id;
+  final String type;
+  final String? label;
+  final String? category;
+  final String? description;
+  final double? min;
+  final double? max;
+  final double? step;
+
+  String get displayLabel => label == null || label!.isEmpty ? id : label!;
+}
+
 /// Parsed document settings consumed by the editor and composition root.
 ///
 /// This model keeps profile/parameter/unit parsing out of the page widget while
@@ -10,12 +38,14 @@ class WorkbenchDocumentSettings {
     required this.profiles,
     required this.paramValues,
     required this.paramOverrides,
+    this.parameterSpecs = const <String, WorkbenchParameterSpec>{},
     required this.targetUnit,
   });
 
   final Map<String, Map<String, dynamic>> profiles;
   final Map<String, double> paramValues;
   final Map<String, dynamic> paramOverrides;
+  final Map<String, WorkbenchParameterSpec> parameterSpecs;
   final LengthUnit targetUnit;
 
   factory WorkbenchDocumentSettings.fromDocument(
@@ -46,6 +76,7 @@ class WorkbenchDocumentSettings {
 
     final paramValues = <String, double>{};
     final paramOverrides = <String, dynamic>{};
+    final parameterSpecs = <String, WorkbenchParameterSpec>{};
     final rawParameters = document['parameters'];
     if (rawParameters is Map) {
       for (final entry in rawParameters.entries) {
@@ -55,11 +86,31 @@ class WorkbenchDocumentSettings {
             ? value['default']
             : value;
         final normalizedDefault = normalizeUnit(rawDefault, targetUnit);
-        final parsedValue =
-            normalizedDefault is num && normalizedDefault.isFinite
-            ? normalizedDefault.toDouble()
-            : 50.0;
-        paramValues[id] = parsedValue;
+        if (normalizedDefault is! num || !normalizedDefault.isFinite) {
+          continue;
+        }
+
+        double? numericField(String key) {
+          if (value is! Map || !value.containsKey(key)) return null;
+          final normalized = normalizeUnit(value[key], targetUnit);
+          return normalized is num && normalized.isFinite
+              ? normalized.toDouble()
+              : null;
+        }
+
+        paramValues[id] = normalizedDefault.toDouble();
+        parameterSpecs[id] = WorkbenchParameterSpec(
+          id: id,
+          type: value is Map && value['type'] != null
+              ? value['type'].toString()
+              : 'number',
+          label: value is Map ? value['label']?.toString() : null,
+          category: value is Map ? value['category']?.toString() : null,
+          description: value is Map ? value['description']?.toString() : null,
+          min: numericField('min'),
+          max: numericField('max'),
+          step: numericField('step'),
+        );
       }
 
       for (final id in paramValues.keys) {
@@ -73,6 +124,7 @@ class WorkbenchDocumentSettings {
       profiles: profiles,
       paramValues: paramValues,
       paramOverrides: paramOverrides,
+      parameterSpecs: parameterSpecs,
       targetUnit: targetUnit,
     );
   }

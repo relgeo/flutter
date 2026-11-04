@@ -9,15 +9,18 @@ class WorkbenchKeyboardActivatable extends StatelessWidget {
     required this.onActivate,
     required this.focusColor,
     required this.child,
+    this.autofocus = false,
   });
 
   final VoidCallback onActivate;
   final Color focusColor;
   final Widget child;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
     return FocusableActionDetector(
+      autofocus: autofocus,
       shortcuts: const <ShortcutActivator, Intent>{
         SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
         SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
