@@ -8,8 +8,8 @@ library;
 import 'dart:math' as math;
 import '../geometry/types.dart';
 
-const double _kTolerance =
-    1e-4; // Toleransi floating point untuk perbandingan geometri
+// Matches the active Core Runtime constraint contract (EPSILON = 0.001).
+const double _kTolerance = 1e-3;
 
 /// Memproses seluruh blok `constraints` dan mengembalikan daftar pelanggaran.
 List<ConstraintViolation> processConstraints(
@@ -67,7 +67,23 @@ List<ConstraintViolation> processConstraints(
     }
   }
 
-  return violations;
+  // Keep the Flutter result aligned with the active Core/Geometry diagnostic
+  // contract while preserving the existing constructor fields for callers.
+  return [
+    for (final violation in violations)
+      ConstraintViolation(
+        type: violation.type,
+        message: violation.message,
+        deviation: violation.deviation,
+        path: violation.path,
+        involvedObjects: violation.involvedObjects,
+        severity: 'error',
+        origin: 'constraint',
+        expected: const {'deviation': 0, 'tolerance': _kTolerance},
+        actual: {'deviation': violation.deviation},
+        visualHelper: violation.visualHelper,
+      ),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

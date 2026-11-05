@@ -124,6 +124,7 @@ class FilePickerWorkbenchFileService
 
   @override
   Future<WorkbenchDocumentFile?> openDocumentAtPath(String path) async {
+    if (!_isSupportedPath(path)) return null;
     final file = File(path);
     if (!await file.exists()) return null;
     return WorkbenchDocumentFile(
@@ -172,5 +173,10 @@ class FilePickerWorkbenchFileService
     final separator = path.lastIndexOf(RegExp(r'[/\\]'));
     if (separator < 0 || separator == path.length - 1) return null;
     return path.substring(separator + 1);
+  }
+
+  bool _isSupportedPath(String path) {
+    final name = (_fileName(path) ?? path).toLowerCase();
+    return _extensions.any((extension) => name.endsWith('.$extension'));
   }
 }

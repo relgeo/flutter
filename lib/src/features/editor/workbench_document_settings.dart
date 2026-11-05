@@ -27,6 +27,21 @@ class WorkbenchParameterSpec {
   final double? step;
 
   String get displayLabel => label == null || label!.isEmpty ? id : label!;
+
+  /// Whether [value] is a valid numeric override for this parameter.
+  ///
+  /// Invalid metadata is treated as a rejected envelope rather than allowing
+  /// a value to bypass the document's declared bounds. The resolver remains
+  /// authoritative for evaluation; this check only protects the editor state.
+  bool accepts(double value) {
+    if (!value.isFinite) return false;
+    if (min != null && !min!.isFinite) return false;
+    if (max != null && !max!.isFinite) return false;
+    if (min != null && max != null && min! > max!) return false;
+    if (min != null && value < min!) return false;
+    if (max != null && value > max!) return false;
+    return true;
+  }
 }
 
 /// Parsed document settings consumed by the editor and composition root.

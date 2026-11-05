@@ -87,6 +87,22 @@ void main() {
     expect(settings.overridesForProfile('wide'), {'width': 80.0, 'height': 20});
   });
 
+  test('parameter specs reject non-finite and out-of-range overrides', () {
+    const spec = WorkbenchParameterSpec(
+      id: 'width',
+      type: 'length',
+      min: 10,
+      max: 80,
+    );
+
+    expect(spec.accepts(10), isTrue);
+    expect(spec.accepts(80), isTrue);
+    expect(spec.accepts(9.99), isFalse);
+    expect(spec.accepts(80.01), isFalse);
+    expect(spec.accepts(double.nan), isFalse);
+    expect(spec.accepts(double.infinity), isFalse);
+  });
+
   test('clearing an unknown or null profile clears overrides', () {
     final settings = WorkbenchDocumentSettings(
       profiles: const {},

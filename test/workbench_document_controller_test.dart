@@ -76,6 +76,43 @@ void main() {
   });
 
   test(
+    'parameter overrides preserve state when values are outside the bounds',
+    () {
+      final controller = WorkbenchDocumentController();
+      addTearDown(controller.dispose);
+
+      controller.setParameters(
+        values: const {'width': 40},
+        overrides: const {
+          'width': 100,
+          'unknown': 20,
+        },
+        specs: const {
+          'width': WorkbenchParameterSpec(
+            id: 'width',
+            type: 'length',
+            min: 10,
+            max: 80,
+          ),
+        },
+      );
+
+      expect(controller.paramOverrides, isEmpty);
+
+      controller.setParamOverride('width', 55);
+      expect(controller.paramOverrides, {'width': 55.0});
+
+      controller.setParamOverride('width', 9);
+      controller.setParamOverride('width', 81);
+      controller.setParamOverride('width', double.nan);
+      controller.setParamOverride('width', double.infinity);
+      controller.setParamOverride('missing', 20);
+
+      expect(controller.paramOverrides, {'width': 55.0});
+    },
+  );
+
+  test(
     'preview target identifies model, sheet, and reserved component targets',
     () {
       final controller = WorkbenchDocumentController();

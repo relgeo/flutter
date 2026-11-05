@@ -63,21 +63,22 @@ class WorkbenchDocumentController extends ChangeNotifier {
         const <String, WorkbenchParameterSpec>{},
   }) {
     _paramValues = Map<String, double>.from(values);
-    _paramOverrides = Map<String, dynamic>.from(overrides);
     _parameterSpecs = Map<String, WorkbenchParameterSpec>.from(specs);
+    _paramOverrides = _sanitizeOverrides(overrides);
     notifyListeners();
   }
 
   void setParamValues(Map<String, double> values) {
     _paramValues = Map<String, double>.from(values);
+    _paramOverrides = _sanitizeOverrides(_paramOverrides);
     notifyListeners();
   }
 
   void setParamOverride(String name, dynamic value) {
     if (!_paramValues.containsKey(name)) return;
-    if (value is num && value.isFinite) {
-      _paramOverrides[name] = value.toDouble();
-    }
+    final normalized = _normalizeOverride(name, value);
+    if (normalized == null) return;
+    _paramOverrides[name] = normalized;
     notifyListeners();
   }
 
@@ -87,8 +88,27 @@ class WorkbenchDocumentController extends ChangeNotifier {
   }
 
   void setParamOverrides(Map<String, dynamic> overrides) {
-    _paramOverrides = Map<String, dynamic>.from(overrides);
+    _paramOverrides = _sanitizeOverrides(overrides);
     notifyListeners();
+  }
+
+  Map<String, dynamic> _sanitizeOverrides(Map<String, dynamic> overrides) {
+    final sanitized = <String, dynamic>{};
+    for (final entry in overrides.entries) {
+      final normalized = _normalizeOverride(entry.key, entry.value);
+      if (normalized != null) sanitized[entry.key] = normalized;
+    }
+    return sanitized;
+  }
+
+  double? _normalizeOverride(String name, dynamic value) {
+    if (!_paramValues.containsKey(name) || value is! num || !value.isFinite) {
+      return null;
+    }
+    final normalized = value.toDouble();
+    final spec = _parameterSpecs[name];
+    if (spec != null && !spec.accepts(normalized)) return null;
+    return normalized;
   }
 
   void setScene(ResolvedScene? scene) {

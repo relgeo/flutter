@@ -219,6 +219,10 @@ Map<String, dynamic> _projectViolation(ConstraintViolation violation) {
       'y2': helper.y2,
     };
   }
+  if (violation.severity != null) result['severity'] = violation.severity;
+  if (violation.origin != null) result['origin'] = violation.origin;
+  if (violation.expected != null) result['expected'] = violation.expected;
+  if (violation.actual != null) result['actual'] = violation.actual;
   return result;
 }
 

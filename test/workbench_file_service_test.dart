@@ -47,6 +47,15 @@ void main() {
     expect(document, isNull);
   });
 
+  test('opening an unsupported recent path returns null', () async {
+    final file = File('${temporaryDirectory.path}/notes.txt');
+    await file.writeAsString('not a RelGeo document');
+
+    final document = await service.openDocumentAtPath(file.path);
+
+    expect(document, isNull);
+  });
+
   test('opening an existing recent path returns source and identity', () async {
     final file = File('${temporaryDirectory.path}/drawing.relgeo');
     await file.writeAsString('scene: {}');

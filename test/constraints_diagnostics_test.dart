@@ -29,6 +29,10 @@ void main() {
     expect(violation.deviation, closeTo(14.142135623730951, 1e-9));
     expect(violation.path, 'constraints[0]');
     expect(violation.involvedObjects, isEmpty);
+    expect(violation.severity, 'error');
+    expect(violation.origin, 'constraint');
+    expect(violation.expected, {'deviation': 0, 'tolerance': 0.001});
+    expect(violation.actual, {'deviation': closeTo(14.142135623730951, 1e-9)});
     expect(violation.visualHelper?.x1, 0);
     expect(violation.visualHelper?.y1, 0);
     expect(violation.visualHelper?.x2, 10);

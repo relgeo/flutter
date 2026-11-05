@@ -621,6 +621,11 @@ class ConstraintViolation {
   final double deviation;
   final String path;
   final List<String> involvedObjects;
+  /// Stable diagnostic metadata shared with the Core Runtime boundary.
+  final String? severity;
+  final String? origin;
+  final dynamic expected;
+  final dynamic actual;
   final ({double x1, double y1, double x2, double y2})? visualHelper;
 
   ConstraintViolation({
@@ -629,6 +634,10 @@ class ConstraintViolation {
     required this.deviation,
     required this.path,
     required this.involvedObjects,
+    this.severity,
+    this.origin,
+    this.expected,
+    this.actual,
     this.visualHelper,
   });
 }

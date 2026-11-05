@@ -125,11 +125,15 @@ void main() {
           origin: 'https://remote.invalid',
         );
         expect(mismatchedOrigin['httpStatus'], HttpStatus.forbidden);
-        final readOnlyTools = await post(readOnlyServer, <String, Object?>{
-          'jsonrpc': '2.0',
-          'id': 2,
-          'method': 'tools/list',
-        });
+        final readOnlyTools = await post(
+          readOnlyServer,
+          <String, Object?>{
+            'jsonrpc': '2.0',
+            'id': 2,
+            'method': 'tools/list',
+          },
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+        );
         final listedReadOnly =
             (((readOnlyTools['result'] as Map)['tools']) as List)
                 .cast<Map<String, Object?>>();
@@ -146,15 +150,19 @@ void main() {
           isNot(contains('relgeo_apply_document_edit')),
         );
 
-        final denied = await post(readOnlyServer, <String, Object?>{
-          'jsonrpc': '2.0',
-          'id': 3,
-          'method': 'tools/call',
-          'params': <String, Object?>{
-            'name': 'relgeo_apply_document_edit',
-            'arguments': <String, Object?>{},
+        final denied = await post(
+          readOnlyServer,
+          <String, Object?>{
+            'jsonrpc': '2.0',
+            'id': 3,
+            'method': 'tools/call',
+            'params': <String, Object?>{
+              'name': 'relgeo_apply_document_edit',
+              'arguments': <String, Object?>{},
+            },
           },
-        });
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+        );
         expect(denied['httpStatus'], HttpStatus.forbidden);
         expect(session.source, initialSource);
 
@@ -163,11 +171,15 @@ void main() {
           permission: McpPermission.readWrite,
         );
         await initialize(readWriteServer);
-        final readWriteTools = await post(readWriteServer, <String, Object?>{
-          'jsonrpc': '2.0',
-          'id': 4,
-          'method': 'tools/list',
-        });
+        final readWriteTools = await post(
+          readWriteServer,
+          <String, Object?>{
+            'jsonrpc': '2.0',
+            'id': 4,
+            'method': 'tools/list',
+          },
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+        );
         final listedReadWrite =
             (((readWriteTools['result'] as Map)['tools']) as List)
                 .cast<Map<String, Object?>>();
@@ -176,54 +188,62 @@ void main() {
           contains('relgeo_apply_document_edit'),
         );
 
-        final stale = await post(readWriteServer, <String, Object?>{
-          'jsonrpc': '2.0',
-          'id': 5,
-          'method': 'tools/call',
-          'params': <String, Object?>{
-            'name': 'relgeo_apply_document_edit',
-            'arguments': <String, Object?>{
-              'baseDocumentId': session.documentId,
-              'baseRevision': session.revision + 1,
-              'summary': 'Stale change',
-              'edits': <Object?>[
-                <String, Object?>{
-                  'range': <String, Object?>{'start': 0, 'end': 0},
-                  'replacement': '# stale\n',
-                },
-              ],
+        final stale = await post(
+          readWriteServer,
+          <String, Object?>{
+            'jsonrpc': '2.0',
+            'id': 5,
+            'method': 'tools/call',
+            'params': <String, Object?>{
+              'name': 'relgeo_apply_document_edit',
+              'arguments': <String, Object?>{
+                'baseDocumentId': session.documentId,
+                'baseRevision': session.revision + 1,
+                'summary': 'Stale change',
+                'edits': <Object?>[
+                  <String, Object?>{
+                    'range': <String, Object?>{'start': 0, 'end': 0},
+                    'replacement': '# stale\n',
+                  },
+                ],
+              },
             },
           },
-        });
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+        );
         expect(
           ((stale['result'] as Map)['structuredContent'] as Map)['status'],
           'stale',
         );
         expect(session.source, initialSource);
 
-        final applied = await post(readWriteServer, <String, Object?>{
-          'jsonrpc': '2.0',
-          'id': 6,
-          'method': 'tools/call',
-          'params': <String, Object?>{
-            'name': 'relgeo_apply_document_edit',
-            'arguments': <String, Object?>{
-              'baseDocumentId': session.documentId,
-              'baseRevision': session.revision,
-              'summary': 'Create a square',
-              'edits': <Object?>[
-                <String, Object?>{
-                  'range': <String, Object?>{
-                    'start': 0,
-                    'end': initialSource.length,
+        final applied = await post(
+          readWriteServer,
+          <String, Object?>{
+            'jsonrpc': '2.0',
+            'id': 6,
+            'method': 'tools/call',
+            'params': <String, Object?>{
+              'name': 'relgeo_apply_document_edit',
+              'arguments': <String, Object?>{
+                'baseDocumentId': session.documentId,
+                'baseRevision': session.revision,
+                'summary': 'Create a square',
+                'edits': <Object?>[
+                  <String, Object?>{
+                    'range': <String, Object?>{
+                      'start': 0,
+                      'end': initialSource.length,
+                    },
+                    'replacement':
+                        'objects:\n  square:\n    type: rect\n    size: [40, 40]\n    place:\n      topLeft: [0, 0]\n',
                   },
-                  'replacement':
-                      'objects:\n  square:\n    type: rect\n    size: [40, 40]\n    place:\n      topLeft: [0, 0]\n',
-                },
-              ],
+                ],
+              },
             },
           },
-        });
+          protocolVersion: RelGeoMcpJsonRpcRouter.protocolVersion,
+        );
         final editResult =
             (applied['result'] as Map)['structuredContent'] as Map;
         expect(editResult['status'], 'applied');
