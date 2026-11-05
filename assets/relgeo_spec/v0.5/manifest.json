@@ -3,16 +3,16 @@
   "specVersion": "0.5",
   "sourceDirectory": "spec/id",
   "assetDirectory": "assets/relgeo_spec/v0.5",
-  "revision": "b96ba3b23de202227eade06614635ef6717df516",
-  "sourceUrl": "https://github.com/relgeo/spec/tree/b96ba3b23de202227eade06614635ef6717df516/id",
+  "revision": "f4fecf2153ad2d960f36eda96a6a593d5aed30b7",
+  "sourceUrl": "https://github.com/relgeo/spec/tree/f4fecf2153ad2d960f36eda96a6a593d5aed30b7/id",
   "digestAlgorithm": "sha256",
-  "digest": "sha256:25b021f107cb005e87f887abbbd250bcf2084ae6f52e2911964cd020f4f9c225",
-  "fileCount": 34,
+  "digest": "sha256:f194e9ca245723687ebd9c21be839fb576bf9f02f6bdb207a8d92ab581b1f250",
+  "fileCount": 35,
   "files": [
     {
       "path": "README.md",
-      "bytes": 6932,
-      "sha256": "119a66b5786f7d23b07d28d8a822a1dabaa04b3dfcc50282fa57189fb893ace4"
+      "bytes": 6953,
+      "sha256": "02c20621a7dfe78a0882d533a3f1a2297a147f13abfae714817eeb757048f993"
     },
     {
       "path": "appendix/27-summary.md",
@@ -51,13 +51,18 @@
     },
     {
       "path": "core/06-error-model.md",
-      "bytes": 12305,
-      "sha256": "2fb01a15b92500c3e41427ab074411d37e16bdcdae86d6417246083f3dce4f58"
+      "bytes": 13003,
+      "sha256": "64b854613c65da53864a45022e019ab6ebe45ad3a170894321aba5845e7cb7e7"
+    },
+    {
+      "path": "core/07-closure-contracts.md",
+      "bytes": 11283,
+      "sha256": "edbf9e8f0a1ba7d1dbd2a67fa00beae7c8b36611884c3e298376b1835c16eccd"
     },
     {
       "path": "core/README.md",
-      "bytes": 560,
-      "sha256": "5ab48b0268d2cda90e11298ff9aee04e3592bf845b596ce77ad3d1e40b8743b9"
+      "bytes": 637,
+      "sha256": "e6ec83877ff6a892c537164f73a1391c35d3a40ed3de441c6b78b03cc9035683"
     },
     {
       "path": "editorial-guide.md",
@@ -76,8 +81,8 @@
     },
     {
       "path": "geometry/15-composition-objects.md",
-      "bytes": 11448,
-      "sha256": "015e57ad225f88cb5456329b8494d83fbc4ca053e7a615c69d381a581efee6f8"
+      "bytes": 12465,
+      "sha256": "227323caf66726f4de24e319a1257d09ac4f414466d11da0be179ed897b9ad0e"
     },
     {
       "path": "geometry/16-collection-objects.md",

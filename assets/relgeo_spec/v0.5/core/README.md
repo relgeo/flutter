@@ -12,6 +12,7 @@ Urutan baca yang disarankan:
 4. evaluation order
 5. semantic guarantees
 6. error model
+7. closure contracts
 
 ---
 
@@ -23,3 +24,4 @@ Urutan baca yang disarankan:
 4. [04-evaluation-order.md](./04-evaluation-order.md)
 5. [05-semantic-guarantees.md](./05-semantic-guarantees.md)
 6. [06-error-model.md](./06-error-model.md)
+7. [07-closure-contracts.md](./07-closure-contracts.md)

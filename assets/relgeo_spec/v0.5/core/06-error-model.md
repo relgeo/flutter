@@ -106,12 +106,18 @@ Error yang terjadi saat membangun geometri dari relasi yang diberikan.
 | `PATH_JOIN_DIRECTION_MISMATCH` | Target `path.join` path-like tetapi arah traversalnya tidak cocok dengan item sebelumnya |
 | `ELLIPSE_INVALID_RADIUS` | `ellipse.rx` atau `ellipse.ry` bernilai nol, negatif, atau tidak valid |
 | `INVALID_OFFSET` | Gagal menghitung offset (self-intersection ekstrem) |
+| `INVALID_TRANSFORM` | Transform geometry memiliki koordinat, sudut, atau faktor skala non-finite atau bentuk yang tidak valid |
+| `INVALID_CLOSED_SHAPE` | Input pada closed-shape boundary tidak bertipe/berdimensi valid atau menghasilkan ring degenerate |
 | `TANGENT_NOT_FOUND` | Tidak ada solusi garis singgung yang valid |
 | `DEGENERATE_ARC` | Busur tidak valid (3 titik segaris pada mode 3-point) |
 | `SELF_INTERSECTING_PATH` | Path memotong dirinya sendiri (kritikal untuk offset) |
 | `INVALID_CORNER_OPERATION` | Radius fillet/chamfer melebihi panjang segmen yang tersedia |
 | `INVALID_JOIN_TARGET` | Item pada `path.join` bukan target lintasan yang valid |
 | `INVALID_CLOSE_WITH` | `closeWith` dipakai pada mode/context path yang tidak valid |
+| `INVALID_BOOLEAN_OPERATION` | Nama operasi Boolean atau struktur operand tidak sesuai kontrak aktif |
+| `BOOLEAN_EMPTY_RESULT` | Operasi Boolean tidak menghasilkan area/ring yang valid pada mode strict |
+| `BOOLEAN_FAILED` | Engine Boolean gagal membangun hasil dan penyebab tidak memiliki kode yang lebih spesifik |
+| `BOOLEAN_MULTIPART_RESULT` | Operasi Boolean menghasilkan lebih dari satu island ketika `result.mode: single` diminta |
 | `TURTLE_HEADING_UNAVAILABLE` | Segment `line` relatif memakai `turn` atau `forward` tanpa heading awal yang valid |
 | `INVALID_TURTLE_FORWARD` | Nilai `forward` pada relative line segment tidak valid |
 | `INVALID_TURTLE_TURN` | Nilai `turn` pada relative line segment tidak valid |

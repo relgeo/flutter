@@ -65,6 +65,7 @@ Untuk fondasi normatif DSL:
 4. evaluation order
 5. semantic guarantees
 6. error model
+7. closure contracts
 
 ### `syntax/`
 

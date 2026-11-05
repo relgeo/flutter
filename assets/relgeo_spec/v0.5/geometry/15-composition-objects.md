@@ -396,6 +396,23 @@ Aturan hasil minimum:
 
 Field tambahan seperti `origin` boleh dipakai pada operation yang relevan.
 
+### Target compatibility boundary
+
+Pada compatibility line v0.5, geometry operation target harus menghasilkan
+geometri yang dapat dibawa ke surface geometry berikutnya. Target yang legal
+untuk `translate`, `rotate`, `scale`, dan `mirror` adalah `point`, `line`,
+`arc`, `circle`, `ellipse`, `rect`, `quadratic`, `cubic`, `path`, `polygon`,
+`boolean`, `group`, `clone`, atau hasil operation geometry sejenis. `text`,
+`component`, `dimension`, `annotation`, `repeat`, `divide`, dan `collection`
+tidak legal sebagai target operation geometry; mereka bukan satu geometri
+operasional pada boundary ini dan harus menghasilkan `INVALID_OPERATION_TARGET`.
+
+`reverse` memakai subset yang memiliki traversal deterministik (line, arc,
+circle, ellipse, rect, quadratic, cubic, path, polygon, atau boolean) dan
+menghasilkan `INVALID_REVERSE_TARGET` bila target tidak menyediakan surface
+tersebut. `split` memiliki boundary path-like terbuka yang dijelaskan di atas
+dan tetap menghasilkan `INVALID_SPLIT_TARGET` untuk target lain.
+
 ### Result Surface
 
 Hasil operation object harus diperlakukan sebagai object resolved biasa.

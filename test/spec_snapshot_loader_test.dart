@@ -27,8 +27,8 @@ void main() {
     final index = loaded.createIndex();
 
     expect(loaded.snapshot.specVersion, '0.5');
-    expect(loaded.snapshot.fileCount, 34);
-    expect(loaded.documents, hasLength(34));
+    expect(loaded.snapshot.fileCount, 35);
+    expect(loaded.documents, hasLength(35));
     expect(
       index
           .search(const SearchSpecInput(query: 'parameters constants'))
