@@ -152,6 +152,20 @@ Default:
 center
 ```
 
+### Placement diagnostics
+
+Placement failures retain the object and field that caused the failure:
+
+- an unknown `place.inside` container emits `UNKNOWN_REFERENCE` at `place.inside`;
+- a non-`rect` `place.inside` container emits `INVALID_VALUE` at `place.inside`;
+- a negative or non-finite `margin` emits `INVALID_VALUE` at `place.margin`.
+- an unknown object anchor in `on.point`, `on.path`, or `on.frame` emits
+  `UNKNOWN_ANCHOR` at the namespace-specific field (`on.point.anchor`,
+  `on.path.anchor`, or `on.frame.anchor`) and retains the placement object ID.
+
+These diagnostics are part of the placement contract and must not be replaced
+by an unscoped resolver exception.
+
 ---
 
 ## 17.3 on.path

@@ -35,6 +35,12 @@ void main() {
           .matches,
       isNotEmpty,
     );
+    final profileSpec = loaded.documents
+        .singleWhere((document) => document.relativePath == 'syntax/11-profiles.md');
+    expect(profileSpec.content, contains('UNKNOWN_FIELD'));
+    final closureSpec = loaded.documents
+        .singleWhere((document) => document.relativePath == 'core/07-closure-contracts.md');
+    expect(closureSpec.content, contains('SVGSemanticError'));
   });
 
   test(

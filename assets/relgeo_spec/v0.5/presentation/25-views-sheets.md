@@ -141,7 +141,29 @@ renderToSVG(scene, { sheetId: "drawing1" });
 
 ---
 
-## 25.5 Error Codes
+## 25.5 Semantic Projection Boundary
+
+Output semantic renderer (`relgeo.svg-semantic`, schema version `1`, compatibility
+line `0.5`) membawa layout presentasi yang diperlukan consumer untuk parity tanpa
+menjadikan raw SVG sebagai kontrak:
+
+- `viewOrder` dan `sheetOrder` mempertahankan urutan declaration/resolution;
+- setiap view membawa `id`, `target`, `scale`, `scaleFactor`, bounding box,
+  `objectOrder`, dan semantic objects dalam scope view;
+- setiap sheet membawa `id`, `size`, `width`, `height`, serta daftar placement
+  `{ use, x, y, width, height }` dalam urutan deklarasi;
+- metadata document/view/sheet yang berupa data dibawa secara canonical dan
+  finite; metadata tersebut tidak boleh mengubah geometry atau dependency graph;
+- semantic object mempertahankan identity, kind, role, references, geometry,
+  transform, dan placement. Business metadata object yang dibawa ke projection
+  terbatas pada `material`, `thickness`, `process`, `partNo`, dan `description`;
+  raw paint/style tidak menjadi semantic geometry.
+
+Consumer harus membandingkan projection terstruktur dan assertion safety secara
+terpisah. Whitespace, attribute order, title-block typography, viewBox, dan
+formatting SVG tetap merupakan renderer policy, bukan semantic mismatch.
+
+## 25.6 Error Codes
 
 | Error                    | Kondisi |
 |--------------------------|---------|

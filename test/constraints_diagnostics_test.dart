@@ -28,7 +28,7 @@ void main() {
     expect(violation.message, 'Points are not aligned. Distance: 14.1421');
     expect(violation.deviation, closeTo(14.142135623730951, 1e-9));
     expect(violation.path, 'constraints[0]');
-    expect(violation.involvedObjects, isEmpty);
+    expect(violation.involvedObjects, ['first', 'second']);
     expect(violation.severity, 'error');
     expect(violation.origin, 'constraint');
     expect(violation.expected, {'deviation': 0, 'tolerance': 0.001});

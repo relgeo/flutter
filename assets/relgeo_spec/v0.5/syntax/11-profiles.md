@@ -38,6 +38,14 @@ Aturan:
 - Profile **boleh** mengoverride nilai `parameters`.
 - Profile **tidak boleh** mengoverride `constants`.
 - Runtime internal tetap hanya peduli pada nilai parameter final setelah preset dipilih.
+- Setiap key override harus merupakan parameter yang dideklarasikan. Key yang
+  tidak dikenal, termasuk nama constant, ditolak sebelum resolve dengan
+  diagnostic `UNKNOWN_FIELD` pada path `profiles.<profile>.<key>`.
+- Nilai override typed harus mengikuti type parameter yang dideklarasikan.
+  Ketidakcocokan ditolak sebelum resolve dengan `TYPE_MISMATCH` pada path yang
+  sama; profile tidak boleh mengubah type parameter.
+- `profiles.<profile>` harus berupa object. Nilai array atau scalar ditolak
+  dengan `TYPE_MISMATCH` pada path profile.
 
 ---
 
@@ -49,6 +57,13 @@ Aturan:
 2. tidak menjadi field common object
 3. tidak dipakai untuk reusable object styling
 4. tidak mengubah dependency graph selain lewat nilai parameter akhir
+
+Validasi profile dilakukan untuk seluruh profile yang dideklarasikan saat
+strict parse/validate, bukan hanya profile yang sedang dipilih. Dengan begitu,
+profile yang rusak tidak dapat tersembunyi sampai runtime atau berbeda
+diagnostic-nya antar consumer. `editor` dapat mengagregasikan diagnostic yang
+formatnya sama, tetapi tidak boleh menganggap override invalid sebagai nilai
+parameter yang valid.
 
 Jika dibutuhkan shorthand reusable untuk `meta`, gunakan mekanisme `metaPresets` / `metaPreset`, bukan `profiles`.
 

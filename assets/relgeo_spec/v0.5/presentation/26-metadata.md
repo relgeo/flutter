@@ -282,6 +282,23 @@ terpisah untuk safety. Perubahan font metrics, whitespace, attribute order,
 path formatting, dan renderer-specific viewBox tidak dengan sendirinya
 merupakan semantic drift.
 
+Projection semantik object pada renderer harus membawa field presentasi yang
+terbatas dan stabil: `role` efektif (default `final`, atau `dimension`/
+`annotation` untuk object presentasi), serta `intent`, `label`, `visible`, dan
+provenance `metaPreset` bila tersedia. Raw `stroke`, `fill`, font, dash, dan
+metadata bebas tidak boleh masuk ke projection geometry karena perubahan style
+tidak boleh mengubah identity, role, placement, topology, atau angka geometri.
+Nilai metadata tersebut tetap diperlakukan sebagai data: field string tidak
+boleh menjadi nama element/attribute atau executable markup pada output SVG.
+
+Untuk menjaga metadata bisnis tetap dapat diinspeksi tanpa membocorkan paint
+policy ke semantic geometry, object projection boleh membawa allowlist
+`metadata` berikut: `material`, `thickness`, `process`, `partNo`, dan
+`description`. Document, view, dan sheet metadata boleh dibawa sebagai record
+data canonical (key order stabil, number finite, dan `-0` menjadi `0`). Field
+yang tidak dikenal boleh diabaikan; pengabaian tersebut tidak boleh mengubah
+identity, role, placement, topology, atau ukuran geometry.
+
 ---
 
 ## 26.5 Semantics

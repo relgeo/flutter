@@ -122,7 +122,7 @@ ConstraintViolation? _processAlign(
           'Points are not aligned. Distance: ${deviation.toStringAsFixed(4)}',
       deviation: deviation,
       path: path,
-      involvedObjects: const [],
+      involvedObjects: _extractObjectIds([targetSpec, withSpec]),
       visualHelper: (
         x1: targetPt.x,
         y1: targetPt.y,

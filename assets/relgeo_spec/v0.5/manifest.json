@@ -3,10 +3,10 @@
   "specVersion": "0.5",
   "sourceDirectory": "spec/id",
   "assetDirectory": "assets/relgeo_spec/v0.5",
-  "revision": "f4fecf2153ad2d960f36eda96a6a593d5aed30b7",
-  "sourceUrl": "https://github.com/relgeo/spec/tree/f4fecf2153ad2d960f36eda96a6a593d5aed30b7/id",
+  "revision": "dc47343c9f4da7275fcb1563d5c5815647917760",
+  "sourceUrl": "https://github.com/relgeo/spec/tree/dc47343c9f4da7275fcb1563d5c5815647917760/id",
   "digestAlgorithm": "sha256",
-  "digest": "sha256:f194e9ca245723687ebd9c21be839fb576bf9f02f6bdb207a8d92ab581b1f250",
+  "digest": "sha256:407bbfbeec449f533609decdd88b1168b69f039aab38d342490f147febdbe9c6",
   "fileCount": 35,
   "files": [
     {
@@ -56,8 +56,8 @@
     },
     {
       "path": "core/07-closure-contracts.md",
-      "bytes": 11283,
-      "sha256": "edbf9e8f0a1ba7d1dbd2a67fa00beae7c8b36611884c3e298376b1835c16eccd"
+      "bytes": 13104,
+      "sha256": "20de5580654f37f482118dae3384f1077ee8eddf2a464a6b759e024bd2356963"
     },
     {
       "path": "core/README.md",
@@ -76,8 +76,8 @@
     },
     {
       "path": "geometry/14-geometry-objects.md",
-      "bytes": 18806,
-      "sha256": "1d113b6c2f2494ec76a612ad522f12e779c9bc24ea8665c0adeb26dc3f655efc"
+      "bytes": 19427,
+      "sha256": "b72c6be52ad41c3d716830f70e09c26db6ae2e339ef2f3525c4cae0eb6cfeb3c"
     },
     {
       "path": "geometry/15-composition-objects.md",
@@ -91,13 +91,13 @@
     },
     {
       "path": "geometry/17-placement.md",
-      "bytes": 4749,
-      "sha256": "58311b7eb8a208c36daa2999d7f78eba17b6dc642953303de154e59a7264d41a"
+      "bytes": 5428,
+      "sha256": "2f4ca45dc64ea29e6bc428832e66a907aa5385a9b65e3d8e9ce196d90db61378"
     },
     {
       "path": "geometry/18-anchors.md",
-      "bytes": 1227,
-      "sha256": "0536f157d50ca1338c78f462f7d3cb7420a45a6bdb70d3dbde4b9204cd329e40"
+      "bytes": 2065,
+      "sha256": "04f314e5c21338e8a8a2f3eab96ae7bfc00cf89e6bc23c7a5d3c771aa6daafb1"
     },
     {
       "path": "geometry/19-collections.md",
@@ -106,13 +106,13 @@
     },
     {
       "path": "geometry/20-geometry-queries.md",
-      "bytes": 10013,
-      "sha256": "4dcc6795dca25a2e4bff93d7a5a60cb934f53bd9d2f7daebae4ec02a29e64577"
+      "bytes": 10862,
+      "sha256": "0a307eef012f080ce03312f281e6af923343ad3a96a7fef9d02a483c2dd99b2b"
     },
     {
       "path": "geometry/21-constraints.md",
-      "bytes": 2328,
-      "sha256": "89b4dfb3a1a27090c311ae64cc89975427e82f19ebb509562a1d3ce2e07435ae"
+      "bytes": 2632,
+      "sha256": "fdbd07780acde1684abf3f3c74dbc8c11561d74e5dd5eb9f27981e2f8bfbef43"
     },
     {
       "path": "geometry/README.md",
@@ -136,13 +136,13 @@
     },
     {
       "path": "presentation/25-views-sheets.md",
-      "bytes": 5259,
-      "sha256": "9556dce366c3a75086050f3cff479c24a76bcc15212dc35f805150ce944f9366"
+      "bytes": 6520,
+      "sha256": "4069b23ee0a9ad6b4af77ad6d0da8b9d556fd846b4b758fef7f40d2d763318e5"
     },
     {
       "path": "presentation/26-metadata.md",
-      "bytes": 9115,
-      "sha256": "d1cc68dff76dff5114752757ca1b95e46973091be77af2c5a17ea5d1e890aaa5"
+      "bytes": 10243,
+      "sha256": "8358a57af22725d9db5d62ce1e13d13d987b380d568757589953d632f0c84a0d"
     },
     {
       "path": "presentation/README.md",
@@ -151,8 +151,8 @@
     },
     {
       "path": "syntax/07-type-system.md",
-      "bytes": 6977,
-      "sha256": "598ff77c8866fe0892c014ceba5d1697048835765c73a59e18a66e4b12eaf27a"
+      "bytes": 7567,
+      "sha256": "90e5b77fbc8e8107bc30536ed115b6d3d4ee3181ee8b5808ed76abea42589d2f"
     },
     {
       "path": "syntax/08-parameters.md",
@@ -171,8 +171,8 @@
     },
     {
       "path": "syntax/11-profiles.md",
-      "bytes": 1363,
-      "sha256": "f9a5caf4de42ba760368a9db551c5caada37810260c551b1492a5837bfc10d8a"
+      "bytes": 2309,
+      "sha256": "19574a1d2fd72563800f8768a8bc8b9335cf234b6a83cb2510273dc0fdf29594"
     },
     {
       "path": "syntax/12-expressions.md",

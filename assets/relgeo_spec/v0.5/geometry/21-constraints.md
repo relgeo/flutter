@@ -37,6 +37,11 @@ constraints:
   - equal: [garisA.length, 10cm]
 ```
 
+Setiap member reference pada ekspresi `equal` harus menunjuk ke object, value,
+atau anchor yang dikenal. Reference object/anchor yang typo adalah structural
+error `UNKNOWN_REFERENCE` atau `UNKNOWN_ANCHOR` pada path constraint; ia tidak
+boleh ditunda menjadi kegagalan evaluator tanpa lokasi constraint.
+
 ---
 
 ## 21.3 Parallel

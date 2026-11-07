@@ -99,6 +99,21 @@ objects:
       pinggang: [50%, 70%]
 ```
 
+## 18.6 Curve and transformed-object bounds
+
+Untuk `path`, `quadratic`, dan `cubic`, anchor bbox (`top`, `bottom`, `left`,
+`right`, `centerX`, `centerY`) mengikuti envelope kurva, bukan control polygon.
+Implementasi boleh menggunakan sampling deterministik selama hasilnya stabil
+dan tidak mengekspos control point sebagai bagian dari geometri resolved.
+
+Anchor pada group, clone, dan transform operation membaca world-space result
+setelah transform yang relevan. Anchor yang tidak ada harus tetap menjadi
+diagnostic terstruktur pada boundary resolver; consumer tidak boleh mengubahnya
+menjadi nilai `undefined` yang tampak sukses. Untuk referensi dari expression,
+diagnostic tersebut mempertahankan `UNKNOWN_ANCHOR` dan path field expression
+(misalnya `objects.marker.at`), sehingga lokasi referensi yang hilang tetap
+dapat ditelusuri.
+
 ---
 
 [← 17. Placement System](17-placement.md) &nbsp;|&nbsp; [↑ Index](README.md) &nbsp;|&nbsp; [19. Collections →](19-collections.md)

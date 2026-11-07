@@ -153,6 +153,10 @@ up
 down
 ```
 
+`length` adalah `scalar-length` finite dan strictly positive. Nilai nol,
+negatif, atau non-finite menghasilkan diagnostic `INVALID_VALUE` pada path
+`length`; line degenerat tidak dipublikasikan sebagai geometry.
+
 > [!NOTE]
 > Mode ini berbeda dari Polar Movement pada `point.move.angle`. `direction` pada `line` hanya menerima arah kardinal. Untuk garis dengan sudut bebas, gunakan mode `from-to` dengan `point` yang telah dihitung menggunakan `move.angle`.
 
@@ -231,6 +235,10 @@ objects:
 
     size: [200mm, 100mm]
 ```
+
+`size` adalah pasangan `scalar-length` finite dan strictly positive. Nilai nol,
+negatif, atau non-finite menghasilkan diagnostic `INVALID_VALUE` pada boundary
+resolver; rect degenerate tidak dipublikasikan sebagai geometry.
 
 ---
 
@@ -354,6 +362,10 @@ point
 ```txt
 scalar-length
 ```
+
+`radius` harus finite dan strictly positive. Mode `through` juga harus
+menghasilkan radius positif; circle degenerate menghasilkan diagnostic
+`INVALID_VALUE` pada boundary resolver.
 
 #### area
 

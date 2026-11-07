@@ -49,6 +49,27 @@ menjadikan capability `not-applicable`.
 | `CORE-INT-002` | Valid, incomplete, and runtime-error source through language-service/Playground boundary | Core semantics are preserved across edit → diagnostic → resolve → preview → inspect; consumer may reformat but not redefine codes/paths | Incomplete/runtime-error source never becomes false success; browser sequencing/accessibility is consumer evidence | Uses Core v0.5 diagnostics/projection; language-service tests, worker/conformance checks, browser E2E when available |
 | `CORE-INT-004` | Selected shared fixtures at TS, renderer, Markdown, and Flutter semantic boundaries | Consumers compare semantic objects, paths, diagnostics, ordering, and projection fields; raw SVG bytes excluded | Mismatch is reported at semantic field/path/order level; host unavailability is `not-verified`, not Core absence | Shared fixture manifest and projection schema v1; renderer/CLI/Markdown tests plus Flutter comparator when host is available |
 
+### Renderer semantic error boundary
+
+`@relgeo/renderer-svg` owns the semantic SVG projection and replay boundary,
+while the core runtime owns `relgeo.resolved-scene`. These are separate
+consumer contracts, but neither may leak an untyped engine exception:
+
+1. `projectSVGSemanticScene(scene)` throws `SVGSemanticError` with code
+   `INVALID_SEMANTIC_PROJECTION` when the resolved input contains a non-finite
+   number or an unsupported transform; `path` identifies the semantic field.
+2. `compareSVGSemanticReplay(expected, actual)` throws `SVGSemanticError` with
+   code `INVALID_SEMANTIC_REPLAY` for malformed JSON or non-finite replay
+   values. JSON parser wording is normalized; engine-specific parse text does
+   not become part of the compatibility contract.
+3. Semantic arrays retain their order. Object-key canonicalization and numeric
+   tolerance do not reorder arrays or turn invalid input into a successful
+   comparison.
+4. These renderer codes are adapter-boundary codes. They do not replace the
+   core codes `INVALID_RESOLVED_SCENE` and `INVALID_SEMANTIC_SNAPSHOT` for the
+   core projection boundary, and any adapter translation must preserve the
+   failing semantic path.
+
 ## 7.3 Contract-to-source ownership
 
 The normative ownership split is:
@@ -66,6 +87,15 @@ An implementation or consumer must not introduce a new public field, code,
 phase, result mode, or ordering rule solely in a downstream matrix. Update the
 normative chapter first, then implementation and fixtures, then the capability
 reconciliation.
+
+The v0.5 object-type projection follows the normative geometry and presentation
+chapters. The checked consumer vocabulary must keep all declared object types,
+including the geometry operations `translate`, `rotate`, `scale`, `mirror`,
+`reverse`, and `split`, aligned across the Core parser, language-service schema,
+and language-service completions. Operation-specific fields are part of that
+projection: `target` plus `by`, `angle`, `factor`, `axis`, or `at`/`pick` as
+defined by [15. Composition Objects](../geometry/15-composition-objects.md).
+Missing projection is a vocabulary drift failure, not an optional host feature.
 
 ## 7.4 Compatibility impact
 

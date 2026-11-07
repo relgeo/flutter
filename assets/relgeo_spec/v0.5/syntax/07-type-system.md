@@ -298,6 +298,15 @@ Catatan:
 Resolver wajib:
 
 - mempertahankan tipe hasil evaluasi
+- memvalidasi literal numerik dengan grammar desimal/eksponensial yang sama
+  dengan evaluator; suffix satuan tidak boleh diterima oleh `number`
+- menolak literal malformed seperti `10..5deg`, `10..5%`, atau `10abc` tanpa
+  melakukan truncation ala `parseFloat`; kegagalan harus mempertahankan
+  diagnostic `TYPE_MISMATCH` dan path deklarasi (`parameters.<id>.default` atau
+  `profiles.<profile>.<id>`)
+- menerapkan profile hanya setelah parameter dideklarasikan dan sebelum
+  normalisasi ke `scene.unit`; nilai `derived` membaca hasil normalisasi yang
+  sama dengan nilai default/override
 - memvalidasi operasi antar tipe
 - menghasilkan error jika tipe tidak kompatibel
 

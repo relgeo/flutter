@@ -206,6 +206,17 @@ Semantik:
 
 ---
 
+### 20.9.1 Collection and query failure boundary
+
+Index array maupun collection yang berada di luar domain harus gagal dengan
+`INVALID_COLLECTION_ACCESS` pada phase `runtime`, mempertahankan object/path
+context bila tersedia. Query path dengan parameter di luar `[0, 1]`, target
+degenerate, atau selector yang tidak sah harus mengembalikan diagnostic
+terstruktur; resolver tidak boleh menebak titik terdekat atau mengembalikan
+`undefined` sebagai hasil yang valid.
+
+---
+
 ## 20.10 angleBetween
 
 Menghasilkan arah dari point pertama ke point kedua.
@@ -418,6 +429,12 @@ deterministik. Sampling adalah perilaku package saat ini, bukan janji error
 bound universal untuk DSL atau parity lintas host.
 
 ### 20.18.2 Selector and result modes
+
+Intersection comparison and point deduplication use the deterministic
+`GEOMETRY_TOLERANCES.intersection` value of `1e-9` in scene units. This is the
+numeric boundary for coincidence and canonical ordering; it is not a general
+expression-evaluation epsilon. Curve approximation assertions may use a wider
+fixture tolerance when the result is produced by deterministic sampling.
 
 | Mode | Perilaku |
 | --- | --- |
