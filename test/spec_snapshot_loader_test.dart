@@ -35,11 +35,13 @@ void main() {
           .matches,
       isNotEmpty,
     );
-    final profileSpec = loaded.documents
-        .singleWhere((document) => document.relativePath == 'syntax/11-profiles.md');
+    final profileSpec = loaded.documents.singleWhere(
+      (document) => document.relativePath == 'syntax/11-profiles.md',
+    );
     expect(profileSpec.content, contains('UNKNOWN_FIELD'));
-    final closureSpec = loaded.documents
-        .singleWhere((document) => document.relativePath == 'core/07-closure-contracts.md');
+    final closureSpec = loaded.documents.singleWhere(
+      (document) => document.relativePath == 'core/07-closure-contracts.md',
+    );
     expect(closureSpec.content, contains('SVGSemanticError'));
   });
 
@@ -164,11 +166,55 @@ void main() {
     },
   );
 
-  test(
-    'loads the pinned corpus through AssetBundle and builds an index',
-    () async {
-      const root = 'assets/relgeo_spec/v0.5';
-      final manifest = jsonEncode(<String, Object>{
+  test('loads the pinned corpus through AssetBundle and builds an index', () async {
+    const root = 'assets/relgeo_spec/v0.5';
+    final manifest = jsonEncode(<String, Object>{
+      'schemaVersion': 1,
+      'specVersion': '0.5',
+      'sourceDirectory': 'spec/id',
+      'assetDirectory': root,
+      'revision': 'fixture-revision',
+      'sourceUrl': 'https://example.test/spec/fixture-revision/id',
+      'digestAlgorithm': 'sha256',
+      'digest':
+          'sha256:c5273e02c094043ec6392ec0b52e45c2933c6fd7f512cd18c1764df42b0b5ddf',
+      'fileCount': 2,
+      'files': <Map<String, Object>>[
+        <String, Object>{
+          'path': 'core/README.md',
+          'bytes': 36,
+          'sha256':
+              '78fd0853fbb9f71b4efe607c4d8b2ccfc5ad97fab233c6ebd0a6cb4d74de429c',
+        },
+        <String, Object>{
+          'path': 'syntax/08-parameters.md',
+          'bytes': 56,
+          'sha256':
+              '6a975b710ddb51ca1fef479f00ad17b0326c5f1f438492d0de84bc56ae388512',
+        },
+      ],
+    });
+    final bundle = _MapAssetBundle(<String, String>{
+      '$root/manifest.json': manifest,
+      '$root/core/README.md': '# Core\n\nStatus dokumen: `Normative`\n',
+      '$root/syntax/08-parameters.md':
+          '# Parameters\n\nStatus dokumen: `Normative`\n\nNamed inputs.',
+    });
+
+    final loaded = await RelGeoSpecSnapshotLoader(bundle: bundle).load();
+    expect(loaded.snapshot.revision, 'fixture-revision');
+    expect(loaded.documents, hasLength(2));
+    final index = loaded.createIndex();
+    final result = index.search(const SearchSpecInput(query: 'named inputs'));
+    expect(result.matches, hasLength(1));
+    expect(result.matches.single.provenance.isNormative, isTrue);
+    expect(result.snapshot.digest, startsWith('sha256:'));
+  });
+
+  test('rejects bundled content that no longer matches its manifest hash', () async {
+    const root = 'assets/relgeo_spec/v0.5';
+    final bundle = _MapAssetBundle(<String, String>{
+      '$root/manifest.json': jsonEncode(<String, Object>{
         'schemaVersion': 1,
         'specVersion': '0.5',
         'sourceDirectory': 'spec/id',
@@ -176,30 +222,65 @@ void main() {
         'revision': 'fixture-revision',
         'sourceUrl': 'https://example.test/spec/fixture-revision/id',
         'digestAlgorithm': 'sha256',
-        'digest': 'sha256:fixture',
+        'digest':
+            'sha256:c5273e02c094043ec6392ec0b52e45c2933c6fd7f512cd18c1764df42b0b5ddf',
         'fileCount': 2,
         'files': <Map<String, Object>>[
-          <String, Object>{'path': 'core/README.md'},
-          <String, Object>{'path': 'syntax/08-parameters.md'},
+          <String, Object>{
+            'path': 'core/README.md',
+            'bytes': 36,
+            'sha256':
+                '78fd0853fbb9f71b4efe607c4d8b2ccfc5ad97fab233c6ebd0a6cb4d74de429c',
+          },
+          <String, Object>{
+            'path': 'syntax/08-parameters.md',
+            'bytes': 56,
+            'sha256':
+                '6a975b710ddb51ca1fef479f00ad17b0326c5f1f438492d0de84bc56ae388512',
+          },
         ],
-      });
-      final bundle = _MapAssetBundle(<String, String>{
-        '$root/manifest.json': manifest,
-        '$root/core/README.md': '# Core\n\nStatus dokumen: `Normative`\n',
-        '$root/syntax/08-parameters.md':
-            '# Parameters\n\nStatus dokumen: `Normative`\n\nNamed inputs.',
-      });
+      }),
+      '$root/core/README.md': '# Core\n\nStatus dokumen: `Normative`\n',
+      '$root/syntax/08-parameters.md':
+          '# Parameters\n\nStatus dokumen: `Normative`\n\nTampered.....',
+    });
 
-      final loaded = await RelGeoSpecSnapshotLoader(bundle: bundle).load();
-      expect(loaded.snapshot.revision, 'fixture-revision');
-      expect(loaded.documents, hasLength(2));
-      final index = loaded.createIndex();
-      final result = index.search(const SearchSpecInput(query: 'named inputs'));
-      expect(result.matches, hasLength(1));
-      expect(result.matches.single.provenance.isNormative, isTrue);
-      expect(result.snapshot.digest, 'sha256:fixture');
-    },
-  );
+    await expectLater(
+      RelGeoSpecSnapshotLoader(bundle: bundle).load(),
+      throwsA(
+        predicate<FormatException>(
+          (error) => error.message.contains('hash differs from manifest'),
+        ),
+      ),
+    );
+  });
+
+  test('rejects a manifest whose corpus digest is stale', () async {
+    const root = 'assets/relgeo_spec/v0.5';
+    final bundle = _MapAssetBundle(<String, String>{
+      '$root/manifest.json': jsonEncode(<String, Object>{
+        'schemaVersion': 1,
+        'specVersion': '0.5',
+        'sourceDirectory': 'spec/id',
+        'assetDirectory': root,
+        'revision': 'fixture-revision',
+        'sourceUrl': 'https://example.test/spec/fixture-revision/id',
+        'digestAlgorithm': 'sha256',
+        'digest': 'sha256:stale',
+        'fileCount': 0,
+        'files': <Map<String, Object>>[],
+      }),
+    });
+
+    await expectLater(
+      RelGeoSpecSnapshotLoader(bundle: bundle).load(),
+      throwsA(
+        predicate<FormatException>(
+          (error) => error.message.contains('digest differs from manifest'),
+        ),
+      ),
+    );
+  });
 
   test('rejects a manifest that escapes the bundled Markdown root', () async {
     const root = 'assets/relgeo_spec/v0.5';

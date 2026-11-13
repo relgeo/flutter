@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:relgeo_mcp/relgeo_mcp.dart';
 
 import 'spec_snapshot_loader.dart';
-import 'workbench_agent_bridge.dart';
 
 /// Streamable HTTP endpoint owned by one running desktop workbench session.
 ///
@@ -19,9 +18,11 @@ class RelGeoMcpDesktopServer {
     required this.token,
     required this.permission,
     required RelGeoMcpJsonRpcRouter router,
+    required Duration requestTimeout,
   }) : _server = server,
        _session = session,
-       _router = router;
+       _router = router,
+       _requestTimeout = requestTimeout;
 
   static const _maxRequestBytes = 1024 * 1024;
   static const _protocolVersion = RelGeoMcpJsonRpcRouter.protocolVersion;
@@ -29,18 +30,37 @@ class RelGeoMcpDesktopServer {
   final HttpServer _server;
   final McpServerSession _session;
   final RelGeoMcpJsonRpcRouter _router;
+  final Duration _requestTimeout;
   bool _stopped = false;
+  int _activeRequests = 0;
 
   final String token;
   final McpPermission permission;
 
   String get endpoint => 'http://127.0.0.1:${_server.port}/mcp';
 
+  /// Safe operational state for the host UI. Durable client identity is not
+  /// inferred from bearer requests; active authorized requests are reported
+  /// separately instead.
+  McpServerStatus get status => _session.status(
+    endpoint: endpoint,
+    permission: permission,
+    activeRequests: _activeRequests,
+  );
+
   static Future<RelGeoMcpDesktopServer> start({
-    required WorkbenchAgentBridge bridge,
+    required RelGeoAgentBridge bridge,
     McpPermission permission = McpPermission.readOnly,
     RelGeoSpecSnapshotLoader? specLoader,
+    Duration requestTimeout = const Duration(seconds: 30),
   }) async {
+    if (requestTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        requestTimeout,
+        'requestTimeout',
+        'must be greater than zero',
+      );
+    }
     final session = McpServerSession(
       policy: const McpSecurityPolicy(enabled: true),
     )..start();
@@ -72,6 +92,7 @@ class RelGeoMcpDesktopServer {
         token: token,
         permission: permission,
         router: router,
+        requestTimeout: requestTimeout,
       );
       server.listen(result._handleRequest, onError: (_) {});
       return result;
@@ -94,8 +115,12 @@ class RelGeoMcpDesktopServer {
     final origin = request.headers.value('origin');
     if (!_isLoopbackHost(request.headers.value('host') ?? '') ||
         (origin != null && !_isLoopbackOrigin(origin))) {
-      response.statusCode = HttpStatus.forbidden;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.forbidden,
+        category: origin == null ? 'host-rejected' : 'origin-rejected',
+        message: 'MCP accepts only loopback host and origin values.',
+      );
       return;
     }
 
@@ -115,33 +140,64 @@ class RelGeoMcpDesktopServer {
       return;
     }
     if (request.uri.path != '/mcp' || request.uri.query.isNotEmpty) {
-      response.statusCode = HttpStatus.notFound;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.notFound,
+        category: 'route-not-found',
+        message: 'MCP endpoint not found.',
+      );
       return;
     }
     if (request.method != 'POST') {
       response.headers.set(HttpHeaders.allowHeader, 'POST, OPTIONS');
-      response.statusCode = HttpStatus.methodNotAllowed;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.methodNotAllowed,
+        category: 'method-not-allowed',
+        message: 'MCP endpoint accepts POST requests only.',
+      );
       return;
     }
     final authorization = _authorized(request);
     if (authorization == null) {
       response.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer');
-      response.statusCode = HttpStatus.unauthorized;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.unauthorized,
+        category: 'unauthorized',
+        message: 'A valid MCP bearer token is required.',
+      );
       return;
     }
+    _activeRequests += 1;
+    unawaited(
+      response.done.then<void>(
+        (_) {
+          if (_activeRequests > 0) _activeRequests -= 1;
+        },
+        onError: (Object _, StackTrace _) {
+          if (_activeRequests > 0) _activeRequests -= 1;
+        },
+      ),
+    );
     if (request.headers.contentType?.mimeType != 'application/json') {
-      response.statusCode = HttpStatus.unsupportedMediaType;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.unsupportedMediaType,
+        category: 'unsupported-media-type',
+        message: 'MCP requests must use application/json.',
+      );
       return;
     }
     final accept = request.headers.value(HttpHeaders.acceptHeader) ?? '';
     if (!_accepts(accept, 'application/json') ||
         !_accepts(accept, 'text/event-stream')) {
-      response.statusCode = HttpStatus.notAcceptable;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.notAcceptable,
+        category: 'not-acceptable',
+        message: 'MCP clients must accept JSON and text/event-stream.',
+      );
       return;
     }
     final protocolHeader = request.headers.value('MCP-Protocol-Version');
@@ -150,17 +206,25 @@ class RelGeoMcpDesktopServer {
             !RelGeoMcpJsonRpcRouter.supportedProtocolVersions.contains(
               protocolHeader,
             ))) {
-      response.statusCode = HttpStatus.badRequest;
-      await response.close();
+      await _errorResponse(
+        response,
+        HttpStatus.badRequest,
+        category: 'protocol-version',
+        message: 'Unsupported or missing MCP protocol version.',
+      );
       return;
     }
 
     try {
-      final body = await _readBody(request);
+      final body = await _readBody(request).timeout(_requestTimeout);
       final decoded = jsonDecode(body);
       if (decoded is! Map || decoded.keys.any((key) => key is! String)) {
-        response.statusCode = HttpStatus.badRequest;
-        await response.close();
+        await _errorResponse(
+          response,
+          HttpStatus.badRequest,
+          category: 'invalid-request',
+          message: 'MCP request body must be a JSON object.',
+        );
         return;
       }
       final message = Map<String, Object?>.from(
@@ -177,13 +241,32 @@ class RelGeoMcpDesktopServer {
       }
       if (_requiresDocumentEditPermission(message) &&
           authorization.permission != McpPermission.readWrite) {
-        response
-          ..statusCode = HttpStatus.forbidden
-          ..write('Document editing is disabled for this MCP session.');
-        await response.close();
+        await _errorResponse(
+          response,
+          HttpStatus.forbidden,
+          category: 'forbidden',
+          message: 'Document editing is disabled for this MCP session.',
+        );
         return;
       }
-      final result = await _router.handle(message);
+      final result = await _router
+          .handle(message)
+          .timeout(
+            _requestTimeout,
+            onTimeout: () {
+              _router.cancelRequest(message['id'], 'MCP request timed out');
+              return <String, Object?>{
+                'jsonrpc': '2.0',
+                'id': message['id'],
+                'error': <String, Object?>{
+                  'code': -32800,
+                  'message': 'MCP request timed out',
+                  'category': 'cancelled',
+                  'data': <String, Object?>{'category': 'request-timeout'},
+                },
+              };
+            },
+          );
       if (result == null) {
         response.statusCode = HttpStatus.accepted;
       } else {
@@ -198,12 +281,59 @@ class RelGeoMcpDesktopServer {
         response.write(jsonEncode(result));
       }
     } on FormatException {
-      response.statusCode = HttpStatus.badRequest;
+      await _errorResponse(
+        response,
+        HttpStatus.badRequest,
+        category: 'invalid-json',
+        message: 'MCP request body is not valid JSON.',
+      );
+      return;
+    } on TimeoutException {
+      await _errorResponse(
+        response,
+        HttpStatus.requestTimeout,
+        category: 'request-timeout',
+        message: 'MCP request body timed out.',
+      );
+      return;
     } on RequestTooLargeException {
-      response.statusCode = HttpStatus.requestEntityTooLarge;
+      await _errorResponse(
+        response,
+        HttpStatus.requestEntityTooLarge,
+        category: 'request-too-large',
+        message: 'MCP request body exceeds the size limit.',
+      );
+      return;
     } catch (_) {
-      response.statusCode = HttpStatus.internalServerError;
+      await _errorResponse(
+        response,
+        HttpStatus.internalServerError,
+        category: 'transport-failure',
+        message: 'MCP transport failed before a response was completed.',
+      );
+      return;
     }
+    await response.close();
+  }
+
+  static Future<void> _errorResponse(
+    HttpResponse response,
+    int statusCode, {
+    required String category,
+    required String message,
+  }) async {
+    response
+      ..statusCode = statusCode
+      ..headers.contentType = ContentType.json;
+    response.write(
+      jsonEncode(<String, Object?>{
+        'error': <String, Object?>{
+          'code': statusCode,
+          'message': message,
+          'data': <String, Object?>{'category': category},
+        },
+      }),
+    );
     await response.close();
   }
 

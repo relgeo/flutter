@@ -25,8 +25,10 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
       const <DocumentDiagnostic>[];
 
   @override
-  Future<ActiveDocumentSnapshot> getActiveDocument() async =>
-      session.snapshot(diagnostics: diagnostics());
+  Future<ActiveDocumentSnapshot?> getActiveDocument() async {
+    if (!session.isOpen) return null;
+    return session.snapshot(diagnostics: diagnostics());
+  }
 
   @override
   Future<List<DocumentDiagnostic>> getDiagnostics() async => diagnostics();
@@ -52,6 +54,11 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
     DocumentEditProposal proposal,
   ) async {
     final snapshot = await getActiveDocument();
+    if (snapshot == null) {
+      return const DocumentEditResult.failed(
+        message: 'No active document session is connected',
+      );
+    }
     final validation = proposal.validateAgainst(snapshot);
     final stale = validation.any(
       (error) =>
@@ -71,6 +78,11 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
     DocumentEditProposal proposal, {
     McpCancellationToken? cancellation,
   }) async {
+    if (!session.isOpen) {
+      return const DocumentEditResult.failed(
+        message: 'No active document session is connected',
+      );
+    }
     final snapshot = session.snapshot(diagnostics: diagnostics());
     final validation = proposal.validateAgainst(snapshot);
     final hasStaleGuardFailure = validation.any(
@@ -87,6 +99,11 @@ class WorkbenchAgentBridge implements RelGeoAgentBridge {
 
     final nextSource = proposal.applyTo(snapshot);
     cancellation?.throwIfCancelled();
+    if (nextSource == snapshot.source) {
+      return DocumentEditResult.noOp(
+        snapshot: session.snapshot(diagnostics: diagnostics()),
+      );
+    }
 
     // The setter is called exactly once. With the workbench listener attached,
     // that produces one native editor history entry and updates the session;

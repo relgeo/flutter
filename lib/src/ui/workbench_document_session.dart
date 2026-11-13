@@ -24,12 +24,14 @@ class WorkbenchDocumentSession extends ChangeNotifier {
   String? _path;
   String? _name;
   int _revision = 0;
+  bool _isOpen = true;
 
   String get documentId => _documentId;
   String get source => _source;
   String? get path => _path;
   String? get name => _name;
   int get revision => _revision;
+  bool get isOpen => _isOpen;
   bool get isDirty => _source != _savedSource;
 
   ActiveDocumentSnapshot snapshot({
@@ -47,6 +49,7 @@ class WorkbenchDocumentSession extends ChangeNotifier {
   }
 
   void updateSource(String source) {
+    if (!_isOpen) return;
     if (_source == source) return;
     _source = source;
     _revision += 1;
@@ -59,6 +62,7 @@ class WorkbenchDocumentSession extends ChangeNotifier {
     String? name,
     String? documentId,
   }) {
+    _isOpen = true;
     _documentId =
         documentId ??
         (path != null && path.isNotEmpty ? path : _nextUntitledDocumentId());
@@ -71,6 +75,7 @@ class WorkbenchDocumentSession extends ChangeNotifier {
   }
 
   void markSaved({required String source, String? path, String? name}) {
+    if (!_isOpen) return;
     _source = source;
     _savedSource = source;
     _path = path;
@@ -87,11 +92,45 @@ class WorkbenchDocumentSession extends ChangeNotifier {
     required int baseRevision,
     required String source,
   }) {
-    if (documentId != _documentId || baseRevision != _revision) return false;
+    if (!_isOpen || documentId != _documentId || baseRevision != _revision) {
+      return false;
+    }
     updateSource(source);
     return true;
   }
 
+  /// Closes the active document without leaving a usable blank MCP target.
+  ///
+  /// The next [markLoaded] call creates the next active session. Clearing the
+  /// identity and revision here ensures an edit captured before close cannot
+  /// be replayed against a later document.
+  void close() {
+    if (!_isOpen) return;
+    _isOpen = false;
+    _documentId = _nextUntitledDocumentId();
+    _source = '';
+    _savedSource = '';
+    _path = null;
+    _name = null;
+    _revision = 0;
+    notifyListeners();
+  }
+
+  /// Reloads the same document identity from its owner and invalidates edits
+  /// based on the previous source by advancing the monotonic revision.
+  void reload({required String source}) {
+    if (!_isOpen) {
+      markLoaded(source: source);
+      return;
+    }
+    _source = source;
+    _savedSource = source;
+    _revision += 1;
+    notifyListeners();
+  }
+
+  /// Backwards-compatible blank-document reset used by older host callers.
+  /// New lifecycle code should call [close] followed by [markLoaded].
   void reset({String source = ''}) {
     markLoaded(source: source);
   }

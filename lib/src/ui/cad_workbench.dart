@@ -330,7 +330,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       return;
     }
     if (!await _confirmDiscardChangesIfNeeded()) return;
-    _documentSession.reset(source: '');
+    _documentSession.close();
     _editorController.replaceDocument('');
     unawaited(_recoveryStore.clear());
     _selectionController.clear();
@@ -1572,6 +1572,10 @@ objects:
                   ],
                   if (server != null) ...[
                     const SizedBox(height: 16),
+                    Text(
+                      'Status: ${server.status.running ? 'running' : 'stopped'} · active requests: ${server.status.activeRequests}',
+                    ),
+                    const SizedBox(height: 10),
                     const Text('Endpoint'),
                     SelectableText(server.endpoint),
                     const SizedBox(height: 10),
