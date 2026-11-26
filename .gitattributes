@@ -1,0 +1,3 @@
+# The bundled spec manifest records exact byte lengths and SHA-256 hashes.
+# Keep the snapshot byte-identical on every checkout, including Windows.
+assets/relgeo_spec/** text eol=lf
