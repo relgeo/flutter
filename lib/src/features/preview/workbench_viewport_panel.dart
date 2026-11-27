@@ -77,28 +77,36 @@ class WorkbenchViewportPanel extends StatelessWidget {
                   minScale: 0.0001,
                   maxScale: 10000.0,
                   child: scene != null
-                      ? GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTapUp: (details) =>
-                              onCanvasTap(details.localPosition),
-                          child: SizedBox(
-                            width: displayBounds!.width,
-                            height: displayBounds!.height,
-                            child: CustomPaint(
-                              key: const Key('scene-canvas'),
-                              painter: CanvasPainter(
-                                scene: scene!,
-                                backgroundColor:
-                                    visualProfile.viewportBackgroundColor,
-                                overlay: overlay,
-                                zoomScale: zoomLevel,
-                                sheetId: selectedSheetId,
-                                selectedObjectId: selectedObjectId,
-                                hiddenRoles: hiddenRoles,
-                                visualProfile: visualProfile,
-                                themeTokens: Theme.of(
-                                  context,
-                                ).extension<RelGeoThemeExtension>(),
+                      ? Semantics(
+                          container: true,
+                          label: 'Canvas preview',
+                          value: selectedObjectId == null
+                              ? 'No object selected'
+                              : 'Selected object $selectedObjectId',
+                          hint: 'Tap an object to select it',
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapUp: (details) =>
+                                onCanvasTap(details.localPosition),
+                            child: SizedBox(
+                              width: displayBounds!.width,
+                              height: displayBounds!.height,
+                              child: CustomPaint(
+                                key: const Key('scene-canvas'),
+                                painter: CanvasPainter(
+                                  scene: scene!,
+                                  backgroundColor:
+                                      visualProfile.viewportBackgroundColor,
+                                  overlay: overlay,
+                                  zoomScale: zoomLevel,
+                                  sheetId: selectedSheetId,
+                                  selectedObjectId: selectedObjectId,
+                                  hiddenRoles: hiddenRoles,
+                                  visualProfile: visualProfile,
+                                  themeTokens: Theme.of(
+                                    context,
+                                  ).extension<RelGeoThemeExtension>(),
+                                ),
                               ),
                             ),
                           ),

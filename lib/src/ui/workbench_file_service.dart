@@ -15,6 +15,49 @@ abstract interface class WorkbenchFileService {
   Future<bool> saveDocument(String source, {required bool saveAs});
 }
 
+/// A picker result that does not expose the platform plugin's concrete types.
+///
+/// Desktop pickers may return a path without eagerly loading bytes, while web
+/// pickers commonly return bytes without a filesystem path. The workbench
+/// accepts either representation and normalizes it at this boundary.
+class WorkbenchPickedFile {
+  const WorkbenchPickedFile({required this.name, this.path, this.bytes});
+
+  final String name;
+  final String? path;
+  final Uint8List? bytes;
+}
+
+/// Host adapter for native/document picker operations.
+abstract interface class WorkbenchFilePicker {
+  Future<WorkbenchPickedFile?> pickDocument({
+    required List<String> allowedExtensions,
+  });
+
+  Future<String?> saveDocument({
+    required String fileName,
+    required List<String> allowedExtensions,
+  });
+}
+
+/// Stable error vocabulary for the document/file boundary.
+class WorkbenchDocumentFileException implements Exception {
+  const WorkbenchDocumentFileException({
+    required this.code,
+    required this.message,
+    this.path,
+    this.cause,
+  });
+
+  final String code;
+  final String message;
+  final String? path;
+  final Object? cause;
+
+  @override
+  String toString() => '$code: $message';
+}
+
 /// Request passed to a host-owned asynchronous Save or Save As operation.
 class WorkbenchDocumentSaveRequest {
   const WorkbenchDocumentSaveRequest({
@@ -89,9 +132,13 @@ abstract interface class WorkbenchRecentDocumentFileService
 /// callbacks on [CADWorkbenchPage].
 class FilePickerWorkbenchFileService
     implements WorkbenchRecentDocumentFileService {
-  const FilePickerWorkbenchFileService({this.defaultFileName = 'relgeo.yaml'});
+  const FilePickerWorkbenchFileService({
+    this.defaultFileName = 'relgeo.yaml',
+    WorkbenchFilePicker? picker,
+  }) : _picker = picker ?? const _PlatformWorkbenchFilePicker();
 
   final String defaultFileName;
+  final WorkbenchFilePicker _picker;
 
   static const _extensions = <String>['yaml', 'yml', 'relgeo'];
 
@@ -103,20 +150,11 @@ class FilePickerWorkbenchFileService
 
   @override
   Future<WorkbenchDocumentFile?> openDocumentWithIdentity() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: _extensions,
-      withData: true,
-      lockParentWindow: true,
-    );
-    if (result == null || result.files.isEmpty) return null;
-    final file = result.files.single;
-    final bytes = file.bytes;
-    if (bytes == null) {
-      throw FileSystemException('The selected document could not be read.');
-    }
+    final file = await _picker.pickDocument(allowedExtensions: _extensions);
+    if (file == null) return null;
+    final source = await _readPickedSource(file);
     return WorkbenchDocumentFile(
-      source: utf8.decode(bytes),
+      source: source,
       path: file.path,
       name: file.name,
     );
@@ -127,11 +165,22 @@ class FilePickerWorkbenchFileService
     if (!_isSupportedPath(path)) return null;
     final file = File(path);
     if (!await file.exists()) return null;
-    return WorkbenchDocumentFile(
-      source: await file.readAsString(),
-      path: path,
-      name: _fileName(path) ?? path,
-    );
+    try {
+      return WorkbenchDocumentFile(
+        source: _decode(await file.readAsBytes(), path: path),
+        path: path,
+        name: _fileName(path) ?? path,
+      );
+    } on WorkbenchDocumentFileException {
+      rethrow;
+    } catch (error) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.read',
+        message: 'The selected document could not be read.',
+        path: path,
+        cause: error,
+      );
+    }
   }
 
   @override
@@ -151,17 +200,24 @@ class FilePickerWorkbenchFileService
     // destination picker.
     final path = !saveAs && currentPath != null && currentPath.isNotEmpty
         ? currentPath
-        : await FilePicker.platform.saveFile(
-            type: FileType.custom,
-            allowedExtensions: _extensions,
+        : await _picker.saveDocument(
             fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
-            lockParentWindow: true,
+            allowedExtensions: _extensions,
           );
     if (path == null) return null;
 
-    await File(
-      path,
-    ).writeAsBytes(Uint8List.fromList(utf8.encode(source)), flush: true);
+    try {
+      await File(
+        path,
+      ).writeAsBytes(Uint8List.fromList(utf8.encode(source)), flush: true);
+    } catch (error) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.write',
+        message: 'The document could not be saved.',
+        path: path,
+        cause: error,
+      );
+    }
     return WorkbenchDocumentFile(
       source: source,
       path: path,
@@ -178,5 +234,77 @@ class FilePickerWorkbenchFileService
   bool _isSupportedPath(String path) {
     final name = (_fileName(path) ?? path).toLowerCase();
     return _extensions.any((extension) => name.endsWith('.$extension'));
+  }
+
+  Future<String> _readPickedSource(WorkbenchPickedFile file) async {
+    if (file.bytes != null) return _decode(file.bytes!, path: file.path);
+    final path = file.path;
+    if (path == null || path.isEmpty) {
+      throw const WorkbenchDocumentFileException(
+        code: 'document.read',
+        message: 'The selected document has no readable content.',
+      );
+    }
+    try {
+      return _decode(await File(path).readAsBytes(), path: path);
+    } on WorkbenchDocumentFileException {
+      rethrow;
+    } catch (error) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.read',
+        message: 'The selected document could not be read.',
+        path: path,
+        cause: error,
+      );
+    }
+  }
+
+  String _decode(List<int> bytes, {String? path}) {
+    try {
+      return utf8.decode(bytes);
+    } catch (error) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.decode',
+        message: 'The selected document is not valid UTF-8.',
+        path: path,
+        cause: error,
+      );
+    }
+  }
+}
+
+class _PlatformWorkbenchFilePicker implements WorkbenchFilePicker {
+  const _PlatformWorkbenchFilePicker();
+
+  @override
+  Future<WorkbenchPickedFile?> pickDocument({
+    required List<String> allowedExtensions,
+  }) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: allowedExtensions,
+      withData: true,
+      lockParentWindow: true,
+    );
+    if (result == null || result.files.isEmpty) return null;
+    final file = result.files.single;
+    return WorkbenchPickedFile(
+      name: file.name,
+      path: file.path,
+      bytes: file.bytes,
+    );
+  }
+
+  @override
+  Future<String?> saveDocument({
+    required String fileName,
+    required List<String> allowedExtensions,
+  }) {
+    return FilePicker.platform.saveFile(
+      type: FileType.custom,
+      allowedExtensions: allowedExtensions,
+      fileName: fileName,
+      lockParentWindow: true,
+    );
   }
 }

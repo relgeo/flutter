@@ -1,7 +1,35 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
+
+class _FakePicker implements WorkbenchFilePicker {
+  WorkbenchPickedFile? pickedFile;
+  String? savePath;
+  int pickCount = 0;
+  int saveCount = 0;
+
+  @override
+  Future<WorkbenchPickedFile?> pickDocument({
+    required List<String> allowedExtensions,
+  }) async {
+    pickCount++;
+    expect(allowedExtensions, containsAll(<String>['yaml', 'yml', 'relgeo']));
+    return pickedFile;
+  }
+
+  @override
+  Future<String?> saveDocument({
+    required String fileName,
+    required List<String> allowedExtensions,
+  }) async {
+    saveCount++;
+    expect(fileName, isNotEmpty);
+    expect(allowedExtensions, contains('relgeo'));
+    return savePath;
+  }
+}
 
 void main() {
   late Directory temporaryDirectory;
@@ -65,6 +93,70 @@ void main() {
     expect(document?.source, 'scene: {}');
     expect(document?.path, file.path);
     expect(document?.name, 'drawing.relgeo');
+  });
+
+  test('picker reads a path-backed result when the host omits bytes', () async {
+    final file = File('${temporaryDirectory.path}/picked.relgeo');
+    await file.writeAsString('scene: {}');
+    final picker = _FakePicker()
+      ..pickedFile = WorkbenchPickedFile(
+        name: 'picked.relgeo',
+        path: file.path,
+      );
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    final document = await pickerService.openDocumentWithIdentity();
+
+    expect(picker.pickCount, 1);
+    expect(document?.source, 'scene: {}');
+    expect(document?.path, file.path);
+  });
+
+  test('picker preserves a web-style bytes-only result', () async {
+    final picker = _FakePicker()
+      ..pickedFile = WorkbenchPickedFile(
+        name: 'picked.relgeo',
+        bytes: Uint8List.fromList(<int>[115, 99, 101, 110, 101, 58, 32, 123, 125]),
+      );
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    final document = await pickerService.openDocumentWithIdentity();
+
+    expect(document?.source, 'scene: {}');
+    expect(document?.path, isNull);
+  });
+
+  test('malformed picker bytes use the stable decode error code', () async {
+    final picker = _FakePicker()
+      ..pickedFile = WorkbenchPickedFile(
+        name: 'broken.relgeo',
+        bytes: Uint8List.fromList(<int>[0xff, 0xfe]),
+      );
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    await expectLater(
+      pickerService.openDocumentWithIdentity(),
+      throwsA(
+        predicate(
+          (error) =>
+              error is WorkbenchDocumentFileException &&
+              error.code == 'document.decode',
+        ),
+      ),
+    );
+  });
+
+  test('save picker cancellation does not write a destination', () async {
+    final picker = _FakePicker();
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    final saved = await pickerService.saveDocumentWithIdentity(
+      'scene: {}',
+      saveAs: true,
+    );
+
+    expect(saved, isNull);
+    expect(picker.saveCount, 1);
   });
 
   test(

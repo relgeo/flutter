@@ -147,6 +147,9 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
   String? get _documentName => _documentSession.name;
   List<WorkbenchRecentDocument> _recentDocuments =
       const <WorkbenchRecentDocument>[];
+  Object? _documentFileError;
+  Object? _yamlDiagnosticError;
+  Object? _compilerDiagnosticError;
 
   Future<void> _openDocumentFromFileService() async {
     final service = widget.fileService;
@@ -159,6 +162,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         // Ask only after a document was selected. Cancelling the picker must
         // not ask the user to discard the current work.
         if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+        _documentFileError = null;
         _loadDocument(document);
         await _recordRecentDocument(document);
         return;
@@ -167,10 +171,12 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
       final source = await service.openDocument();
       if (!mounted || source == null) return;
       if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+      _documentFileError = null;
       _documentSession.markLoaded(source: source);
       _editorController.replaceDocument(source);
       _compileDSL(source);
     } catch (error) {
+      _documentFileError = error;
       _showDocumentOperationError('Open document', error);
     }
   }
@@ -189,14 +195,17 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         return;
       }
       if (!await _confirmDiscardChangesIfNeeded() || !mounted) return;
+      _documentFileError = null;
       _loadDocument(document);
       await _recordRecentDocument(document);
     } catch (error) {
+      _documentFileError = error;
       _showDocumentOperationError('Open recent document', error);
     }
   }
 
   void _loadDocument(WorkbenchDocumentFile document) {
+    _documentFileError = null;
     _documentSession.markLoaded(
       source: document.source,
       path: document.path,
@@ -210,6 +219,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
 
   Future<void> _createNewDocument() async {
     if (!await _confirmDiscardChangesIfNeeded()) return;
+    _documentFileError = null;
     _documentSession.markLoaded(source: _newDocumentDSL);
     _editorController.replaceDocument(_newDocumentDSL);
     unawaited(_recoveryStore.clear());
@@ -229,6 +239,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
           currentName: _documentName,
         );
         if (saved != null && mounted) {
+          _documentFileError = null;
           _documentSession.markSaved(
             source: saved.source,
             path: saved.path,
@@ -245,6 +256,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         saveAs: saveAs,
       );
       if (saved && mounted) {
+        _documentFileError = null;
         _documentSession.markSaved(
           source: _editorController.text,
           path: _documentPath,
@@ -262,6 +274,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         }
       }
     } catch (error) {
+      _documentFileError = error;
       _showDocumentOperationError(
         saveAs ? 'Save document as' : 'Save document',
         error,
@@ -296,6 +309,8 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         path: savedPath,
         name: savedName,
       );
+      _documentFileError = null;
+      unawaited(_recoveryStore.clear());
       if (savedPath != null && savedName != null) {
         await _recordRecentDocument(
           WorkbenchDocumentFile(
@@ -306,6 +321,7 @@ class _CADWorkbenchPageState extends State<CADWorkbenchPage> {
         );
       }
     } catch (error) {
+      _documentFileError = error;
       _showDocumentOperationError(
         saveAs ? 'Save document as' : 'Save document',
         error,
@@ -841,6 +857,8 @@ objects:
       setState(() {
         _yamlError = null;
         _compilerError = null;
+        _yamlDiagnosticError = null;
+        _compilerDiagnosticError = null;
         _scene = scene;
         if (_selectionController.selectedObjectId != null &&
             !scene.objects.containsKey(_selectionController.selectedObjectId)) {
@@ -854,11 +872,15 @@ objects:
         }
       });
     } on YamlException catch (e) {
+      _yamlDiagnosticError = e;
+      _compilerDiagnosticError = null;
       setState(() {
         _yamlError = e.message;
         _compilerError = null;
       });
     } catch (e) {
+      _yamlDiagnosticError = null;
+      _compilerDiagnosticError = e;
       setState(() {
         _yamlError = null;
         _compilerError = e.toString();
@@ -1685,7 +1707,11 @@ objects:
       editor: _editorController,
       diagnostics: () => WorkbenchImportDiagnostics.fromErrors(
         yamlError: _yamlError,
+        yamlException: _yamlDiagnosticError,
         compilerError: _compilerError,
+        compilerException: _compilerDiagnosticError,
+        fileError: _documentFileError,
+        sourceRevision: _documentSession.revision.toString(),
       ),
     );
     final server = await RelGeoMcpDesktopServer.start(

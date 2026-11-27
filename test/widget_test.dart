@@ -705,6 +705,7 @@ void main() {
       final editor = _editorPanel(tester).controller;
       editor.text = '${editor.text}\n# typed save';
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
 
       await tester.tap(find.text('File'));
       await tester.pumpAndSettle();
@@ -717,6 +718,12 @@ void main() {
       expect(requests.single.currentPath, isNull);
       expect(requests.single.currentName, isNull);
       expect(dirtyStates, containsAllInOrder(<bool>[true, false]));
+      expect(
+        (await SharedPreferences.getInstance()).getString(
+          'relgeo.workbench.recovery.source',
+        ),
+        isNull,
+      );
 
       editor.text = '${editor.text}\n# typed save as';
       await tester.pump();
