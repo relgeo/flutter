@@ -34,7 +34,7 @@ jobs:
         with:
           repository: relgeo/mcp
           # Keep the standalone sibling checkout on the validated workspace MCP baseline.
-          ref: 109bd599fc5b4881f3a3ada128da7e9d548ab936
+          ref: ad3079bb9658ea44f58ae0a6872a042473e95626
           path: mcp
           persist-credentials: false
 
@@ -84,7 +84,7 @@ jobs:
         with:
           repository: relgeo/mcp
           # Keep the standalone sibling checkout on the validated workspace MCP baseline.
-          ref: 109bd599fc5b4881f3a3ada128da7e9d548ab936
+          ref: ad3079bb9658ea44f58ae0a6872a042473e95626
           path: mcp
           persist-credentials: false
 

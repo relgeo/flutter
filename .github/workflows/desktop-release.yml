@@ -14,7 +14,8 @@ concurrency:
 
 env:
   FLUTTER_VERSION: 3.41.9
-  MCP_REVISION: b4561c08f7b41fd5630c76138a26ce6717ae9b33
+  # Keep release artifacts joined to the workspace's current MCP gitlink.
+  MCP_REVISION: ad3079bb9658ea44f58ae0a6872a042473e95626
 
 jobs:
   validate:
