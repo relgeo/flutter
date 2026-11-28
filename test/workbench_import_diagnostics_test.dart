@@ -3,6 +3,41 @@ import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 import 'package:relgeo_flutter/src/ui/workbench_import_diagnostics.dart';
 
 void main() {
+  test('structured consumer diagnostics preserve canonical fields', () {
+    final diagnostic = WorkbenchImportDiagnostics.fromCompilerError(
+      const _StructuredDiagnostic(
+        code: 'UNKNOWN_ANCHOR',
+        message: 'Unknown anchor: edge',
+        phase: 'validate',
+        path: 'objects.panel.place.anchor',
+        origin: 'validator',
+      ),
+      sourceRevision: 'session-structured',
+    );
+
+    expect(diagnostic.code, 'UNKNOWN_ANCHOR');
+    expect(diagnostic.message, 'Unknown anchor: edge');
+    expect(diagnostic.phase, 'validate');
+    expect(diagnostic.path, 'objects.panel.place.anchor');
+    expect(diagnostic.origin, 'validator');
+    expect(diagnostic.sourceRevision, 'session-structured');
+  });
+
+  test('map-shaped consumer diagnostics normalize code names', () {
+    final diagnostic = WorkbenchImportDiagnostics.fromCompilerError({
+      'code': 'invalid unit value',
+      'message': 'Expected a finite length',
+      'phase': 'validate',
+      'path': 'parameters.scale.default',
+      'origin': 'validator',
+    });
+
+    expect(diagnostic.code, 'INVALID_UNIT_VALUE');
+    expect(diagnostic.phase, 'validate');
+    expect(diagnostic.path, 'parameters.scale.default');
+    expect(diagnostic.origin, 'validator');
+  });
+
   test('file errors use the stable document diagnostic vocabulary', () {
     const error = WorkbenchDocumentFileException(
       code: 'document.decode',
@@ -51,4 +86,20 @@ void main() {
     expect(diagnostic.phase, 'parse');
     expect(diagnostic.path, 'document');
   });
+}
+
+class _StructuredDiagnostic {
+  const _StructuredDiagnostic({
+    required this.code,
+    required this.message,
+    required this.phase,
+    required this.path,
+    required this.origin,
+  });
+
+  final String code;
+  final String message;
+  final String phase;
+  final String path;
+  final String origin;
 }

@@ -7,6 +7,8 @@ import 'package:relgeo_flutter/src/ui/workbench_file_service.dart';
 class _FakePicker implements WorkbenchFilePicker {
   WorkbenchPickedFile? pickedFile;
   String? savePath;
+  Object? pickError;
+  Object? saveError;
   int pickCount = 0;
   int saveCount = 0;
 
@@ -15,6 +17,7 @@ class _FakePicker implements WorkbenchFilePicker {
     required List<String> allowedExtensions,
   }) async {
     pickCount++;
+    if (pickError != null) throw pickError!;
     expect(allowedExtensions, containsAll(<String>['yaml', 'yml', 'relgeo']));
     return pickedFile;
   }
@@ -25,6 +28,7 @@ class _FakePicker implements WorkbenchFilePicker {
     required List<String> allowedExtensions,
   }) async {
     saveCount++;
+    if (saveError != null) throw saveError!;
     expect(fileName, isNotEmpty);
     expect(allowedExtensions, contains('relgeo'));
     return savePath;
@@ -126,6 +130,26 @@ void main() {
     expect(document?.path, isNull);
   });
 
+  test('picker rejects unsupported extensions before reading content', () async {
+    final picker = _FakePicker()
+      ..pickedFile = WorkbenchPickedFile(
+        name: 'notes.txt',
+        bytes: Uint8List.fromList(<int>[115, 99, 101, 110, 101]),
+      );
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    await expectLater(
+      pickerService.openDocumentWithIdentity(),
+      throwsA(
+        predicate(
+          (error) =>
+              error is WorkbenchDocumentFileException &&
+              error.code == 'document.unsupported_format',
+        ),
+      ),
+    );
+  });
+
   test('malformed picker bytes use the stable decode error code', () async {
     final picker = _FakePicker()
       ..pickedFile = WorkbenchPickedFile(
@@ -157,6 +181,55 @@ void main() {
 
     expect(saved, isNull);
     expect(picker.saveCount, 1);
+  });
+
+  test('Save As adds the default RelGeo extension when omitted', () async {
+    final path = '${temporaryDirectory.path}/drawing';
+    final picker = _FakePicker()..savePath = path;
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    final saved = await pickerService.saveDocumentWithIdentity(
+      'scene: {}',
+      saveAs: true,
+    );
+
+    expect(saved?.path, '$path.relgeo');
+    expect(saved?.name, 'drawing.relgeo');
+    expect(await File('$path.relgeo').readAsString(), 'scene: {}');
+  });
+
+  test('Save As rejects an unsupported destination extension', () async {
+    final path = '${temporaryDirectory.path}/drawing.txt';
+    final picker = _FakePicker()..savePath = path;
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    await expectLater(
+      pickerService.saveDocumentWithIdentity('scene: {}', saveAs: true),
+      throwsA(
+        predicate(
+          (error) =>
+              error is WorkbenchDocumentFileException &&
+              error.code == 'document.unsupported_format',
+        ),
+      ),
+    );
+    expect(await File(path).exists(), isFalse);
+  });
+
+  test('picker failures use the stable picker error code', () async {
+    final picker = _FakePicker()..pickError = StateError('native picker');
+    final pickerService = FilePickerWorkbenchFileService(picker: picker);
+
+    await expectLater(
+      pickerService.openDocumentWithIdentity(),
+      throwsA(
+        predicate(
+          (error) =>
+              error is WorkbenchDocumentFileException &&
+              error.code == 'document.picker',
+        ),
+      ),
+    );
   });
 
   test(

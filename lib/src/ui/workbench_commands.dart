@@ -1,4 +1,30 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+/// Builds the primary modifier used by workbench commands.
+///
+/// Desktop conventions use Command on macOS and Control on Windows/Linux.
+/// Keeping this decision in one place ensures the in-window shortcut surface
+/// and the menu metadata describe the same command contract.
+class WorkbenchShortcut {
+  const WorkbenchShortcut._();
+
+  static SingleActivator primary(
+    LogicalKeyboardKey key, {
+    bool shift = false,
+    bool alt = false,
+  }) {
+    final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
+    return SingleActivator(
+      key,
+      control: !isMacOS,
+      meta: isMacOS,
+      shift: shift,
+      alt: alt,
+    );
+  }
+}
 
 enum WorkbenchCommandId {
   newDocument,

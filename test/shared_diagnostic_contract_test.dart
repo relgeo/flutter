@@ -28,7 +28,7 @@ void main() {
     expect(contract['contractRevision'], 'mcp-contract-2026-11-12-r2');
     expect((contract['provenance'] as Map)['source'], 'spec');
     expect((contract['provenance'] as Map)['revision'], isNotEmpty);
-    expect(contract['cases'], hasLength(4));
+    expect(contract['cases'], hasLength(5));
   });
 
   test('Flutter diagnostics preserve canonical code, phase, path, and origin', () {
@@ -65,6 +65,14 @@ void main() {
             const WorkbenchDocumentFileException(
               code: 'document.decode',
               message: 'The selected document is not valid UTF-8.',
+            ),
+            sourceRevision: sourceRevision,
+          ).single,
+        'document-unsupported-format' =>
+          WorkbenchImportDiagnostics.fromFileError(
+            const WorkbenchDocumentFileException(
+              code: 'document.unsupported_format',
+              message: 'Only supported document extensions are accepted.',
             ),
             sourceRevision: sourceRevision,
           ).single,

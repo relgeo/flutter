@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -140,8 +140,6 @@ class FilePickerWorkbenchFileService
   final String defaultFileName;
   final WorkbenchFilePicker _picker;
 
-  static const _extensions = <String>['yaml', 'yml', 'relgeo'];
-
   @override
   Future<String?> openDocument() async {
     final document = await openDocumentWithIdentity();
@@ -150,8 +148,18 @@ class FilePickerWorkbenchFileService
 
   @override
   Future<WorkbenchDocumentFile?> openDocumentWithIdentity() async {
-    final file = await _picker.pickDocument(allowedExtensions: _extensions);
+    final WorkbenchPickedFile? file;
+    try {
+      file = await _picker.pickDocument(allowedExtensions: supportedExtensions);
+    } catch (error) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.picker',
+        message: 'The document picker could not be opened.',
+        cause: error,
+      );
+    }
     if (file == null) return null;
+    _validateSupportedName(file.name, path: file.path);
     final source = await _readPickedSource(file);
     return WorkbenchDocumentFile(
       source: source,
@@ -198,13 +206,25 @@ class FilePickerWorkbenchFileService
     // Save writes directly to the document identity already associated with
     // the session. Only Save As (or Save on an untitled document) opens a
     // destination picker.
-    final path = !saveAs && currentPath != null && currentPath.isNotEmpty
-        ? currentPath
-        : await _picker.saveDocument(
-            fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
-            allowedExtensions: _extensions,
-          );
-    if (path == null) return null;
+    final String? pickedPath;
+    if (!saveAs && currentPath != null && currentPath.isNotEmpty) {
+      pickedPath = currentPath;
+    } else {
+      try {
+        pickedPath = await _picker.saveDocument(
+          fileName: saveAs ? defaultFileName : currentName ?? defaultFileName,
+          allowedExtensions: supportedExtensions,
+        );
+      } catch (error) {
+        throw WorkbenchDocumentFileException(
+          code: 'document.picker',
+          message: 'The document picker could not be opened.',
+          cause: error,
+        );
+      }
+    }
+    if (pickedPath == null) return null;
+    final path = _normalizeSavePath(pickedPath);
 
     try {
       await File(
@@ -225,15 +245,48 @@ class FilePickerWorkbenchFileService
     );
   }
 
+  static const supportedExtensions = <String>['yaml', 'yml', 'relgeo'];
+
   String? _fileName(String path) {
-    final separator = path.lastIndexOf(RegExp(r'[/\\]'));
-    if (separator < 0 || separator == path.length - 1) return null;
-    return path.substring(separator + 1);
+    final normalized = path.replaceAll('\\', '/');
+    final separator = normalized.lastIndexOf('/');
+    if (separator == normalized.length - 1) return null;
+    return separator < 0 ? normalized : normalized.substring(separator + 1);
   }
 
   bool _isSupportedPath(String path) {
     final name = (_fileName(path) ?? path).toLowerCase();
-    return _extensions.any((extension) => name.endsWith('.$extension'));
+    return supportedExtensions.any((extension) => name.endsWith('.$extension'));
+  }
+
+  void _validateSupportedName(String name, {String? path}) {
+    final candidate = name.isNotEmpty ? name : path ?? '';
+    if (_isSupportedPath(candidate)) return;
+    throw WorkbenchDocumentFileException(
+      code: 'document.unsupported_format',
+      message: 'Only .yaml, .yml, and .relgeo documents are supported.',
+      path: path,
+    );
+  }
+
+  String _normalizeSavePath(String path) {
+    final name = _fileName(path);
+    if (name == null || name.isEmpty) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.unsupported_format',
+        message: 'The destination must have a supported document filename.',
+        path: path,
+      );
+    }
+    if (_isSupportedPath(path)) return path;
+    if (name.contains('.')) {
+      throw WorkbenchDocumentFileException(
+        code: 'document.unsupported_format',
+        message: 'Only .yaml, .yml, and .relgeo documents are supported.',
+        path: path,
+      );
+    }
+    return '$path.relgeo';
   }
 
   Future<String> _readPickedSource(WorkbenchPickedFile file) async {
@@ -261,7 +314,8 @@ class FilePickerWorkbenchFileService
 
   String _decode(List<int> bytes, {String? path}) {
     try {
-      return utf8.decode(bytes);
+      final decoded = utf8.decode(bytes);
+      return decoded.startsWith('\uFEFF') ? decoded.substring(1) : decoded;
     } catch (error) {
       throw WorkbenchDocumentFileException(
         code: 'document.decode',

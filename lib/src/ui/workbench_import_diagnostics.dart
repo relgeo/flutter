@@ -59,18 +59,20 @@ class WorkbenchImportDiagnostics {
 
   static DocumentDiagnostic fromCompilerError(
     Object error, {
-    String? path,
-    String? sourceRevision,
-  }) {
-    final message = _message(error);
-    final code = _codeFor(message);
+      String? path,
+      String? sourceRevision,
+    }) {
+    final structuredCode = _field(error, 'code');
+    final structuredMessage = _field(error, 'message');
+    final message = structuredMessage ?? _message(error);
+    final code = _normalizeCode(structuredCode ?? _codeFor(message));
     return DocumentDiagnostic(
       code: code,
       message: _detailFor(message),
       severity: DiagnosticSeverity.error,
-      phase: _phaseFor(code),
-      path: path ?? _pathFor(message) ?? 'document',
-      origin: 'activeDocument',
+      phase: _field(error, 'phase') ?? _phaseFor(code),
+      path: path ?? _field(error, 'path') ?? _pathFor(message) ?? 'document',
+      origin: _field(error, 'origin') ?? 'activeDocument',
       sourceRevision: sourceRevision,
     );
   }
@@ -132,6 +134,29 @@ class WorkbenchImportDiagnostics {
     return 'UNKNOWN_ERROR';
   }
 
+  static String _normalizeCode(String code) =>
+      code.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '_');
+
+  /// Accepts the shared core diagnostic shape without importing the core
+  /// package into the Flutter host. This keeps the adapter usable with a
+  /// current consumer diagnostic object as well as legacy exception strings.
+  static String? _field(Object error, String name) {
+    if (error is Map) return error[name]?.toString();
+    try {
+      final dynamic value = error;
+      return switch (name) {
+        'code' => value.code?.toString(),
+        'message' => value.message?.toString(),
+        'phase' => value.phase?.toString(),
+        'path' => value.path?.toString(),
+        'origin' => value.origin?.toString(),
+        _ => null,
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
   static String _detailFor(String message) {
     final prefix = RegExp(r'^([A-Z][A-Z0-9_]+):\s*').firstMatch(message);
     return prefix == null ? message : message.substring(prefix.end);
@@ -139,9 +164,11 @@ class WorkbenchImportDiagnostics {
 
   static String _phaseFor(String code) {
     if (code == 'CONSTRAINT_VIOLATION') return 'constraint';
+    if (code == 'INVALID_UNIT_VALUE') return 'validate';
     if (code.contains('BOOLEAN') ||
         code == 'DIVISION_BY_ZERO' ||
-        code == 'INVALID_COLLECTION_ACCESS') {
+        code == 'INVALID_COLLECTION_ACCESS' ||
+        code == 'PATH_LENGTH_UNAVAILABLE') {
       return 'runtime';
     }
     return 'resolve';
@@ -160,12 +187,18 @@ class WorkbenchImportDiagnostics {
     'BOOLEAN_MULTIPART_RESULT',
     'CONSTRAINT_VIOLATION',
     'DIVISION_BY_ZERO',
+    'INVALID_BOOLEAN_OPERATION',
     'INVALID_COLLECTION_ACCESS',
     'INVALID_EXPRESSION',
     'INVALID_OBJECT_TYPE',
+    'INVALID_T_PARAMETER',
+    'INVALID_UNIT_VALUE',
     'INVALID_VALUE',
     'MISSING_REQUIRED_FIELD',
+    'PATH_LENGTH_UNAVAILABLE',
     'TYPE_MISMATCH',
+    'UNKNOWN_ANCHOR',
+    'UNKNOWN_FIELD',
     'UNKNOWN_IDENTIFIER',
     'UNKNOWN_REFERENCE',
   };

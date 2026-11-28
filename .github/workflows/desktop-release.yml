@@ -193,11 +193,16 @@ jobs:
             exit 1
           fi
           mkdir -p ../release-assets
+          SPEC_REVISION="$(python3 -c 'import json; print(json.load(open("assets/relgeo_spec/v0.5/manifest.json"))["revision"])')"
+          SPEC_DIGEST="$(python3 -c 'import json; print(json.load(open("assets/relgeo_spec/v0.5/manifest.json"))["digest"])')"
+          SPEC_MANIFEST_SHA256="$(shasum -a 256 assets/relgeo_spec/v0.5/manifest.json | awk '{print $1}')"
           ASSET="../release-assets/RelGeo-macos-${ARCH}-v${RELEASE_VERSION}.zip"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "$ASSET"
           printf 'target=macos\narchitecture=%s\nflutter=%s\ndart=%s\n' \
             "$ARCHS" "$FLUTTER_VERSION" "$(dart --version 2>&1)" \
             > ../release-assets/metadata-macos.txt
+          printf 'specRevision=%s\nspecDigest=%s\nspecManifestSha256=%s\nspecManifestPath=assets/relgeo_spec/v0.5/manifest.json\n' \
+            "$SPEC_REVISION" "$SPEC_DIGEST" "$SPEC_MANIFEST_SHA256" >> ../release-assets/metadata-macos.txt
 
       - name: Build and archive Linux app
         if: runner.os == 'Linux'
@@ -214,12 +219,17 @@ jobs:
           test -d "$BUNDLE/data"
           test -d "$BUNDLE/lib"
           mkdir -p ../release-assets ../release-package/RelGeo
+          SPEC_REVISION="$(python3 -c 'import json; print(json.load(open("assets/relgeo_spec/v0.5/manifest.json"))["revision"])')"
+          SPEC_DIGEST="$(python3 -c 'import json; print(json.load(open("assets/relgeo_spec/v0.5/manifest.json"))["digest"])')"
+          SPEC_MANIFEST_SHA256="$(shasum -a 256 assets/relgeo_spec/v0.5/manifest.json | awk '{print $1}')"
           cp -R "$BUNDLE"/. ../release-package/RelGeo/
           tar -C ../release-package -czf \
             "../release-assets/RelGeo-linux-x64-v${RELEASE_VERSION}.tar.gz" RelGeo
           printf 'target=linux\narchitecture=x64\nflutter=%s\ndart=%s\n' \
             "$FLUTTER_VERSION" "$(dart --version 2>&1)" \
             > ../release-assets/metadata-linux.txt
+          printf 'specRevision=%s\nspecDigest=%s\nspecManifestSha256=%s\nspecManifestPath=assets/relgeo_spec/v0.5/manifest.json\n' \
+            "$SPEC_REVISION" "$SPEC_DIGEST" "$SPEC_MANIFEST_SHA256" >> ../release-assets/metadata-linux.txt
 
       - name: Build and archive Windows app
         if: runner.os == 'Windows'
@@ -237,11 +247,18 @@ jobs:
           if (!(Test-Path "$bundle/data")) { throw 'Missing data directory' }
           New-Item -ItemType Directory -Force ../release-assets | Out-Null
           Compress-Archive -Path "$bundle/*" -DestinationPath "../release-assets/RelGeo-windows-x64-v$env:RELEASE_VERSION.zip" -CompressionLevel Optimal
+          $specManifest = Get-Content 'assets/relgeo_spec/v0.5/manifest.json' -Raw | ConvertFrom-Json
+          $specDigest = $specManifest.digest
+          $specManifestSha256 = (Get-FileHash 'assets/relgeo_spec/v0.5/manifest.json' -Algorithm SHA256).Hash.ToLowerInvariant()
           @(
             'target=windows'
             'architecture=x64'
             "flutter=$env:FLUTTER_VERSION"
             "dart=$(dart --version 2>&1)"
+            "specRevision=$($specManifest.revision)"
+            "specDigest=$specDigest"
+            "specManifestSha256=$specManifestSha256"
+            'specManifestPath=assets/relgeo_spec/v0.5/manifest.json'
           ) | Set-Content ../release-assets/metadata-windows.txt
 
       - name: Upload platform package
@@ -293,10 +310,21 @@ jobs:
                   fields[key] = value
               metadata[fields['target']] = fields
 
+          spec_revisions = sorted({fields['specRevision'] for fields in metadata.values()})
+          spec_digests = sorted({fields['specDigest'] for fields in metadata.values()})
+          spec_manifest_sha256 = sorted({fields['specManifestSha256'] for fields in metadata.values()})
+          spec_paths = sorted({fields['specManifestPath'] for fields in metadata.values()})
+          if len(spec_revisions) != 1 or len(spec_digests) != 1 or len(spec_manifest_sha256) != 1 or spec_paths != ['assets/relgeo_spec/v0.5/manifest.json']:
+              raise SystemExit('Platform metadata does not share one spec revision, asset digest, manifest checksum, or manifest path.')
+
           manifest = {
               'applicationVersion': os.environ['RELEASE_VERSION'],
               'flutterRevision': os.environ['GITHUB_SHA'],
               'mcpRevision': os.environ['MCP_REVISION'],
+              'specRevision': spec_revisions[0],
+              'specDigest': spec_digests[0],
+              'specManifestSha256': spec_manifest_sha256[0],
+              'specManifestPath': spec_paths[0],
               'flutterVersion': os.environ['FLUTTER_VERSION'],
               'prerelease': os.environ['PRERELEASE'] == 'true',
               'artifacts': sorted(glob.glob('*.zip') + glob.glob('*.tar.gz')),

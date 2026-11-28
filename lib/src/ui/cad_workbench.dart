@@ -1172,10 +1172,9 @@ objects:
             unawaited(_createNewDocument());
           }
         },
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyN, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyN),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyN,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1190,10 +1189,9 @@ objects:
             unawaited(_openDocumentFromFileService());
           }
         },
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyO, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyO),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyO,
-          control: true,
         ),
       ),
       if (_recentDocuments.isNotEmpty ||
@@ -1233,10 +1231,9 @@ objects:
             unawaited(_saveDocumentToFileService(saveAs: false));
           }
         },
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyS, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyS),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyS,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1256,14 +1253,12 @@ objects:
             unawaited(_saveDocumentToFileService(saveAs: true));
           }
         },
-        shortcut: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyS,
-          control: true,
           shift: true,
         ),
-        shortcutActivator: const SingleActivator(
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyS,
-          control: true,
           shift: true,
         ),
       ),
@@ -1273,10 +1268,9 @@ objects:
         label: 'Close document',
         enabled: widget.onCloseDocument != null || widget.fileService != null,
         onInvoke: () => unawaited(_closeDocument()),
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyW, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyW),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyW,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1286,10 +1280,9 @@ objects:
         enabled: widget.onQuitApplication != null,
         onInvoke: () =>
             unawaited(_runLifecycleAction(widget.onQuitApplication)),
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyQ, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyQ),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyQ,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1314,10 +1307,9 @@ objects:
         label: 'Undo',
         enabled: _editorController.editingController.canUndo,
         onInvoke: _editorController.editingController.undo,
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyZ, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyZ),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyZ,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1326,14 +1318,12 @@ objects:
         label: 'Redo',
         enabled: _editorController.editingController.canRedo,
         onInvoke: _editorController.editingController.redo,
-        shortcut: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyZ,
-          control: true,
           shift: true,
         ),
-        shortcutActivator: const SingleActivator(
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyZ,
-          control: true,
           shift: true,
         ),
       ),
@@ -1342,10 +1332,9 @@ objects:
         menu: 'Edit',
         label: 'Copy source',
         onInvoke: _copySourceToClipboard,
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyC, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.keyC),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyC,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1368,10 +1357,9 @@ objects:
         menu: 'View',
         label: 'Zoom in',
         onInvoke: _zoomIn,
-        shortcut: const SingleActivator(LogicalKeyboardKey.add, control: true),
-        shortcutActivator: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.add),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.add,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1379,13 +1367,9 @@ objects:
         menu: 'View',
         label: 'Zoom out',
         onInvoke: _zoomOut,
-        shortcut: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(LogicalKeyboardKey.minus),
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.minus,
-          control: true,
-        ),
-        shortcutActivator: const SingleActivator(
-          LogicalKeyboardKey.minus,
-          control: true,
         ),
       ),
       WorkbenchCommand(
@@ -1449,14 +1433,12 @@ objects:
         checked: _showSceneGraph,
         enabled: _scene != null,
         onInvoke: () => setState(() => _showSceneGraph = !_showSceneGraph),
-        shortcut: const SingleActivator(
+        shortcut: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyG,
-          control: true,
           shift: true,
         ),
-        shortcutActivator: const SingleActivator(
+        shortcutActivator: WorkbenchShortcut.primary(
           LogicalKeyboardKey.keyG,
-          control: true,
           shift: true,
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +6,32 @@ import 'package:relgeo_flutter/src/ui/workbench_commands.dart';
 import 'package:relgeo_flutter/src/ui/workbench_platform_menu_bar.dart';
 
 void main() {
+  test('primary shortcut uses Control on Windows/Linux', () {
+    final previous = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = previous);
+
+    final shortcut = WorkbenchShortcut.primary(LogicalKeyboardKey.keyS);
+
+    expect(shortcut.control, isTrue);
+    expect(shortcut.meta, isFalse);
+  });
+
+  test('primary shortcut uses Command on macOS', () {
+    final previous = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = previous);
+
+    final shortcut = WorkbenchShortcut.primary(
+      LogicalKeyboardKey.keyS,
+      shift: true,
+    );
+
+    expect(shortcut.control, isFalse);
+    expect(shortcut.meta, isTrue);
+    expect(shortcut.shift, isTrue);
+  });
+
   test('command registry reports ambiguous shortcut bindings', () {
     final registry = WorkbenchCommandRegistry([
       WorkbenchCommand(
